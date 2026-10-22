@@ -14,111 +14,23 @@
   }
 
   .dark {
-    --bg-primary: #07080A;
-    --bg-surface: #101216;
-    --bg-subtle: #181B22;
+    --bg-primary: #0B0C0E;
+    --bg-surface: #14161B;
+    --bg-subtle: #1B1E26;
     --text-primary: #F4F1EA;
     --text-muted: #949BA8;
-    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-subtle: rgba(244, 241, 234, 0.10);
     --accent-ncd: #8267FF;
     --accent-hover: #6C4DF6;
-    --accent-subtle: rgba(130, 103, 255, 0.12);
+    --accent-subtle: rgba(130, 103, 255, 0.15);
   }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Geist", system-ui, sans-serif;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    font-family: 'Geist', system-ui, -apple-system, sans-serif;
   }
 
   .font-tabular {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Mono", "Geist Mono", monospace;
+    font-family: 'Geist Mono', monospace;
     font-feature-settings: "tnum" 1, "zero" 1;
-  }
-
-  /* §1 Response: tactile instant feedback on pointer-down (WWDC Fluid Interfaces) */
-  button:active:not(:disabled),
-  a:active:not([aria-disabled="true"]),
-  [role="button"]:active {
-    transform: scale(0.97);
-    transition: transform 100ms cubic-bezier(0.2, 0.9, 0.3, 1);
-  }
-}
-
-/* §15 Typography: Optical Tracking & Leading */
-.apple-display {
-  letter-spacing: -0.03em;
-  line-height: 1.05;
-  font-optical-sizing: auto;
-}
-
-.apple-title {
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-  font-optical-sizing: auto;
-}
-
-.apple-body {
-  letter-spacing: -0.005em;
-  line-height: 1.5;
-}
-
-.apple-caption {
-  letter-spacing: 0.015em;
-}
-
-/* §12 Materials & Depth: Translucent layers & squircle surface */
-.apple-nav {
-  background: rgba(244, 241, 234, 0.85);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(16, 18, 22, 0.08);
-}
-
-.dark .apple-nav {
-  background: rgba(7, 8, 10, 0.85);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.apple-surface {
-  background-color: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(255, 255, 255, 0.9);
-  border-left: 1px solid rgba(16, 18, 22, 0.06);
-  border-right: 1px solid rgba(16, 18, 22, 0.06);
-  border-bottom: 1px solid rgba(16, 18, 22, 0.08);
-  box-shadow: 0 4px 20px -2px rgba(16, 18, 22, 0.03);
-}
-
-.dark .apple-surface {
-  background-color: rgba(16, 18, 22, 0.80);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  border-left: 1px solid rgba(255, 255, 255, 0.06);
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.4);
-  box-shadow: 0 6px 24px -4px rgba(0, 0, 0, 0.4);
-}
-
-/* §14 Reduced motion & transparency */
-@media (prefers-reduced-motion: reduce) {
-  button:active, a:active, [role="button"]:active {
-    transform: none !important;
-  }
-  .animate-pulse, .animate-bounce, .animate-ping {
-    animation: none !important;
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .apple-nav, .apple-surface {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    background-color: var(--bg-surface) !important;
   }
 }
