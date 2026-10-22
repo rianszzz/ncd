@@ -2,138 +2,35 @@
 
 @layer base {
   :root {
-    --bg-primary: #F6F5F2;
+    --bg-primary: #F4F1EA;
     --bg-surface: #FFFFFF;
-    --bg-subtle: #EFECE6;
+    --bg-subtle: #EBE7DE;
     --text-primary: #101216;
     --text-muted: #585E6C;
     --border-subtle: rgba(16, 18, 22, 0.08);
     --accent-ncd: #6C4DF6;
     --accent-hover: #583BD9;
-    --accent-subtle: rgba(108, 77, 246, 0.08);
+    --accent-subtle: rgba(108, 77, 246, 0.10);
   }
 
   .dark {
-    --bg-primary: #07080A;
-    --bg-surface: #101216;
-    --bg-subtle: #181B22;
+    --bg-primary: #0B0C0E;
+    --bg-surface: #14161B;
+    --bg-subtle: #1B1E26;
     --text-primary: #F4F1EA;
     --text-muted: #949BA8;
-    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-subtle: rgba(244, 241, 234, 0.10);
     --accent-ncd: #8267FF;
     --accent-hover: #6C4DF6;
-    --accent-subtle: rgba(130, 103, 255, 0.12);
+    --accent-subtle: rgba(130, 103, 255, 0.15);
   }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Geist', system-ui, sans-serif;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    font-family: 'Geist', system-ui, -apple-system, sans-serif;
   }
 
   .font-tabular {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', 'Geist Mono', monospace;
+    font-family: 'Geist Mono', monospace;
     font-feature-settings: "tnum" 1, "zero" 1;
-  }
-
-  .font-display-serif {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-style: italic;
-  }
-
-  /* Tactile Instant Feedback on Pointer-Down (WWDC Fluid Interfaces Rule #1) */
-  button:active:not(:disabled),
-  a:active:not([aria-disabled="true"]),
-  [role="button"]:active {
-    transform: scale(0.97);
-    transition: transform 100ms ease-out;
-  }
-}
-
-/* Apple Typography — Optical Tracking & Leading (WWDC Rule #15) */
-.apple-display-headline {
-  letter-spacing: -0.035em;
-  line-height: 0.90;
-  font-optical-sizing: auto;
-}
-
-.apple-section-headline {
-  letter-spacing: -0.025em;
-  line-height: 1.05;
-  font-optical-sizing: auto;
-}
-
-.apple-subhead {
-  letter-spacing: -0.01em;
-  line-height: 1.45;
-}
-
-.apple-caption {
-  letter-spacing: 0.015em;
-  line-height: 1.35;
-}
-
-/* Translucent Materials & Depth (WWDC Rule #12) */
-.apple-material-nav {
-  background: rgba(246, 245, 242, 0.78);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-bottom: 1px solid rgba(16, 18, 22, 0.08);
-}
-
-.dark .apple-material-nav {
-  background: rgba(7, 8, 10, 0.82);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
-}
-
-.apple-card {
-  background-color: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px) saturate(150%);
-  -webkit-backdrop-filter: blur(20px) saturate(150%);
-  border-top: 1px solid rgba(255, 255, 255, 0.6);
-  border-left: 1px solid rgba(16, 18, 22, 0.06);
-  border-right: 1px solid rgba(16, 18, 22, 0.06);
-  border-bottom: 1px solid rgba(16, 18, 22, 0.1);
-  box-shadow: 0 4px 20px -2px rgba(16, 18, 22, 0.04);
-}
-
-.dark .apple-card {
-  background-color: rgba(16, 18, 22, 0.75);
-  backdrop-filter: blur(20px) saturate(150%);
-  -webkit-backdrop-filter: blur(20px) saturate(150%);
-  border-top: 1px solid rgba(255, 255, 255, 0.14);
-  border-left: 1px solid rgba(255, 255, 255, 0.07);
-  border-right: 1px solid rgba(255, 255, 255, 0.07);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.4);
-  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.5);
-}
-
-/* Ambient Radial Glow */
-.dark .hero-ambient-glow {
-  background: radial-gradient(circle at 50% 18%, rgba(108, 77, 246, 0.22) 0%, rgba(7, 8, 10, 0) 70%);
-}
-
-.hero-ambient-light {
-  background: radial-gradient(circle at 50% 15%, rgba(108, 77, 246, 0.07) 0%, rgba(246, 245, 242, 0) 70%);
-}
-
-/* Accessibility: Reduced Motion & Transparency (WWDC Rule #14) */
-@media (prefers-reduced-motion: reduce) {
-  button:active, a:active, [role="button"]:active {
-    transform: none !important;
-  }
-  .animate-pulse, .animate-bounce, .animate-ping {
-    animation: none !important;
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .apple-material-nav, .apple-card {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    background-color: var(--bg-surface) !important;
   }
 }
