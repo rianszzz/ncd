@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-primary: #F4F1EA;
+    --bg-surface: #FFFFFF;
+    --bg-subtle: #EBE7DE;
+    --text-primary: #101216;
+    --text-muted: #585E6C;
+    --border-subtle: rgba(16, 18, 22, 0.08);
+    --accent-ncd: #6C4DF6;
+    --accent-hover: #583BD9;
+    --accent-subtle: rgba(108, 77, 246, 0.10);
+  }
+
+  .dark {
+    --bg-primary: #0B0C0E;
+    --bg-surface: #14161B;
+    --bg-subtle: #1B1E26;
+    --text-primary: #F4F1EA;
+    --text-muted: #949BA8;
+    --border-subtle: rgba(244, 241, 234, 0.10);
+    --accent-ncd: #8267FF;
+    --accent-hover: #6C4DF6;
+    --accent-subtle: rgba(130, 103, 255, 0.15);
+  }
+
+  body {
+    font-family: 'Geist', system-ui, -apple-system, sans-serif;
+  }
+
+  .font-tabular {
+    font-family: 'Geist Mono', monospace;
+    font-feature-settings: "tnum" 1, "zero" 1;
+  }
+}
