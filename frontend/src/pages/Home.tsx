@@ -32,7 +32,7 @@ export function Home() {
   return (
     <div className="flex flex-col bg-[#F6F5F2] dark:bg-[#07080A] text-[#101216] dark:text-[#F4F1EA] transition-colors duration-300">
       {/* =========================================================================
-          HERO SECTION (Apple Typographic Tension & Deep Ambient Glow)
+          HERO SECTION (Apple Optical Tracking & Deep Ambient Material)
          ========================================================================= */}
       <section className="relative hero-ambient-light dark:hero-ambient-glow pt-16 pb-24 px-6 border-b border-[#101216]/8 dark:border-white/10">
         <div className="max-w-7xl mx-auto flex flex-col items-start text-left">
@@ -51,9 +51,9 @@ export function Home() {
             </div>
           </div>
 
-          {/* Dual Typographic Headline */}
+          {/* Dual Typographic Headline (Apple Display Optical Sizing) */}
           <div className="relative w-full">
-            <h1 className="text-5xl sm:text-7xl lg:text-[104px] font-black tracking-tight leading-[0.88] uppercase text-[#101216] dark:text-white">
+            <h1 className="text-5xl sm:text-7xl lg:text-[104px] font-black apple-display-headline uppercase text-[#101216] dark:text-white">
               WE ARE<br />
               FULL-STACK<br />
               <span className="font-display-serif lowercase tracking-normal text-[#6C4DF6] dark:text-[#8267FF] italic font-normal">
@@ -63,21 +63,21 @@ export function Home() {
 
             {/* Lockup beside headline */}
             <div className="mt-8 lg:mt-0 lg:absolute lg:right-0 lg:bottom-4 max-w-sm">
-              <p className="text-xs sm:text-sm text-[#585E6C] dark:text-[#949BA8] leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#585E6C] dark:text-[#949BA8] apple-subhead leading-relaxed">
                 Inkubasi rekayasa perangkat lunak mandiri di bawah naungan NEXA Tech Labs. 35 talenta teknologi membangun karya berstandar industri, transparansi kas terbuka (<em>Maker-Checker</em>), dan pencapaian kejuaraan.
               </p>
 
               <div className="mt-5 flex items-center space-x-3">
                 <Link
                   to="/join"
-                  className="px-5 py-2.5 rounded-full bg-[#101216] dark:bg-white text-white dark:text-[#101216] font-semibold text-xs tracking-wider hover:bg-[#6C4DF6] dark:hover:bg-[#8267FF] dark:hover:text-white transition-all flex items-center space-x-1.5 shadow-xs"
+                  className="px-5 py-2.5 rounded-full bg-[#101216] dark:bg-white text-white dark:text-[#101216] font-semibold text-xs tracking-wider hover:bg-[#6C4DF6] dark:hover:bg-[#8267FF] dark:hover:text-white transition-all duration-150 flex items-center space-x-1.5 shadow-xs"
                 >
                   <span>Gabung NCD</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
                 </Link>
                 <Link
                   to="/projects"
-                  className="px-5 py-2.5 rounded-full border border-[#101216]/15 dark:border-white/15 text-[#101216] dark:text-white font-semibold text-xs tracking-wider hover:bg-black/5 dark:hover:bg-white/5 transition-all"
+                  className="px-5 py-2.5 rounded-full border border-[#101216]/15 dark:border-white/15 text-[#101216] dark:text-white font-semibold text-xs tracking-wider hover:bg-black/5 dark:hover:bg-white/5 transition-all duration-150"
                 >
                   Lihat Karya
                 </Link>
@@ -113,13 +113,13 @@ export function Home() {
       <section className="max-w-7xl mx-auto px-6 py-24 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Left Column: Section Title */}
-          <div className="lg:col-span-4 flex flex-col justify-between">
+          <div className="lg:col-span-4 flex flex-col justify-between text-left">
             <div>
               <div className="flex items-center space-x-2 text-xs font-semibold text-[#6C4DF6] dark:text-[#8267FF] uppercase tracking-wider mb-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#6C4DF6] dark:bg-[#8267FF]"></span>
                 <span>CORE ADVANTAGES</span>
               </div>
-              <h2 className="text-4xl sm:text-5xl font-black uppercase tracking-tight text-[#101216] dark:text-white leading-[0.95]">
+              <h2 className="text-4xl sm:text-5xl font-black uppercase apple-section-headline text-[#101216] dark:text-white">
                 FEATURES
               </h2>
             </div>
@@ -137,10 +137,10 @@ export function Home() {
             </div>
           </div>
 
-          {/* Right Column: 3x2 Squircle Bento Cards */}
+          {/* Right Column: 3x2 Squircle Apple Cards */}
           <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-left">
-            {/* Bento Card 1 */}
-            <div className="p-6 rounded-3xl bg-white dark:bg-[#101216]/80 border border-[#101216]/8 dark:border-white/10 shadow-xs hover:border-[#6C4DF6]/40 dark:hover:border-[#8267FF]/40 transition-all flex flex-col justify-between">
+            {/* Card 1 */}
+            <div className="p-6 rounded-3xl apple-card transition-all duration-200 flex flex-col justify-between">
               <div>
                 <div className="w-10 h-10 rounded-full bg-[#6C4DF6]/10 dark:bg-[#8267FF]/10 text-[#6C4DF6] dark:text-[#8267FF] flex items-center justify-center mb-5">
                   <ShieldCheck className="w-5 h-5" />
@@ -154,8 +154,8 @@ export function Home() {
               </div>
             </div>
 
-            {/* Bento Card 2 */}
-            <div className="p-6 rounded-3xl bg-white dark:bg-[#101216]/80 border border-[#101216]/8 dark:border-white/10 shadow-xs hover:border-[#6C4DF6]/40 dark:hover:border-[#8267FF]/40 transition-all flex flex-col justify-between">
+            {/* Card 2 */}
+            <div className="p-6 rounded-3xl apple-card transition-all duration-200 flex flex-col justify-between">
               <div>
                 <div className="w-10 h-10 rounded-full bg-[#6C4DF6]/10 dark:bg-[#8267FF]/10 text-[#6C4DF6] dark:text-[#8267FF] flex items-center justify-center mb-5">
                   <Cpu className="w-5 h-5" />
@@ -169,8 +169,8 @@ export function Home() {
               </div>
             </div>
 
-            {/* Bento Card 3 */}
-            <div className="p-6 rounded-3xl bg-white dark:bg-[#101216]/80 border border-[#101216]/8 dark:border-white/10 shadow-xs hover:border-[#6C4DF6]/40 dark:hover:border-[#8267FF]/40 transition-all flex flex-col justify-between">
+            {/* Card 3 */}
+            <div className="p-6 rounded-3xl apple-card transition-all duration-200 flex flex-col justify-between">
               <div>
                 <div className="w-10 h-10 rounded-full bg-[#6C4DF6]/10 dark:bg-[#8267FF]/10 text-[#6C4DF6] dark:text-[#8267FF] flex items-center justify-center mb-5">
                   <Flame className="w-5 h-5" />
@@ -184,8 +184,8 @@ export function Home() {
               </div>
             </div>
 
-            {/* Bento Card 4 */}
-            <div className="p-6 rounded-3xl bg-white dark:bg-[#101216]/80 border border-[#101216]/8 dark:border-white/10 shadow-xs hover:border-[#6C4DF6]/40 dark:hover:border-[#8267FF]/40 transition-all flex flex-col justify-between">
+            {/* Card 4 */}
+            <div className="p-6 rounded-3xl apple-card transition-all duration-200 flex flex-col justify-between">
               <div>
                 <div className="w-10 h-10 rounded-full bg-[#6C4DF6]/10 dark:bg-[#8267FF]/10 text-[#6C4DF6] dark:text-[#8267FF] flex items-center justify-center mb-5">
                   <Lock className="w-5 h-5" />
@@ -199,8 +199,8 @@ export function Home() {
               </div>
             </div>
 
-            {/* Bento Card 5 */}
-            <div className="p-6 rounded-3xl bg-white dark:bg-[#101216]/80 border border-[#101216]/8 dark:border-white/10 shadow-xs hover:border-[#6C4DF6]/40 dark:hover:border-[#8267FF]/40 transition-all flex flex-col justify-between">
+            {/* Card 5 */}
+            <div className="p-6 rounded-3xl apple-card transition-all duration-200 flex flex-col justify-between">
               <div>
                 <div className="w-10 h-10 rounded-full bg-[#6C4DF6]/10 dark:bg-[#8267FF]/10 text-[#6C4DF6] dark:text-[#8267FF] flex items-center justify-center mb-5">
                   <Layers className="w-5 h-5" />
@@ -214,8 +214,8 @@ export function Home() {
               </div>
             </div>
 
-            {/* Bento Card 6 */}
-            <div className="p-6 rounded-3xl bg-white dark:bg-[#101216]/80 border border-[#101216]/8 dark:border-white/10 shadow-xs hover:border-[#6C4DF6]/40 dark:hover:border-[#8267FF]/40 transition-all flex flex-col justify-between">
+            {/* Card 6 */}
+            <div className="p-6 rounded-3xl apple-card transition-all duration-200 flex flex-col justify-between">
               <div>
                 <div className="w-10 h-10 rounded-full bg-[#6C4DF6]/10 dark:bg-[#8267FF]/10 text-[#6C4DF6] dark:text-[#8267FF] flex items-center justify-center mb-5">
                   <Sparkles className="w-5 h-5" />
