@@ -38,8 +38,8 @@ export function Home() {
         </h1>
 
         {/* Subhead with comfortable Apple line leading */}
-        <p className="mt-6 text-base md:text-lg text-[#585E6C] dark:text-[#949BA8] max-w-2xl apple-body leading-relaxed">
-          Wadah inkubasi 35 talenta rekayasa perangkat lunak di bawah naungan NEXA Tech Labs. Menghadirkan tata kelola kas terbuka dengan sistem Maker-Checker dan portofolio teknologi berdaya guna.
+        <p className="mt-6 text-base md:text-lg text-[#585E6C] dark:text-[#949BA8] max-w-xl apple-body leading-relaxed">
+          Inkubasi 35 talenta rekayasa perangkat lunak mandiri. Menghadirkan tata kelola kas terbuka Maker-Checker dan portofolio berstandar industri.
         </p>
 
         {/* Tactile Action Buttons */}
