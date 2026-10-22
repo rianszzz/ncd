@@ -59,7 +59,7 @@
 
 > **Tujuan**: Menerapkan design system resmi NCD pada Tailwind CSS dan membangun komponen shell publik maupun portal di React.
 
-- [ ] **TASK-101** `[P0]` **Setup Design Tokens & Theme Engine (React/Tailwind)**
+- [x] **TASK-101** `[P0]` **Setup Design Tokens & Theme Engine (React/Tailwind)**
   - Konfigurasi variabel CSS warna resmi NCD:
     - Primary Accent: `#6C4DF6` (Ungu NCD)
     - Light Background: `#F4F1EA` (Off-white hangat)
@@ -69,7 +69,7 @@
   - Implementasikan Dark/Light mode switcher dengan penyimpanan di `localStorage`.
   - *Estimasi*: 2 Hari | *Assignee*: Developer (Rianszzz)
 
-- [ ] **TASK-102** `[P0]` **Global Navigation & Layout Shells**
+- [x] **TASK-102** `[P0]` **Global Navigation & Layout Shells**
   - Komponen `PublicLayout`: Sticky navbar, logo NCD + strip *"Under the umbrella of NEXA Tech Labs"*, navigasi links, CTA "Masuk / Join", dan footer informatif.
   - Komponen `PortalLayout`: Sidebar navigasi collapsible, topbar dengan user avatar dropdown & status role badge, serta breadcrumb.
   - Setup Axios interceptor untuk menyertakan token otentikasi otomatis dan penanganan error 401/403.
@@ -86,22 +86,22 @@
 
 > **Tujuan**: Menyelesaikan endpoint publik di backend Go dan halaman sisi publik di frontend React.
 
-- [ ] **TASK-201** `[P0]` **Beranda Publik (`/`) & API Stats**
+- [x] **TASK-201** `[P0]` **Beranda Publik (`/`) & API Stats**
   - Backend: Endpoint `GET /api/v1/public/stats` (menghitung total anggota aktif, proyek publik, prestasi, kompetisi).
   - Frontend: Hero section dinamis, strip logo NEXA Tech Labs, statistik counter teranimasi, showcase 3 proyek highlight, dan CTA rekrutmen.
   - *Estimasi*: 3 Hari | *Assignee*: Developer
 
-- [ ] **TASK-202** `[P0]` **Halaman Tentang NCD & Timeline Sejarah (`/about`, `/history`)**
+- [x] **TASK-202** `[P0]` **Halaman Tentang NCD & Timeline Sejarah (`/about`, `/history`)**
   - Backend: Endpoint `GET /api/v1/public/history` (mengambil data sejarah kronologis).
   - Frontend: Narasi visi-misi, nilai organisasi, dan komponen timeline interaktif berbasis tahun/bulan dengan foto dokumentasi.
   - *Estimasi*: 2 Hari | *Assignee*: Developer & Sekretaris
 
-- [ ] **TASK-203** `[P0]` **Struktur Organisasi & Direktori 35 Anggota (`/team`)**
+- [x] **TASK-203** `[P0]` **Struktur Organisasi & Direktori 35 Anggota (`/team`)**
   - Backend: Endpoint `GET /api/v1/public/members` (hanya mengembalikan anggota dengan `show_in_public = true` dan tanpa mengekspos nomor telepon).
   - Frontend: Bagan struktur pengurus hierarki dan grid galeri 35 anggota dengan pencarian nama instan serta filter multi-tag divisi/keahlian.
   - *Estimasi*: 3 Hari | *Assignee*: Developer
 
-- [ ] **TASK-204** `[P0]` **Katalog Portofolio Proyek Publik (`/projects`, `/projects/:slug`)**
+- [x] **TASK-204** `[P0]` **Katalog Portofolio Proyek Publik (`/projects`, `/projects/:slug`)**
   - Backend: Endpoint `GET /api/v1/public/projects` dan `GET /api/v1/public/projects/:slug` (hanya proyek dengan `is_public = true`).
   - Frontend: Card grid proyek, badge teknologi, halaman detail proyek lengkap dengan screenshot, deskripsi markdown, dan anggota kontributor.
   - *Estimasi*: 3 Hari | *Assignee*: Developer
@@ -116,7 +116,7 @@
   - Frontend: Daftar artikel dengan cover image, pembagian tag, dan halaman baca artikel dengan renderer Markdown aman.
   - *Estimasi*: 2 Hari | *Assignee*: Developer & Sekretaris
 
-- [ ] **TASK-207** `[P0]` **Formulir Pendaftaran Terbuka / Rekrutmen (`/join`)**
+- [x] **TASK-207** `[P0]` **Formulir Pendaftaran Terbuka / Rekrutmen (`/join`)**
   - Backend: Endpoint `POST /api/v1/public/apply` dengan proteksi rate limit, validasi spam honeypot, dan notifikasi email konfirmasi.
   - Frontend: Landing info alur rekrutmen + FAQ, multi-field form terintegrasi validasi Zod, dan toggle otomatis bila periode rekrutmen ditutup.
   - *Estimasi*: 3 Hari | *Assignee*: Developer
@@ -131,7 +131,7 @@
 
 > **Tujuan**: Membangun backend authentication engine di Go dan protected workspace `/app/*` di React.
 
-- [ ] **TASK-301** `[P0]` **Autentikasi Go JWT & Route Guarding di React**
+- [x] **TASK-301** `[P0]` **Autentikasi Go JWT & Route Guarding di React**
   - Backend: Endpoint `POST /api/v1/auth/login`, `POST /api/v1/auth/logout`, `GET /api/v1/auth/me`.
   - Backend: Middleware `RequireAuth` dan `RequireRole` di router Chi/Gin; pengesahan cookie sesi `httpOnly`.
   - Frontend: `AuthContext`, hook `useAuth`, dan komponen `<ProtectedRoute roles={...}>` untuk melindungi rute `/app/*`.
@@ -179,7 +179,7 @@
 
 > **Tujuan**: Membangun modul buku kas dengan validasi Maker-Checker ketat di Go Service dan visualisasi di React.
 
-- [ ] **TASK-401** `[P0]` **Engine Maker-Checker di Go Service**
+- [x] **TASK-401** `[P0]` **Engine Maker-Checker di Go Service**
   - Backend Service: Logika status mutasi:
     - Bendahara I input draft (`status: DRAFT_PENDING`).
     - Bendahara II verifikasi (`status: VERIFIED`).
@@ -187,12 +187,12 @@
   - Backend: Saldo kas berjalan hanya mengakumulasi transaksi dengan status `VERIFIED`.
   - *Estimasi*: 3 Hari | *Assignee*: Developer, Bendahara I (Iqbal), Bendahara II (Sri)
 
-- [ ] **TASK-402** `[P0]` **Anti-Delete & Mekanisme Void Audit Trail**
+- [x] **TASK-402** `[P0]` **Anti-Delete & Mekanisme Void Audit Trail**
   - Backend: Blokir aksi `DELETE` pada mutasi kas. Buat endpoint `POST /api/v1/finance/transactions/:id/void` khusus Super Admin.
   - Pencatatan otomatis ke tabel `audit_logs` (user pembatal, tanggal, dan alasan tertulis).
   - *Estimasi*: 2 Hari | *Assignee*: Developer
 
-- [ ] **TASK-403** `[P0]` **Input Mutasi & Unggah Bukti Nota ke Supabase Storage**
+- [x] **TASK-403** `[P0]` **Input Mutasi & Unggah Bukti Nota ke Supabase Storage**
   - Backend: Integrasi upload bukti nota ke Supabase Storage bucket `receipts-kas`.
   - Frontend: Modal input transaksi bagi Bendahara I dengan upload file, serta Lightbox preview nota bagi seluruh anggota.
   - *Estimasi*: 3 Hari | *Assignee*: Developer & Bendahara I
@@ -202,7 +202,7 @@
   - Frontend: Tab status iuran pribadi untuk member; matriks kontrol 35 anggota untuk Bendahara I & II.
   - *Estimasi*: 2 Hari | *Assignee*: Developer & Bendahara
 
-- [ ] **TASK-405** `[P0]` **Visualisasi Grafik Arus Kas & Ekspor Rekapan**
+- [x] **TASK-405** `[P0]` **Visualisasi Grafik Arus Kas & Ekspor Rekapan**
   - Frontend: Visualisasi grafik Recharts (arus kas bulanan masuk vs keluar, komposisi per kategori).
   - Frontend/Backend: Ekspor laporan mutasi ke format CSV dan PDF resmi ber-kop NCD.
   - *Estimasi*: 3 Hari | *Assignee*: Developer

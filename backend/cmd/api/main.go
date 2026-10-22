@@ -45,6 +45,24 @@ func main() {
 	// API v1 routes group
 	r.Route("/api/v1", func(api chi.Router) {
 		api.Get("/health", handler.HealthCheck)
+
+		// Public Routes
+		api.Get("/public/stats", handler.GetPublicStats)
+		api.Get("/public/members", handler.GetPublicMembers)
+		api.Get("/public/projects", handler.GetPublicProjects)
+		api.Get("/public/history", handler.GetPublicHistory)
+		api.Post("/public/apply", handler.SubmitApplication)
+
+		// Finance Routes (Maker-Checker Kas)
+		api.Get("/finance/summary", handler.GetCashSummary)
+		api.Get("/finance/transactions", handler.ListTransactions)
+		api.Post("/finance/transactions", handler.CreateTransaction)
+		api.Post("/finance/transactions/{id}/verify", handler.VerifyTransaction)
+		api.Post("/finance/transactions/{id}/void", handler.VoidTransaction)
+
+		// Auth Routes
+		api.Post("/auth/login", handler.Login(cfg.JWTSecret))
+		api.Post("/auth/logout", handler.Logout)
 	})
 
 	server := &http.Server{
