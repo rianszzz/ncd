@@ -37,7 +37,7 @@
     font-feature-settings: "tnum" 1, "zero" 1;
   }
 
-  /* §1 Response — kill latency: tactile instant feedback on pointer-down (WWDC Fluid Interfaces) */
+  /* §1 Response: tactile instant feedback on pointer-down (WWDC Fluid Interfaces) */
   button:active:not(:disabled),
   a:active:not([aria-disabled="true"]),
   [role="button"]:active {
@@ -46,7 +46,7 @@
   }
 }
 
-/* §15 Typography — Optical Tracking & Leading */
+/* §15 Typography: Optical Tracking & Leading */
 .apple-display {
   letter-spacing: -0.03em;
   line-height: 1.05;
@@ -68,7 +68,7 @@
   letter-spacing: 0.015em;
 }
 
-/* §12 Materials & Depth — Translucent layers & squircle surface */
+/* §12 Materials & Depth: Translucent layers & squircle surface */
 .apple-nav {
   background: rgba(244, 241, 234, 0.85);
   backdrop-filter: blur(20px) saturate(180%);

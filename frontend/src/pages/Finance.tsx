@@ -106,21 +106,21 @@ export function Finance() {
       {/* Header & Title */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-10">
         <div>
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-semibold bg-[#6C4DF6]/10 text-[#6C4DF6] mb-3">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full text-xs font-semibold bg-[#6C4DF6]/10 text-[#6C4DF6] dark:text-[#8267FF] mb-3 border border-[#6C4DF6]/20 apple-caption">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Transparansi Finansial Komunitas</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#101216]">
-            Buku Kas Terbuka & Maker-Checker
+          <h1 className="text-3xl md:text-4xl font-extrabold apple-display text-[#101216] dark:text-white">
+            Buku Kas Terbuka &amp; Maker-Checker
           </h1>
-          <p className="text-xs text-[#585E6C] mt-1.5 leading-relaxed">
+          <p className="text-xs text-[#585E6C] dark:text-[#949BA8] mt-1.5 leading-relaxed apple-body">
             Setiap rupiah dicatat oleh Bendahara I (Maker), diverifikasi oleh Bendahara II (Checker), dan dapat diaudit oleh seluruh 35 anggota.
           </p>
         </div>
 
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="px-4 py-2.5 rounded-xl bg-[#6C4DF6] text-white text-xs font-semibold hover:bg-[#583BD9] transition-all flex items-center space-x-2 shadow-xs shrink-0"
+          className="px-4 py-2.5 rounded-full bg-[#6C4DF6] text-white text-xs font-semibold hover:bg-[#583BD9] transition-all flex items-center space-x-2 shadow-xs shrink-0"
         >
           <PlusCircle className="w-4 h-4" />
           <span>Input Draft Kas (Bendahara I)</span>
@@ -129,53 +129,53 @@ export function Finance() {
 
       {/* Financial Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-        <div className="p-6 rounded-2xl bg-white border border-[#101216]/10 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-[#585E6C] mb-2 font-medium">
+        <div className="p-6 rounded-3xl apple-surface">
+          <div className="flex items-center justify-between text-xs text-[#585E6C] dark:text-[#949BA8] mb-2 font-medium">
             <span>Saldo Kas Bersih</span>
-            <span className="w-2 h-2 rounded-full bg-[#107C41]"></span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
           </div>
-          <div className="text-2xl font-bold text-[#101216] font-tabular">
+          <div className="text-2xl font-bold text-[#101216] dark:text-white font-tabular apple-title">
             {formatRupiah(summary?.current_balance || 0)}
           </div>
-          <div className="text-[11px] text-[#585E6C] mt-2">Saldo resmi terverifikasi</div>
+          <div className="text-[11px] text-[#585E6C] dark:text-[#949BA8] mt-2">Saldo resmi terverifikasi</div>
         </div>
 
-        <div className="p-6 rounded-2xl bg-white border border-[#101216]/10 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-[#585E6C] mb-2 font-medium">
+        <div className="p-6 rounded-3xl apple-surface">
+          <div className="flex items-center justify-between text-xs text-[#585E6C] dark:text-[#949BA8] mb-2 font-medium">
             <span>Total Pemasukan</span>
-            <TrendingUp className="w-4 h-4 text-[#107C41]" />
+            <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div className="text-2xl font-bold text-[#107C41] font-tabular">
+          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-tabular apple-title">
             {formatRupiah(summary?.total_income || 0)}
           </div>
-          <div className="text-[11px] text-[#585E6C] mt-2">Iuran, hadiah lomba & sponsor</div>
+          <div className="text-[11px] text-[#585E6C] dark:text-[#949BA8] mt-2">Iuran, hadiah lomba &amp; sponsor</div>
         </div>
 
-        <div className="p-6 rounded-2xl bg-white border border-[#101216]/10 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-[#585E6C] mb-2 font-medium">
+        <div className="p-6 rounded-3xl apple-surface">
+          <div className="flex items-center justify-between text-xs text-[#585E6C] dark:text-[#949BA8] mb-2 font-medium">
             <span>Total Pengeluaran</span>
-            <TrendingDown className="w-4 h-4 text-[#D83B01]" />
+            <TrendingDown className="w-4 h-4 text-rose-600 dark:text-rose-400" />
           </div>
-          <div className="text-2xl font-bold text-[#D83B01] font-tabular">
+          <div className="text-2xl font-bold text-rose-600 dark:text-rose-400 font-tabular apple-title">
             {formatRupiah(summary?.total_expense || 0)}
           </div>
-          <div className="text-[11px] text-[#585E6C] mt-2">Infrastruktur & operasional</div>
+          <div className="text-[11px] text-[#585E6C] dark:text-[#949BA8] mt-2">Infrastruktur &amp; operasional</div>
         </div>
 
-        <div className="p-6 rounded-2xl bg-white border border-[#101216]/10 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-[#585E6C] mb-2 font-medium">
+        <div className="p-6 rounded-3xl apple-surface">
+          <div className="flex items-center justify-between text-xs text-[#585E6C] dark:text-[#949BA8] mb-2 font-medium">
             <span>Menunggu Verifikasi</span>
-            <Clock className="w-4 h-4 text-[#D97706]" />
+            <Clock className="w-4 h-4 text-amber-500" />
           </div>
-          <div className="text-2xl font-bold text-[#D97706] font-tabular">
+          <div className="text-2xl font-bold text-amber-500 font-tabular apple-title">
             {summary?.pending_drafts || 0} Draft
           </div>
-          <div className="text-[11px] text-[#585E6C] mt-2">Perlu disahkan Bendahara II</div>
+          <div className="text-[11px] text-[#585E6C] dark:text-[#949BA8] mt-2">Perlu disahkan Bendahara II</div>
         </div>
       </div>
 
       {/* Tabs Filter */}
-      <div className="flex items-center space-x-2 border-b border-[#101216]/10 pb-3 mb-6">
+      <div className="flex items-center space-x-2 border-b border-[#101216]/6 dark:border-white/10 pb-3 mb-6">
         {[
           { key: 'ALL', label: 'Semua Mutasi' },
           { key: 'DRAFT_PENDING', label: 'Menunggu Verifikasi (Pending)' },
@@ -185,10 +185,10 @@ export function Finance() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key as any)}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
               activeTab === tab.key
-                ? 'bg-[#101216] text-white shadow-xs'
-                : 'text-[#585E6C] hover:bg-black/5 hover:text-[#101216]'
+                ? 'bg-[#101216] dark:bg-white text-white dark:text-[#101216] shadow-xs'
+                : 'text-[#585E6C] dark:text-[#949BA8] hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#101216] dark:hover:text-white'
             }`}
           >
             {tab.label}
@@ -197,87 +197,87 @@ export function Finance() {
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-white rounded-2xl border border-[#101216]/10 overflow-hidden shadow-xs">
+      <div className="apple-surface rounded-3xl overflow-hidden shadow-xs">
         {isLoading ? (
-          <div className="text-center py-16 text-xs text-[#585E6C]">Memuat data mutasi buku kas...</div>
+          <div className="text-center py-16 text-xs text-[#585E6C] dark:text-[#949BA8]">Memuat data mutasi buku kas...</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-black/5 text-[#585E6C] font-semibold border-b border-[#101216]/10 uppercase tracking-wider text-[10px]">
+              <thead className="bg-black/5 dark:bg-white/5 text-[#585E6C] dark:text-[#949BA8] font-semibold border-b border-[#101216]/6 dark:border-white/10 uppercase tracking-wider text-[10px]">
                 <tr>
-                  <th className="py-3 px-4">No. Transaksi</th>
-                  <th className="py-3 px-4">Tanggal</th>
-                  <th className="py-3 px-4">Tipe & Kategori</th>
-                  <th className="py-3 px-4">Deskripsi</th>
-                  <th className="py-3 px-4">Nominal</th>
-                  <th className="py-3 px-4">Pembuat (Maker)</th>
-                  <th className="py-3 px-4">Status & Verifikator</th>
-                  <th className="py-3 px-4 text-center">Nota</th>
-                  <th className="py-3 px-4 text-right">Aksi</th>
+                  <th className="py-3.5 px-4">No. Transaksi</th>
+                  <th className="py-3.5 px-4">Tanggal</th>
+                  <th className="py-3.5 px-4">Tipe &amp; Kategori</th>
+                  <th className="py-3.5 px-4">Deskripsi</th>
+                  <th className="py-3.5 px-4">Nominal</th>
+                  <th className="py-3.5 px-4">Pembuat (Maker)</th>
+                  <th className="py-3.5 px-4">Status &amp; Verifikator</th>
+                  <th className="py-3.5 px-4 text-center">Nota</th>
+                  <th className="py-3.5 px-4 text-right">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#101216]/5">
+              <tbody className="divide-y divide-[#101216]/6 dark:divide-white/6">
                 {filteredTx?.map((tx) => (
                   <tr
                     key={tx.id}
-                    className={`hover:bg-black/2 transition-colors ${
-                      tx.status === 'VOID' ? 'opacity-60 bg-red-50/20' : ''
+                    className={`hover:bg-black/2 dark:hover:bg-white/2 transition-colors ${
+                      tx.status === 'VOID' ? 'opacity-60 bg-rose-50/20 dark:bg-rose-950/20' : ''
                     }`}
                   >
-                    <td className="py-3.5 px-4 font-tabular font-semibold text-[#101216]">
+                    <td className="py-3.5 px-4 font-tabular font-semibold text-[#101216] dark:text-white">
                       {tx.transaction_number}
                     </td>
-                    <td className="py-3.5 px-4 text-[#585E6C] whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-[#585E6C] dark:text-[#949BA8] whitespace-nowrap">
                       {tx.transaction_date}
                     </td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <span
-                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold mr-1.5 ${
+                        className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold mr-1.5 ${
                           tx.type === 'INCOME'
-                            ? 'bg-[#107C41]/10 text-[#107C41]'
-                            : 'bg-[#D83B01]/10 text-[#D83B01]'
+                            ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                            : 'bg-rose-500/10 text-rose-700 dark:text-rose-300'
                         }`}
                       >
                         {tx.type === 'INCOME' ? 'DEBET' : 'KREDIT'}
                       </span>
-                      <span className="text-[#101216] font-medium">{tx.category_name}</span>
+                      <span className="text-[#101216] dark:text-white font-medium">{tx.category_name}</span>
                     </td>
-                    <td className="py-3.5 px-4 text-[#585E6C] max-w-xs truncate" title={tx.description}>
+                    <td className="py-3.5 px-4 text-[#585E6C] dark:text-[#949BA8] max-w-xs truncate" title={tx.description}>
                       {tx.description}
                       {tx.void_reason && (
-                        <div className="text-[10px] text-red-600 italic mt-0.5">
+                        <div className="text-[10px] text-rose-600 dark:text-rose-400 italic mt-0.5">
                           Alasan Void: {tx.void_reason} ({tx.void_by_name})
                         </div>
                       )}
                     </td>
                     <td
                       className={`py-3.5 px-4 font-tabular font-bold whitespace-nowrap ${
-                        tx.type === 'INCOME' ? 'text-[#107C41]' : 'text-[#D83B01]'
+                        tx.type === 'INCOME' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                       }`}
                     >
                       {tx.type === 'INCOME' ? '+' : '-'} {formatRupiah(tx.amount)}
                     </td>
-                    <td className="py-3.5 px-4 text-[#585E6C] text-[11px] whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-[#585E6C] dark:text-[#949BA8] text-[11px] whitespace-nowrap">
                       {tx.maker_name}
                     </td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       {tx.status === 'VERIFIED' && (
                         <div>
-                          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-800">
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-700 dark:text-sky-300">
                             <CheckCircle className="w-3 h-3" />
                             <span>Terverifikasi</span>
                           </span>
-                          <div className="text-[9px] text-[#585E6C] mt-0.5">{tx.verifier_name}</div>
+                          <div className="text-[9px] text-[#585E6C] dark:text-[#949BA8] mt-0.5">{tx.verifier_name}</div>
                         </div>
                       )}
                       {tx.status === 'DRAFT_PENDING' && (
-                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 animate-pulse">
+                        <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 animate-pulse">
                           <Clock className="w-3 h-3" />
                           <span>Pending Checker</span>
                         </span>
                       )}
                       {tx.status === 'VOID' && (
-                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800">
+                        <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-700 dark:text-rose-300">
                           <Ban className="w-3 h-3" />
                           <span>Dibatalkan</span>
                         </span>
@@ -286,7 +286,7 @@ export function Finance() {
                     <td className="py-3.5 px-4 text-center">
                       <button
                         onClick={() => setSelectedReceipt(tx.receipt_url)}
-                        className="p-1.5 rounded-lg text-[#6C4DF6] hover:bg-[#6C4DF6]/10 transition-colors"
+                        className="p-1.5 rounded-full text-[#6C4DF6] dark:text-[#8267FF] hover:bg-[#6C4DF6]/10 transition-colors"
                         title="Lihat Bukti Nota/Transfer"
                       >
                         <Receipt className="w-4 h-4" />
@@ -297,8 +297,8 @@ export function Finance() {
                         {tx.status === 'DRAFT_PENDING' && (
                           <button
                             onClick={() => verifyTxMutation.mutate(tx.id)}
-                            className="px-2.5 py-1 rounded bg-[#107C41] text-white text-[10px] font-semibold hover:bg-[#0e6b38] transition-colors flex items-center space-x-1"
-                            title="Sahkan & Verifikasi sebagai Bendahara II"
+                            className="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-semibold hover:bg-emerald-700 transition-colors flex items-center space-x-1"
+                            title="Sahkan &amp; Verifikasi sebagai Bendahara II"
                           >
                             <FileCheck className="w-3 h-3" />
                             <span>Sahkan (B2)</span>
@@ -307,7 +307,7 @@ export function Finance() {
                         {tx.status !== 'VOID' && (
                           <button
                             onClick={() => setVoidModalTx(tx)}
-                            className="px-2 py-1 rounded border border-red-200 text-red-600 text-[10px] font-semibold hover:bg-red-50 transition-colors"
+                            className="px-2.5 py-1 rounded-full border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-[10px] font-semibold hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
                             title="Batalkan Mutasi (Super Admin)"
                           >
                             Void
@@ -325,26 +325,26 @@ export function Finance() {
 
       {/* Modal: Input New Transaction (Maker - Bendahara I) */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl border border-[#101216]/10">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#101216]/10">
-              <h3 className="font-bold text-base text-[#101216]">Input Draft Mutasi Kas (Bendahara I)</h3>
-              <button onClick={() => setIsAddModalOpen(false)} className="text-[#585E6C] hover:text-[#101216]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md p-4">
+          <div className="apple-surface rounded-3xl max-w-lg w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#101216]/6 dark:border-white/10">
+              <h3 className="font-bold text-base text-[#101216] dark:text-white apple-title">Input Draft Mutasi Kas (Bendahara I)</h3>
+              <button onClick={() => setIsAddModalOpen(false)} className="text-[#585E6C] dark:text-[#949BA8] hover:text-[#101216] dark:hover:text-white p-1">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold mb-1">Tipe Mutasi</label>
+                <label className="block font-semibold mb-1 text-[#101216] dark:text-white">Tipe Mutasi</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setNewTx({ ...newTx, type: 'INCOME' })}
-                    className={`py-2 rounded-xl font-bold border transition-all ${
+                    className={`py-2 rounded-full font-bold border transition-all ${
                       newTx.type === 'INCOME'
-                        ? 'bg-[#107C41] text-white border-[#107C41]'
-                        : 'bg-white border-[#101216]/10 text-[#585E6C]'
+                        ? 'bg-emerald-600 text-white border-emerald-600'
+                        : 'bg-black/5 dark:bg-white/5 border-transparent text-[#585E6C] dark:text-[#949BA8]'
                     }`}
                   >
                     + Pemasukan (Debet)
@@ -352,10 +352,10 @@ export function Finance() {
                   <button
                     type="button"
                     onClick={() => setNewTx({ ...newTx, type: 'EXPENSE' })}
-                    className={`py-2 rounded-xl font-bold border transition-all ${
+                    className={`py-2 rounded-full font-bold border transition-all ${
                       newTx.type === 'EXPENSE'
-                        ? 'bg-[#D83B01] text-white border-[#D83B01]'
-                        : 'bg-white border-[#101216]/10 text-[#585E6C]'
+                        ? 'bg-rose-600 text-white border-rose-600'
+                        : 'bg-black/5 dark:bg-white/5 border-transparent text-[#585E6C] dark:text-[#949BA8]'
                     }`}
                   >
                     - Pengeluaran (Kredit)
@@ -364,59 +364,59 @@ export function Finance() {
               </div>
 
               <div>
-                <label className="block font-semibold mb-1">Kategori Biaya</label>
+                <label className="block font-semibold mb-1 text-[#101216] dark:text-white">Kategori Biaya</label>
                 <select
                   value={newTx.category_name}
                   onChange={(e) => setNewTx({ ...newTx, category_name: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-black/5 outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 text-[#101216] dark:text-white outline-none border border-transparent focus:border-[#6C4DF6]"
                 >
                   <option value="Iuran Anggota">Iuran Anggota</option>
-                  <option value="Operasional & Event">Operasional & Event</option>
-                  <option value="Infrastruktur & Cloud">Infrastruktur & Cloud</option>
-                  <option value="Konsumsi & Rapat Kerja">Konsumsi & Rapat Kerja</option>
+                  <option value="Operasional & Event">Operasional &amp; Event</option>
+                  <option value="Infrastruktur & Cloud">Infrastruktur &amp; Cloud</option>
+                  <option value="Konsumsi & Rapat Kerja">Konsumsi &amp; Rapat Kerja</option>
                   <option value="Hadiah Kompetisi">Hadiah Kompetisi</option>
                   <option value="Perlengkapan Teknis">Perlengkapan Teknis</option>
                 </select>
               </div>
 
               <div>
-                <label className="block font-semibold mb-1">Nominal (Rupiah)</label>
+                <label className="block font-semibold mb-1 text-[#101216] dark:text-white">Nominal (Rupiah)</label>
                 <input
                   type="number"
                   value={newTx.amount}
                   onChange={(e) => setNewTx({ ...newTx, amount: Number(e.target.value) })}
-                  className="w-full px-3 py-2 rounded-xl bg-black/5 outline-none font-tabular text-sm font-bold"
+                  className="w-full px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 text-[#101216] dark:text-white outline-none font-tabular text-sm font-bold border border-transparent focus:border-[#6C4DF6]"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold mb-1">Keterangan / Deskripsi</label>
+                <label className="block font-semibold mb-1 text-[#101216] dark:text-white">Keterangan / Deskripsi</label>
                 <textarea
                   rows={2}
                   value={newTx.description}
                   onChange={(e) => setNewTx({ ...newTx, description: e.target.value })}
                   placeholder="cth. Pembelian domain ncd.nexatechlabs.my.id"
-                  className="w-full px-3 py-2 rounded-xl bg-black/5 outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 text-[#101216] dark:text-white outline-none border border-transparent focus:border-[#6C4DF6]"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold mb-1">Penanggung Jawab (PIC)</label>
+                <label className="block font-semibold mb-1 text-[#101216] dark:text-white">Penanggung Jawab (PIC)</label>
                 <input
                   type="text"
                   value={newTx.person_in_charge}
                   onChange={(e) => setNewTx({ ...newTx, person_in_charge: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-black/5 outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 text-[#101216] dark:text-white outline-none border border-transparent focus:border-[#6C4DF6]"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold mb-1">Bukti Struk/Nota Transfer (URL Foto)</label>
+                <label className="block font-semibold mb-1 text-[#101216] dark:text-white">Bukti Struk/Nota Transfer (URL Foto)</label>
                 <input
                   type="text"
                   value={newTx.receipt_url}
                   onChange={(e) => setNewTx({ ...newTx, receipt_url: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-black/5 outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 text-[#101216] dark:text-white outline-none border border-transparent focus:border-[#6C4DF6]"
                 />
               </div>
             </div>
@@ -424,14 +424,14 @@ export function Finance() {
             <div className="mt-6 flex justify-end space-x-2">
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-black/5 text-xs font-semibold hover:bg-black/10"
+                className="px-4 py-2 rounded-full bg-black/5 dark:bg-white/5 text-[#585E6C] dark:text-[#949BA8] text-xs font-semibold hover:bg-black/10 dark:hover:bg-white/10"
               >
                 Batal
               </button>
               <button
                 onClick={() => createTxMutation.mutate(newTx)}
                 disabled={!newTx.description || newTx.amount <= 0}
-                className="px-4 py-2 rounded-xl bg-[#6C4DF6] text-white text-xs font-semibold hover:bg-[#583BD9] disabled:opacity-50"
+                className="px-4 py-2 rounded-full bg-[#6C4DF6] text-white text-xs font-semibold hover:bg-[#583BD9] disabled:opacity-50"
               >
                 Simpan Draft Mutasi
               </button>
@@ -442,34 +442,34 @@ export function Finance() {
 
       {/* Modal: Void Transaction (Super Admin) */}
       {voidModalTx && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-red-200">
-            <h3 className="font-bold text-base text-red-600 mb-2">Batalkan Mutasi Kas (VOID)</h3>
-            <p className="text-xs text-[#585E6C] mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md p-4">
+          <div className="apple-surface rounded-3xl max-w-md w-full p-6 shadow-2xl border border-rose-500/20">
+            <h3 className="font-bold text-base text-rose-600 dark:text-rose-400 mb-2 apple-title">Batalkan Mutasi Kas (VOID)</h3>
+            <p className="text-xs text-[#585E6C] dark:text-[#949BA8] mb-4">
               Transaksi <strong>{voidModalTx.transaction_number}</strong> tidak akan dihapus dari database (anti-delete), melainkan ditandai VOID dan dicatat ke Audit Trail.
             </p>
 
-            <label className="block text-xs font-semibold mb-1">Alasan Pembatalan Resmi *</label>
+            <label className="block text-xs font-semibold mb-1 text-[#101216] dark:text-white">Alasan Pembatalan Resmi *</label>
             <textarea
               rows={3}
               required
               placeholder="Sebutkan alasan detail (misal: nota salah input oleh vendor)..."
               value={voidReason}
               onChange={(e) => setVoidReason(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-black/5 text-xs outline-none mb-4"
+              className="w-full px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 text-[#101216] dark:text-white text-xs outline-none mb-4 border border-transparent focus:border-rose-500"
             />
 
             <div className="flex justify-end space-x-2">
               <button
                 onClick={() => setVoidModalTx(null)}
-                className="px-4 py-2 rounded-xl bg-black/5 text-xs font-semibold hover:bg-black/10"
+                className="px-4 py-2 rounded-full bg-black/5 dark:bg-white/5 text-[#585E6C] dark:text-[#949BA8] text-xs font-semibold hover:bg-black/10 dark:hover:bg-white/10"
               >
                 Batal
               </button>
               <button
                 onClick={() => voidTxMutation.mutate({ id: voidModalTx.id, reason: voidReason })}
                 disabled={!voidReason}
-                className="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-semibold hover:bg-red-700 disabled:opacity-50"
+                className="px-4 py-2 rounded-full bg-rose-600 text-white text-xs font-semibold hover:bg-rose-700 disabled:opacity-50"
               >
                 Konfirmasi VOID
               </button>
@@ -482,16 +482,16 @@ export function Finance() {
       {selectedReceipt && (
         <div
           onClick={() => setSelectedReceipt(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-6 cursor-pointer"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-6 cursor-pointer"
         >
-          <div className="relative max-w-2xl w-full bg-white rounded-3xl overflow-hidden p-3 shadow-2xl">
-            <div className="flex items-center justify-between p-3 border-b border-[#101216]/10 mb-2">
-              <span className="text-xs font-bold text-[#101216]">Pratinjau Bukti Sah Transaksi</span>
+          <div className="relative max-w-2xl w-full apple-surface rounded-3xl overflow-hidden p-3 shadow-2xl">
+            <div className="flex items-center justify-between p-3 border-b border-[#101216]/6 dark:border-white/10 mb-2">
+              <span className="text-xs font-bold text-[#101216] dark:text-white">Pratinjau Bukti Sah Transaksi</span>
               <a
                 href={selectedReceipt}
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs text-[#6C4DF6] hover:underline flex items-center space-x-1"
+                className="text-xs text-[#6C4DF6] dark:text-[#8267FF] hover:underline flex items-center space-x-1"
                 onClick={(e) => e.stopPropagation()}
               >
                 <span>Buka Ukuran Asli</span>
@@ -501,7 +501,7 @@ export function Finance() {
             <img
               src={selectedReceipt}
               alt="Bukti Nota"
-              className="w-full max-h-[70vh] object-contain rounded-2xl bg-black/5"
+              className="w-full max-h-[70vh] object-contain rounded-2xl bg-black/5 dark:bg-white/5"
             />
           </div>
         </div>

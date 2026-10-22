@@ -117,10 +117,17 @@ export function Home() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-          <div className="p-8 rounded-3xl apple-surface flex flex-col justify-between">
+          {/* Bento Cell 1: Emerald Governance Tint */}
+          <div className="p-8 rounded-3xl apple-surface relative overflow-hidden flex flex-col justify-between group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none"></div>
             <div>
-              <div className="w-12 h-12 rounded-2xl bg-[#6C4DF6]/10 dark:bg-[#8267FF]/10 text-[#6C4DF6] dark:text-[#8267FF] flex items-center justify-center mb-6">
-                <ShieldCheck className="w-6 h-6" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                  Audit Terbuka
+                </span>
               </div>
               <h3 className="text-lg font-bold text-[#101216] dark:text-white mb-2">
                 Tata Kelola Kas Maker-Checker
@@ -140,10 +147,17 @@ export function Home() {
             </div>
           </div>
 
-          <div className="p-8 rounded-3xl apple-surface flex flex-col justify-between">
+          {/* Bento Cell 2: Brand Accent Surface */}
+          <div className="p-8 rounded-3xl apple-surface relative overflow-hidden flex flex-col justify-between group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#6C4DF6]/5 dark:bg-[#8267FF]/5 rounded-full blur-2xl pointer-events-none"></div>
             <div>
-              <div className="w-12 h-12 rounded-2xl bg-[#6C4DF6]/10 dark:bg-[#8267FF]/10 text-[#6C4DF6] dark:text-[#8267FF] flex items-center justify-center mb-6">
-                <FolderGit2 className="w-6 h-6" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-[#6C4DF6]/10 dark:bg-[#8267FF]/10 text-[#6C4DF6] dark:text-[#8267FF] flex items-center justify-center">
+                  <FolderGit2 className="w-6 h-6" />
+                </div>
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-[#6C4DF6]/10 text-[#6C4DF6] dark:text-[#8267FF]">
+                  Standar Industri
+                </span>
               </div>
               <h3 className="text-lg font-bold text-[#101216] dark:text-white mb-2">
                 Rekayasa Perangkat Lunak Mandiri
@@ -163,10 +177,17 @@ export function Home() {
             </div>
           </div>
 
-          <div className="p-8 rounded-3xl apple-surface flex flex-col justify-between">
+          {/* Bento Cell 3: Privacy & Security Slate Tint */}
+          <div className="p-8 rounded-3xl apple-surface relative overflow-hidden flex flex-col justify-between group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/5 rounded-full blur-2xl pointer-events-none"></div>
             <div>
-              <div className="w-12 h-12 rounded-2xl bg-[#6C4DF6]/10 dark:bg-[#8267FF]/10 text-[#6C4DF6] dark:text-[#8267FF] flex items-center justify-center mb-6">
-                <Users className="w-6 h-6" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+                  <Users className="w-6 h-6" />
+                </div>
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-300">
+                  Kepatuhan Hukum
+                </span>
               </div>
               <h3 className="text-lg font-bold text-[#101216] dark:text-white mb-2">
                 Perlindungan Privasi UU PDP
@@ -189,7 +210,7 @@ export function Home() {
       </section>
 
       {/* =========================================================================
-          SELECTED WORKS PREVIEW (Apple Card Presentation)
+          SELECTED WORKS PREVIEW (Clean presentation without image overlays)
          ========================================================================= */}
       <section className="max-w-6xl mx-auto px-6 py-12 w-full text-left">
         <div className="flex items-center justify-between mb-8">
@@ -214,30 +235,34 @@ export function Home() {
           {projects?.slice(0, 3).map((p) => (
             <div
               key={p.id}
-              className="rounded-3xl apple-surface overflow-hidden flex flex-col justify-between group"
+              className="rounded-3xl apple-surface overflow-hidden flex flex-col justify-between group transition-shadow duration-200 hover:shadow-md"
             >
               <div>
-                <div className="h-44 w-full overflow-hidden bg-black/5 relative">
+                {/* Clean image container without overlaid pills */}
+                <div className="h-44 w-full overflow-hidden bg-black/5">
                   <img
                     src={p.thumbnail_url}
                     alt={p.title}
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute top-3 right-3 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#101216]/80 backdrop-blur-md text-white uppercase tracking-wider">
-                    {p.status}
-                  </div>
                 </div>
 
                 <div className="p-6">
-                  <div className="flex flex-wrap gap-1.5 mb-2.5">
-                    {p.tech_stack.map((t) => (
-                      <span
-                        key={t}
-                        className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-[#101216]/5 dark:bg-white/5 text-[#101216] dark:text-white"
-                      >
-                        {t}
-                      </span>
-                    ))}
+                  {/* Status & Tech tags cleanly placed inside content area */}
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#101216]/5 dark:bg-white/10 text-[#101216] dark:text-white uppercase tracking-wider">
+                      {p.status}
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {p.tech_stack.slice(0, 2).map((t) => (
+                        <span
+                          key={t}
+                          className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-[#101216]/5 dark:bg-white/5 text-[#585E6C] dark:text-[#949BA8]"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
                   </div>
 
                   <h3 className="font-bold text-base text-[#101216] dark:text-white mb-2 leading-snug">

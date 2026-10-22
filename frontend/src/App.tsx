@@ -11,7 +11,7 @@ import { Login } from './pages/Login'
 
 export default function App() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#F4F1EA] text-[#101216] selection:bg-[#6C4DF6] selection:text-white">
+    <div className="min-h-[100dvh] flex flex-col bg-[#F4F1EA] dark:bg-[#07080A] text-[#101216] dark:text-[#F4F1EA] selection:bg-[#6C4DF6] selection:text-white transition-colors">
       <Navbar />
       <main className="flex-1">
         <Routes>
