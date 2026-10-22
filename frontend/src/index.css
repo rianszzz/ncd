@@ -2,15 +2,15 @@
 
 @layer base {
   :root {
-    --bg-primary: #F4F1EA;
+    --bg-primary: #F6F5F2;
     --bg-surface: #FFFFFF;
-    --bg-subtle: #EBE7DE;
+    --bg-subtle: #EFECE6;
     --text-primary: #101216;
     --text-muted: #585E6C;
     --border-subtle: rgba(16, 18, 22, 0.08);
     --accent-ncd: #6C4DF6;
     --accent-hover: #583BD9;
-    --accent-subtle: rgba(108, 77, 246, 0.10);
+    --accent-subtle: rgba(108, 77, 246, 0.08);
   }
 
   .dark {
@@ -22,11 +22,11 @@
     --border-subtle: rgba(255, 255, 255, 0.08);
     --accent-ncd: #8267FF;
     --accent-hover: #6C4DF6;
-    --accent-subtle: rgba(130, 103, 255, 0.15);
+    --accent-subtle: rgba(130, 103, 255, 0.12);
   }
 
   body {
-    font-family: 'Geist', system-ui, -apple-system, sans-serif;
+    font-family: 'Geist', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
   .font-tabular {
@@ -40,12 +40,32 @@
   }
 }
 
-/* Dark mode ambient glow */
+/* Apple Pro Ambient Glow */
 .dark .hero-ambient-glow {
-  background: radial-gradient(circle at 50% 20%, rgba(108, 77, 246, 0.18) 0%, rgba(7, 8, 10, 0) 70%);
+  background: radial-gradient(circle at 50% 20%, rgba(108, 77, 246, 0.20) 0%, rgba(7, 8, 10, 0) 72%);
 }
 
-/* Light mode subtle grain */
 .hero-ambient-light {
-  background: radial-gradient(circle at 50% 15%, rgba(108, 77, 246, 0.06) 0%, rgba(244, 241, 234, 0) 70%);
+  background: radial-gradient(circle at 50% 15%, rgba(108, 77, 246, 0.06) 0%, rgba(246, 245, 242, 0) 70%);
+}
+
+/* Apple Squircle / Glass Card Styling */
+.apple-glass {
+  background-color: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(16, 18, 22, 0.08);
+}
+
+.dark .apple-glass {
+  background-color: rgba(16, 18, 22, 0.70);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Subtle Card Glow on Hover */
+.dark .apple-card-glow:hover {
+  border-color: rgba(130, 103, 255, 0.35);
+  box-shadow: 0 0 30px rgba(108, 77, 246, 0.12);
 }
