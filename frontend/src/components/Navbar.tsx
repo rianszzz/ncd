@@ -8,11 +8,6 @@ export function Navbar() {
 
   return (
     <>
-      {/* Attribution Strip */}
-      <div className="bg-[#101216] text-[#F4F1EA] py-1.5 px-4 text-xs font-medium text-center border-b border-white/10 tracking-wide">
-        Di bawah naungan <span className="font-semibold text-[#8267FF]">NEXA Tech Labs</span> • Komunitas Teknologi Mahasiswa
-      </div>
-
       {/* Main Sticky Navbar */}
       <header className="sticky top-0 z-50 backdrop-blur-md bg-[#F4F1EA]/95 border-b border-[#101216]/10">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
