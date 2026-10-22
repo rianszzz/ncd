@@ -24,11 +24,6 @@ export function Home() {
     <div className="flex flex-col">
       {/* Hero Section */}
       <section className="max-w-6xl mx-auto px-6 pt-20 pb-16 flex flex-col items-center text-center">
-        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-semibold bg-[#6C4DF6]/10 text-[#6C4DF6] mb-6 border border-[#6C4DF6]/20">
-          <span className="w-2 h-2 rounded-full bg-[#6C4DF6] animate-pulse"></span>
-          <span>NEXA Community Development • V1 Release</span>
-        </div>
-
         <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[#101216] max-w-4xl leading-tight md:leading-[1.12]">
           Membangun Karya Nyata, Transparan & Berstandar Tinggi.
         </h1>
