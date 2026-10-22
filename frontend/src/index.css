@@ -14,12 +14,12 @@
   }
 
   .dark {
-    --bg-primary: #0B0C0E;
-    --bg-surface: #14161B;
-    --bg-subtle: #1B1E26;
+    --bg-primary: #07080A;
+    --bg-surface: #101216;
+    --bg-subtle: #181B22;
     --text-primary: #F4F1EA;
     --text-muted: #949BA8;
-    --border-subtle: rgba(244, 241, 234, 0.10);
+    --border-subtle: rgba(255, 255, 255, 0.08);
     --accent-ncd: #8267FF;
     --accent-hover: #6C4DF6;
     --accent-subtle: rgba(130, 103, 255, 0.15);
@@ -33,4 +33,19 @@
     font-family: 'Geist Mono', monospace;
     font-feature-settings: "tnum" 1, "zero" 1;
   }
+
+  .font-display-serif {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
+  }
+}
+
+/* Dark mode ambient glow */
+.dark .hero-ambient-glow {
+  background: radial-gradient(circle at 50% 20%, rgba(108, 77, 246, 0.18) 0%, rgba(7, 8, 10, 0) 70%);
+}
+
+/* Light mode subtle grain */
+.hero-ambient-light {
+  background: radial-gradient(circle at 50% 15%, rgba(108, 77, 246, 0.06) 0%, rgba(244, 241, 234, 0) 70%);
 }
