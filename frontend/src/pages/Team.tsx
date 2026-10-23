@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Github, Linkedin } from 'lucide-react'
 import { api, Member } from '../services/api'
+import { MemberSkeleton } from '../components/Skeletons'
 
 export function Team() {
   const [activeDivision, setActiveDivision] = useState<string>('ALL')
@@ -80,7 +81,11 @@ export function Team() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-20 text-xs text-[#525660]">Memuat daftar anggota...</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <MemberSkeleton key={i} />
+          ))}
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filtered?.map((m) => (

@@ -3,7 +3,7 @@ import { api, HistoryItem } from '../services/api'
 import { Target, Compass, Award, Calendar } from 'lucide-react'
 
 export function About() {
-  const { data: history } = useQuery({
+  const { data: history, isLoading } = useQuery({
     queryKey: ['history'],
     queryFn: async () => {
       const res = await api.get<HistoryItem[]>('/public/history')
@@ -82,19 +82,30 @@ export function About() {
           </div>
 
           <div className="relative border-l border-[#111215]/15 ml-6 pl-8 space-y-10">
-            {history?.map((item) => (
-              <div key={item.id} className="relative group">
-                <div className="absolute -left-[38px] top-1.5 w-4 h-4 rounded-full bg-[#F4F1EB] border-3 border-[#6456EB] shadow-2xs"></div>
-                <div className="flex items-center space-x-2 text-xs font-semibold text-[#6456EB] mb-1">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>{item.month} {item.year}</span>
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="relative animate-pulse">
+                  <div className="absolute -left-[38px] top-1.5 w-4 h-4 rounded-full bg-[#111215]/10" />
+                  <div className="w-24 h-4 rounded bg-[#111215]/8 mb-2" />
+                  <div className="w-48 h-5 rounded bg-[#111215]/10 mb-2" />
+                  <div className="w-full h-16 rounded-xl bg-white border border-[#111215]/8 shadow-2xs" />
                 </div>
-                <h3 className="text-base font-semibold text-[#111215]">{item.title}</h3>
-                <p className="text-xs text-[#525660] mt-1.5 leading-relaxed bg-white p-4 rounded-xl border border-[#111215]/8 shadow-2xs">
-                  {item.description}
-                </p>
-              </div>
-            ))}
+              ))
+            ) : (
+              history?.map((item) => (
+                <div key={item.id} className="relative group">
+                  <div className="absolute -left-[38px] top-1.5 w-4 h-4 rounded-full bg-[#F4F1EB] border-3 border-[#6456EB] shadow-2xs"></div>
+                  <div className="flex items-center space-x-2 text-xs font-semibold text-[#6456EB] mb-1">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>{item.month} {item.year}</span>
+                  </div>
+                  <h3 className="text-base font-semibold text-[#111215]">{item.title}</h3>
+                  <p className="text-xs text-[#525660] mt-1.5 leading-relaxed bg-white p-4 rounded-xl border border-[#111215]/8 shadow-2xs">
+                    {item.description}
+                  </p>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

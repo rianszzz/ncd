@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Github, ExternalLink } from 'lucide-react'
 import { api, Project } from '../services/api'
+import { ProjectSkeleton } from '../components/Skeletons'
 
 export function Projects() {
   const { data: projects, isLoading } = useQuery<Project[]>({
@@ -24,7 +25,11 @@ export function Projects() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-20 text-xs text-[#525660]">Memuat daftar proyek...</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <ProjectSkeleton />
+          <ProjectSkeleton />
+          <ProjectSkeleton />
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {projects?.map((p) => (

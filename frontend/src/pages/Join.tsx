@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../services/api'
-import { CheckCircle2, AlertCircle, Send } from 'lucide-react'
+import { CheckCircle2, AlertCircle, Send, Loader2 } from 'lucide-react'
 
 export function Join() {
   const [formData, setFormData] = useState({
@@ -17,6 +17,7 @@ export function Join() {
   })
 
   const [consent, setConsent] = useState(false)
+  const [consentError, setConsentError] = useState(false)
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
 
@@ -27,9 +28,10 @@ export function Join() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!consent) {
-      alert('Mohon menyetujui syarat persetujuan pemrosesan data pendaftaran sesuai UU PDP.')
+      setConsentError(true)
       return
     }
+    setConsentError(false)
 
     setStatus('submitting')
     try {
@@ -203,25 +205,37 @@ export function Join() {
 
           {/* Privacy Consent (UU PDP) */}
           <div className="pt-2">
-            <label className="flex items-start space-x-2.5 text-xs text-[#525660] cursor-pointer">
+            <label className={`flex items-start space-x-2.5 text-xs text-[#525660] cursor-pointer p-3 rounded-xl border transition-colors ${consentError ? 'border-red-300 bg-red-50/50' : 'border-transparent'}`}>
               <input
                 type="checkbox"
                 checked={consent}
-                onChange={(e) => setConsent(e.target.checked)}
+                onChange={(e) => {
+                  setConsent(e.target.checked)
+                  if (e.target.checked) setConsentError(false)
+                }}
                 className="mt-0.5 rounded text-[#111215] focus:ring-black"
               />
               <span className="leading-relaxed">
                 Saya menyetujui bahwa data yang saya kirimkan digunakan semata-mata untuk keperluan seleksi internal NCD sesuai <Link to="/privacy" className="text-[#6456EB] underline font-medium" target="_blank">Kebijakan Privasi & UU PDP</Link>.
               </span>
             </label>
+            {consentError && (
+              <p className="text-[11px] text-red-600 mt-1 pl-3 font-medium">
+                * Wajib menyetujui persetujuan pemrosesan data pendaftaran sesuai UU PDP.
+              </p>
+            )}
           </div>
 
           <button
             type="submit"
             disabled={status === 'submitting'}
-            className="w-full py-3 rounded-xl bg-[#111215] text-[#F4F1EB] font-medium text-xs hover:bg-[#252830] transition-all flex items-center justify-center space-x-2 shadow-2xs disabled:opacity-50 mt-4"
+            className="w-full py-3 rounded-xl bg-[#111215] text-[#F4F1EB] font-medium text-xs hover:bg-[#252830] transition-all flex items-center justify-center space-x-2 shadow-2xs disabled:opacity-50 mt-4 cursor-pointer disabled:cursor-not-allowed"
           >
-            <Send className="w-3.5 h-3.5" />
+            {status === 'submitting' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Send className="w-3.5 h-3.5" />
+            )}
             <span>{status === 'submitting' ? 'Mengirim Berkas...' : 'Kirim Berkas Pendaftaran'}</span>
           </button>
         </form>

@@ -9,9 +9,10 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { api, Project } from '../services/api'
+import { ProjectSkeleton } from '../components/Skeletons'
 
 export function Home() {
-  const { data: projects } = useQuery<Project[]>({
+  const { data: projects, isLoading } = useQuery<Project[]>({
     queryKey: ['publicProjects'],
     queryFn: async () => {
       const res = await api.get('/public/projects')
@@ -127,7 +128,14 @@ export function Home() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {projects?.slice(0, 3).map((p) => (
+          {isLoading ? (
+            <>
+              <ProjectSkeleton />
+              <ProjectSkeleton />
+              <ProjectSkeleton />
+            </>
+          ) : (
+            projects?.slice(0, 3).map((p) => (
             <div
               key={p.id}
               className="bg-white rounded-2xl border border-[#111215]/8 overflow-hidden shadow-2xs hover:border-[#111215]/20 transition-all flex flex-col"
@@ -176,7 +184,7 @@ export function Home() {
                 </div>
               </div>
             </div>
-          ))}
+          )))}
         </div>
       </section>
 

@@ -12,6 +12,7 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { api, CashSummary, Transaction } from '../services/api'
+import { SummarySkeleton, TableRowSkeleton } from '../components/Skeletons'
 
 export function Finance() {
   const [filterType, setFilterType] = useState<string>('ALL')
@@ -69,49 +70,60 @@ export function Finance() {
 
       {/* Financial Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-        <div className="p-6 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-[#7E8492] mb-2 font-medium">
-            <span>Saldo Kas Bersih</span>
-            <span className="w-2 h-2 rounded-full bg-[#107C41]"></span>
-          </div>
-          <div className="text-2xl md:text-3xl font-semibold text-[#111215] font-tabular tracking-tight">
-            {formatRupiah(summary?.current_balance || 0)}
-          </div>
-          <div className="text-[11px] text-[#7E8492] mt-2">Saldo resmi terverifikasi</div>
-        </div>
+        {isSummaryLoading ? (
+          <>
+            <SummarySkeleton />
+            <SummarySkeleton />
+            <SummarySkeleton />
+            <SummarySkeleton />
+          </>
+        ) : (
+          <>
+            <div className="p-6 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs">
+              <div className="flex items-center justify-between text-xs text-[#7E8492] mb-2 font-medium">
+                <span>Saldo Kas Bersih</span>
+                <span className="w-2 h-2 rounded-full bg-[#107C41]"></span>
+              </div>
+              <div className="text-2xl md:text-3xl font-semibold text-[#111215] font-tabular tracking-tight">
+                {formatRupiah(summary?.current_balance || 0)}
+              </div>
+              <div className="text-[11px] text-[#7E8492] mt-2">Saldo resmi terverifikasi</div>
+            </div>
 
-        <div className="p-6 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-[#7E8492] mb-2 font-medium">
-            <span>Total Pemasukan</span>
-            <TrendingUp className="w-4 h-4 text-[#107C41]" />
-          </div>
-          <div className="text-2xl md:text-3xl font-semibold text-[#107C41] font-tabular tracking-tight">
-            {formatRupiah(summary?.total_income || 0)}
-          </div>
-          <div className="text-[11px] text-[#7E8492] mt-2">Iuran & kas terhimpun</div>
-        </div>
+            <div className="p-6 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs">
+              <div className="flex items-center justify-between text-xs text-[#7E8492] mb-2 font-medium">
+                <span>Total Pemasukan</span>
+                <TrendingUp className="w-4 h-4 text-[#107C41]" />
+              </div>
+              <div className="text-2xl md:text-3xl font-semibold text-[#107C41] font-tabular tracking-tight">
+                {formatRupiah(summary?.total_income || 0)}
+              </div>
+              <div className="text-[11px] text-[#7E8492] mt-2">Iuran & kas terhimpun</div>
+            </div>
 
-        <div className="p-6 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-[#7E8492] mb-2 font-medium">
-            <span>Total Pengeluaran</span>
-            <TrendingDown className="w-4 h-4 text-[#D83B01]" />
-          </div>
-          <div className="text-2xl md:text-3xl font-semibold text-[#D83B01] font-tabular tracking-tight">
-            {formatRupiah(summary?.total_expense || 0)}
-          </div>
-          <div className="text-[11px] text-[#7E8492] mt-2">Operasional & kegiatan</div>
-        </div>
+            <div className="p-6 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs">
+              <div className="flex items-center justify-between text-xs text-[#7E8492] mb-2 font-medium">
+                <span>Total Pengeluaran</span>
+                <TrendingDown className="w-4 h-4 text-[#D83B01]" />
+              </div>
+              <div className="text-2xl md:text-3xl font-semibold text-[#D83B01] font-tabular tracking-tight">
+                {formatRupiah(summary?.total_expense || 0)}
+              </div>
+              <div className="text-[11px] text-[#7E8492] mt-2">Operasional & kegiatan</div>
+            </div>
 
-        <div className="p-6 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-[#7E8492] mb-2 font-medium">
-            <span>Menunggu Verifikasi</span>
-            <Clock className="w-4 h-4 text-[#D97706]" />
-          </div>
-          <div className="text-2xl md:text-3xl font-semibold text-[#D97706] font-tabular tracking-tight">
-            {summary?.pending_drafts || 0}
-          </div>
-          <div className="text-[11px] text-[#7E8492] mt-2">Draft menunggu Checker</div>
-        </div>
+            <div className="p-6 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs">
+              <div className="flex items-center justify-between text-xs text-[#7E8492] mb-2 font-medium">
+                <span>Menunggu Verifikasi</span>
+                <Clock className="w-4 h-4 text-[#D97706]" />
+              </div>
+              <div className="text-2xl md:text-3xl font-semibold text-[#D97706] font-tabular tracking-tight">
+                {summary?.pending_drafts || 0}
+              </div>
+              <div className="text-[11px] text-[#7E8492] mt-2">Draft menunggu Checker</div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Filter and Search Bar */}
@@ -160,29 +172,37 @@ export function Finance() {
 
       {/* Transactions Table */}
       <div className="bg-white rounded-2xl border border-[#111215]/8 overflow-hidden shadow-2xs">
-        {isTxLoading || isSummaryLoading ? (
-          <div className="p-12 text-center text-xs text-[#7E8492]">Memuat buku kas...</div>
-        ) : filteredTx?.length === 0 ? (
-          <div className="p-12 text-center text-xs text-[#7E8492]">
-            Tidak ada transaksi yang cocok dengan filter.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#F4F1EB]/50 border-b border-[#111215]/8 text-[#525660] font-medium">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-[#F4F1EB]/50 border-b border-[#111215]/8 text-[#525660] font-medium">
+              <tr>
+                <th className="py-3.5 px-4">No. Transaksi</th>
+                <th className="py-3.5 px-4">Tanggal</th>
+                <th className="py-3.5 px-4">Tipe & Kategori</th>
+                <th className="py-3.5 px-4">Deskripsi</th>
+                <th className="py-3.5 px-4">Nominal</th>
+                <th className="py-3.5 px-4">Pembuat (Maker)</th>
+                <th className="py-3.5 px-4">Status & Verifikator</th>
+                <th className="py-3.5 px-4 text-center">Bukti Nota</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#111215]/5">
+              {isTxLoading ? (
+                <>
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                </>
+              ) : filteredTx?.length === 0 ? (
                 <tr>
-                  <th className="py-3.5 px-4">No. Transaksi</th>
-                  <th className="py-3.5 px-4">Tanggal</th>
-                  <th className="py-3.5 px-4">Tipe & Kategori</th>
-                  <th className="py-3.5 px-4">Deskripsi</th>
-                  <th className="py-3.5 px-4">Nominal</th>
-                  <th className="py-3.5 px-4">Pembuat (Maker)</th>
-                  <th className="py-3.5 px-4">Status & Verifikator</th>
-                  <th className="py-3.5 px-4 text-center">Bukti Nota</th>
+                  <td colSpan={8} className="p-12 text-center text-xs text-[#7E8492]">
+                    Tidak ada transaksi yang cocok dengan filter.
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-[#111215]/5">
-                {filteredTx?.map((tx) => (
+              ) : (
+                filteredTx?.map((tx) => (
                   <tr
                     key={tx.id}
                     className={`hover:bg-[#F4F1EB]/40 transition-colors ${
@@ -259,11 +279,11 @@ export function Finance() {
                       </button>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Modal: Receipt Lightbox */}

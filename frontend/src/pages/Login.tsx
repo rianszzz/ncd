@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../services/api'
-import { Lock, UserCheck, ArrowRight } from 'lucide-react'
+import { Lock, UserCheck, ArrowRight, Loader2 } from 'lucide-react'
 
 export function Login() {
   const navigate = useNavigate()
@@ -77,10 +77,10 @@ export function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 rounded-xl bg-[#111215] text-[#F4F1EB] font-medium hover:bg-[#252830] transition-all flex items-center justify-center space-x-2 shadow-2xs disabled:opacity-50 mt-2"
+            className="w-full py-2.5 rounded-xl bg-[#111215] text-[#F4F1EB] font-medium hover:bg-[#252830] transition-all flex items-center justify-center space-x-2 shadow-2xs disabled:opacity-50 mt-2 cursor-pointer disabled:cursor-not-allowed"
           >
             <span>{loading ? 'Mengautentikasi...' : 'Masuk Portal'}</span>
-            <ArrowRight className="w-4 h-4" />
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
 
