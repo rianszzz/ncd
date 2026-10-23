@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ncd/backend/internal/config"
 	"github.com/ncd/backend/internal/handler"
+	ncdMiddleware "github.com/ncd/backend/internal/middleware"
 	"github.com/ncd/backend/internal/repository"
 	"github.com/ncd/backend/internal/seed"
 )
@@ -54,6 +55,7 @@ func main() {
 
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{cfg.CORSOrigin, "http://localhost:5173", "http://127.0.0.1:5173"},
+		AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
@@ -74,12 +76,26 @@ func main() {
 		api.Get("/public/history", handler.GetPublicHistory)
 		api.Post("/public/apply", handler.SubmitApplication)
 
-		// Finance Routes (Maker-Checker Kas)
+		// Public Finance Routes (Buku Kas Terbuka - Read-Only Publik)
 		api.Get("/finance/summary", handler.GetCashSummary)
 		api.Get("/finance/transactions", handler.ListTransactions)
-		api.Post("/finance/transactions", handler.CreateTransaction)
-		api.Post("/finance/transactions/{id}/verify", handler.VerifyTransaction)
-		api.Post("/finance/transactions/{id}/void", handler.VoidTransaction)
+
+		// Sensitive Protected Finance Routes (Hanya Pengurus Terautentikasi)
+		api.Group(func(protected chi.Router) {
+			protected.Use(ncdMiddleware.RequireAuth(cfg.JWTSecret))
+
+			// Maker: Bendahara I
+			protected.With(ncdMiddleware.RequireRole("BENDAHARA_I", "GOD_ADMIN", "SUPER_ADMIN")).
+				Post("/finance/transactions", handler.CreateTransaction)
+
+			// Checker: Bendahara II
+			protected.With(ncdMiddleware.RequireRole("BENDAHARA_II", "GOD_ADMIN", "SUPER_ADMIN")).
+				Post("/finance/transactions/{id}/verify", handler.VerifyTransaction)
+
+			// Void Action: Super Admin & God Admin
+			protected.With(ncdMiddleware.RequireRole("GOD_ADMIN", "SUPER_ADMIN")).
+				Post("/finance/transactions/{id}/void", handler.VoidTransaction)
+		})
 
 		// Auth Routes
 		api.Post("/auth/login", handler.Login(cfg.JWTSecret))
