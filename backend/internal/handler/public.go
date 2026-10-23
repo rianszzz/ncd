@@ -3,6 +3,8 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -102,8 +104,22 @@ func GetPublicMembers(w http.ResponseWriter, r *http.Request) {
 					GitHubURL:     m.GithubUrl.String,
 					IsLeader:      m.PositionLevel.Int32 <= 2,
 				}
+				if strings.EqualFold(m.FullName, "Rianszzz") || strings.EqualFold(m.Nickname.String, "Rian") {
+					dto.PositionTitle = "Solo Dev"
+					dto.Bio = ""
+					dto.Skills = []string{}
+				}
 				members = append(members, dto)
 			}
+			sort.SliceStable(members, func(i, j int) bool {
+				if strings.EqualFold(members[i].FullName, "Rianszzz") {
+					return false
+				}
+				if strings.EqualFold(members[j].FullName, "Rianszzz") {
+					return true
+				}
+				return false
+			})
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(members)
 			return
@@ -111,23 +127,6 @@ func GetPublicMembers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	members := []MemberDTO{
-		{
-			ID:            "m-1",
-			FullName:      "Rianszzz",
-			Nickname:      "Rian",
-			AvatarURL:     "",
-			PositionTitle: "Developer Lead",
-			PositionLevel: 1,
-			Division:      "Engineering & Infrastructure",
-			Generation:    "Angkatan 2023",
-			Major:         "Informatika",
-			University:    "Universitas Gunadarma",
-			Skills:        []string{"Go", "React", "PostgreSQL", "Docker", "Next.js"},
-			Bio:           "Arsitek sistem NCD dan pengembang ekosistem teknologi komunitas.",
-			LinkedInURL:   "https://linkedin.com",
-			GitHubURL:     "https://github.com",
-			IsLeader:      true,
-		},
 		{
 			ID:            "m-2",
 			FullName:      "Mirza Danisywar Noor Wahyu",
@@ -243,6 +242,23 @@ func GetPublicMembers(w http.ResponseWriter, r *http.Request) {
 			University:    "Universitas Gunadarma",
 			Skills:        []string{"Financial Audit", "Reconciliation", "Verification Guard"},
 			Bio:           "Checker mutasi kas: verifikator bukti transfer, nota belanja, dan pengesah saldo resmi.",
+			LinkedInURL:   "https://linkedin.com",
+			GitHubURL:     "https://github.com",
+			IsLeader:      true,
+		},
+		{
+			ID:            "m-1",
+			FullName:      "Rianszzz",
+			Nickname:      "Rian",
+			AvatarURL:     "",
+			PositionTitle: "Solo Dev",
+			PositionLevel: 1,
+			Division:      "Engineering & Infrastructure",
+			Generation:    "Angkatan 2023",
+			Major:         "Informatika",
+			University:    "Universitas Gunadarma",
+			Skills:        []string{},
+			Bio:           "",
 			LinkedInURL:   "https://linkedin.com",
 			GitHubURL:     "https://github.com",
 			IsLeader:      true,

@@ -6,13 +6,33 @@ import { api, Member } from '../services/api'
 export function Team() {
   const [activeDivision, setActiveDivision] = useState<string>('ALL')
 
-  const { data: members, isLoading } = useQuery<Member[]>({
+  const { data: rawMembers, isLoading } = useQuery<Member[]>({
     queryKey: ['publicMembers'],
     queryFn: async () => {
       const res = await api.get('/public/members')
       return res.data
     },
   })
+
+  const isRianszzz = (m: Member) =>
+    m.full_name.toLowerCase().includes('rianszzz') || m.nickname?.toLowerCase() === 'rian'
+
+  const members = (rawMembers || [])
+    .map((m) =>
+      isRianszzz(m)
+        ? {
+            ...m,
+            position_title: 'Solo Dev',
+            bio: '',
+            skills: [],
+          }
+        : m
+    )
+    .sort((a, b) => {
+      if (isRianszzz(a)) return 1
+      if (isRianszzz(b)) return -1
+      return 0
+    })
 
   const divisions = [
     'ALL',
@@ -81,21 +101,27 @@ export function Team() {
               </h3>
               <p className="text-xs text-[#7E8492] mt-0.5">{m.major} • {m.generation}</p>
 
-              <p className="text-xs text-[#525660] mt-3 leading-relaxed flex-1">
-                {m.bio}
-              </p>
+              {m.bio ? (
+                <p className="text-xs text-[#525660] mt-3 leading-relaxed flex-1">
+                  {m.bio}
+                </p>
+              ) : (
+                <div className="flex-1" />
+              )}
 
               <div className="w-full pt-4 mt-4 border-t border-[#111215]/8 flex flex-col gap-2">
-                <div className="flex flex-wrap justify-center gap-1">
-                  {m.skills.slice(0, 3).map((skill) => (
-                    <span
-                      key={skill}
-                      className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#F4F1EB] text-[#525660] border border-[#111215]/6"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
+                {m.skills && m.skills.length > 0 && (
+                  <div className="flex flex-wrap justify-center gap-1">
+                    {m.skills.slice(0, 3).map((skill) => (
+                      <span
+                        key={skill}
+                        className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#F4F1EB] text-[#525660] border border-[#111215]/6"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 <div className="flex items-center justify-center space-x-3 mt-1 text-[#7E8492]">
                   {m.github_url && (
