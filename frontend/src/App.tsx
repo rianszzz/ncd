@@ -10,6 +10,7 @@ import { Finance } from './pages/Finance'
 import { Login } from './pages/Login'
 import { Terms } from './pages/Terms'
 import { Privacy } from './pages/Privacy'
+import { NotFound } from './pages/NotFound'
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
       <Footer />
