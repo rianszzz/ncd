@@ -29,3 +29,15 @@ Thumbs.db
 # Go test / coverage
 *.out
 *.test
+
+# Exclude file.md as requested
+file.md
+
+# Agent & Tooling artifacts
+.agents/
+.claude/
+.playwright-mcp/
+agent/
+skills-lock.json
+SKILL.md
+screenshot*.png

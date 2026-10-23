@@ -13,23 +13,45 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ncd/backend/internal/config"
 	"github.com/ncd/backend/internal/handler"
+	"github.com/ncd/backend/internal/repository"
+	"github.com/ncd/backend/internal/seed"
 )
 
 func main() {
 	cfg := config.Load()
 
+	// 1. Database Connection Pool & Auto-Seed
+	ctx := context.Background()
+	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		log.Printf("[NCD Database] Init pool PostgreSQL error: %v (running fallback)\n", err)
+	} else if err := pool.Ping(ctx); err != nil {
+		log.Printf("[NCD Database] Ping PostgreSQL error: %v (running fallback)\n", err)
+		pool.Close()
+	} else {
+		log.Printf("[NCD Database] Berhasil terhubung ke PostgreSQL: %s\n", cfg.DatabaseURL)
+		defer pool.Close()
+
+		repo := repository.New(pool)
+		handler.SetRepository(repo)
+
+		if err := seed.Run(ctx, pool); err != nil {
+			log.Printf("[NCD Seed] Peringatan error saat seed data: %v\n", err)
+		}
+	}
+
+	// 2. HTTP Router Setup
 	r := chi.NewRouter()
 
-	// Base middlewares
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
 
-	// CORS Setup
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{cfg.CORSOrigin, "http://localhost:5173", "http://127.0.0.1:5173"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -39,7 +61,6 @@ func main() {
 		MaxAge:           300,
 	}))
 
-	// Health check
 	r.Get("/healthz", handler.HealthCheck)
 
 	// API v1 routes group
@@ -73,7 +94,6 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	// Graceful shutdown channel
 	shutdownChan := make(chan os.Signal, 1)
 	signal.Notify(shutdownChan, os.Interrupt, syscall.SIGTERM)
 
@@ -87,10 +107,10 @@ func main() {
 	<-shutdownChan
 	log.Println("[NCD Backend] Shutting down gracefully...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := server.Shutdown(ctx); err != nil {
+	if err := server.Shutdown(shutdownCtx); err != nil {
 		log.Printf("Forced shutdown due to error: %v\n", err)
 	}
 

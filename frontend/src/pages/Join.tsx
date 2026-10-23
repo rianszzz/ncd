@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../services/api'
 import { CheckCircle2, AlertCircle, Send } from 'lucide-react'
 
@@ -42,26 +43,23 @@ export function Join() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-16">
-      <div className="text-center mb-12">
-        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-semibold bg-[#6C4DF6]/10 text-[#6C4DF6] mb-4">
-          <span>Rekrutmen Anggota NCD</span>
-        </div>
-        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-[#101216]">
+    <div className="max-w-3xl mx-auto px-6 py-20 text-left">
+      <div className="text-center mb-14">
+        <h1 className="text-3xl md:text-5xl font-semibold tracking-[-0.03em] text-[#111215]">
           Formulir Pendaftaran Terbuka
         </h1>
-        <p className="text-sm text-[#585E6C] mt-3 leading-relaxed">
-          Bergabung bersama 35 talenta teknologi NCD di bawah naungan NEXA Tech Labs. Silakan lengkapi profil dan motivasi Anda di bawah ini.
+        <p className="text-sm md:text-base text-[#525660] mt-3.5 leading-relaxed">
+          Bergabung bersama talenta teknologi NCD di bawah naungan NEXA Tech Labs. Silakan lengkapi profil dan motivasi Anda di bawah ini.
         </p>
       </div>
 
       {status === 'success' ? (
-        <div className="p-8 rounded-3xl bg-white border border-[#107C41]/30 shadow-sm text-center">
+        <div className="p-10 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs text-center">
           <div className="w-16 h-16 rounded-full bg-[#107C41]/10 text-[#107C41] flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-bold text-[#101216]">Pendaftaran Berhasil Terkirim!</h2>
-          <p className="text-sm text-[#585E6C] mt-3 leading-relaxed max-w-md mx-auto">
+          <h2 className="text-2xl font-semibold text-[#111215]">Pendaftaran Berhasil Terkirim</h2>
+          <p className="text-sm text-[#525660] mt-3 leading-relaxed max-w-md mx-auto">
             {message} Pengurus NCD akan meninjau berkas pendaftaran Anda dan menghubungi via WhatsApp/Email resmi.
           </p>
           <button
@@ -80,15 +78,15 @@ export function Join() {
               })
               setConsent(false)
             }}
-            className="mt-6 px-6 py-2.5 rounded-xl bg-[#6C4DF6] text-white font-semibold text-xs hover:bg-[#583BD9] transition-all"
+            className="mt-6 px-5 py-2.5 rounded-xl bg-[#111215] text-[#F4F1EB] font-medium text-xs hover:bg-[#252830] transition-all"
           >
             Kirim Formulir Lain
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="p-8 rounded-3xl bg-white border border-[#101216]/10 shadow-xs space-y-6">
+        <form onSubmit={handleSubmit} className="p-8 md:p-10 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs space-y-5">
           {status === 'error' && (
-            <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center space-x-2">
+            <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-[#D83B01] text-xs flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{message}</span>
             </div>
@@ -96,7 +94,7 @@ export function Join() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label className="block text-xs font-semibold text-[#101216] mb-1.5">Nama Lengkap *</label>
+              <label className="block text-xs font-medium text-[#111215] mb-1.5">Nama Lengkap *</label>
               <input
                 type="text"
                 name="full_name"
@@ -104,12 +102,12 @@ export function Join() {
                 placeholder="cth. Fauzan Al Farikhi"
                 value={formData.full_name}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-black/5 border border-transparent focus:border-[#6C4DF6] focus:bg-white outline-none transition-all"
+                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[#F4F1EB] border border-transparent focus:border-[#111215]/20 focus:bg-white outline-none transition-all placeholder:text-[#7E8492]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#101216] mb-1.5">Email Aktif *</label>
+              <label className="block text-xs font-medium text-[#111215] mb-1.5">Email Aktif *</label>
               <input
                 type="email"
                 name="email"
@@ -117,14 +115,14 @@ export function Join() {
                 placeholder="nama@student.gunadarma.ac.id"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-black/5 border border-transparent focus:border-[#6C4DF6] focus:bg-white outline-none transition-all"
+                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[#F4F1EB] border border-transparent focus:border-[#111215]/20 focus:bg-white outline-none transition-all placeholder:text-[#7E8492]"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div>
-              <label className="block text-xs font-semibold text-[#101216] mb-1.5">Nomor WhatsApp *</label>
+              <label className="block text-xs font-medium text-[#111215] mb-1.5">Nomor WhatsApp *</label>
               <input
                 type="text"
                 name="phone_whatsapp"
@@ -132,12 +130,12 @@ export function Join() {
                 placeholder="081234567890"
                 value={formData.phone_whatsapp}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-black/5 border border-transparent focus:border-[#6C4DF6] focus:bg-white outline-none transition-all"
+                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[#F4F1EB] border border-transparent focus:border-[#111215]/20 focus:bg-white outline-none transition-all placeholder:text-[#7E8492]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#101216] mb-1.5">Jurusan Kuliah *</label>
+              <label className="block text-xs font-medium text-[#111215] mb-1.5">Jurusan Kuliah *</label>
               <input
                 type="text"
                 name="major"
@@ -145,17 +143,17 @@ export function Join() {
                 placeholder="cth. Informatika / Sistem Informasi"
                 value={formData.major}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-black/5 border border-transparent focus:border-[#6C4DF6] focus:bg-white outline-none transition-all"
+                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[#F4F1EB] border border-transparent focus:border-[#111215]/20 focus:bg-white outline-none transition-all placeholder:text-[#7E8492]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#101216] mb-1.5">Angkatan *</label>
+              <label className="block text-xs font-medium text-[#111215] mb-1.5">Angkatan *</label>
               <select
                 name="generation"
                 value={formData.generation}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-black/5 border border-transparent focus:border-[#6C4DF6] focus:bg-white outline-none transition-all"
+                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[#F4F1EB] border border-transparent focus:border-[#111215]/20 focus:bg-white outline-none transition-all"
               >
                 <option value="Angkatan 2024">Angkatan 2024</option>
                 <option value="Angkatan 2023">Angkatan 2023</option>
@@ -166,7 +164,7 @@ export function Join() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#101216] mb-1.5">Minat Divisi & Keahlian Teknis *</label>
+            <label className="block text-xs font-medium text-[#111215] mb-1.5">Minat Divisi & Keahlian Teknis *</label>
             <input
               type="text"
               name="skills_interest"
@@ -174,24 +172,24 @@ export function Join() {
               placeholder="cth. Backend Go, React Frontend, UI/UX Design, Competitive Programming"
               value={formData.skills_interest}
               onChange={handleChange}
-              className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-black/5 border border-transparent focus:border-[#6C4DF6] focus:bg-white outline-none transition-all"
+              className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[#F4F1EB] border border-transparent focus:border-[#111215]/20 focus:bg-white outline-none transition-all placeholder:text-[#7E8492]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#101216] mb-1.5">Tautan Portofolio / GitHub / LinkedIn</label>
+            <label className="block text-xs font-medium text-[#111215] mb-1.5">Tautan Portofolio / GitHub / LinkedIn</label>
             <input
               type="text"
               name="portfolio_links"
               placeholder="https://github.com/username atau https://linkedin.com/in/username"
               value={formData.portfolio_links}
               onChange={handleChange}
-              className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-black/5 border border-transparent focus:border-[#6C4DF6] focus:bg-white outline-none transition-all"
+              className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[#F4F1EB] border border-transparent focus:border-[#111215]/20 focus:bg-white outline-none transition-all placeholder:text-[#7E8492]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#101216] mb-1.5">Motivasi Bergabung dengan NCD *</label>
+            <label className="block text-xs font-medium text-[#111215] mb-1.5">Motivasi Bergabung dengan NCD *</label>
             <textarea
               name="motivation"
               required
@@ -199,21 +197,21 @@ export function Join() {
               placeholder="Ceritakan tujuan Anda bergabung dan apa kontribusi yang ingin Anda berikan bagi komunitas..."
               value={formData.motivation}
               onChange={handleChange}
-              className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-black/5 border border-transparent focus:border-[#6C4DF6] focus:bg-white outline-none transition-all"
+              className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[#F4F1EB] border border-transparent focus:border-[#111215]/20 focus:bg-white outline-none transition-all placeholder:text-[#7E8492]"
             />
           </div>
 
           {/* Privacy Consent (UU PDP) */}
           <div className="pt-2">
-            <label className="flex items-start space-x-2.5 text-xs text-[#585E6C] cursor-pointer">
+            <label className="flex items-start space-x-2.5 text-xs text-[#525660] cursor-pointer">
               <input
                 type="checkbox"
                 checked={consent}
                 onChange={(e) => setConsent(e.target.checked)}
-                className="mt-0.5 rounded text-[#6C4DF6] focus:ring-[#6C4DF6]"
+                className="mt-0.5 rounded text-[#111215] focus:ring-black"
               />
               <span className="leading-relaxed">
-                Saya menyetujui bahwa data yang saya kirimkan digunakan semata-mata untuk keperluan seleksi internal NCD sesuai kepatuhan Undang-Undang Perlindungan Data Pribadi (UU PDP).
+                Saya menyetujui bahwa data yang saya kirimkan digunakan semata-mata untuk keperluan seleksi internal NCD sesuai <Link to="/privacy" className="text-[#6456EB] underline font-medium" target="_blank">Kebijakan Privasi & UU PDP</Link>.
               </span>
             </label>
           </div>
@@ -221,9 +219,9 @@ export function Join() {
           <button
             type="submit"
             disabled={status === 'submitting'}
-            className="w-full py-3.5 rounded-xl bg-[#6C4DF6] text-white font-semibold text-xs hover:bg-[#583BD9] transition-all flex items-center justify-center space-x-2 shadow-sm disabled:opacity-50"
+            className="w-full py-3 rounded-xl bg-[#111215] text-[#F4F1EB] font-medium text-xs hover:bg-[#252830] transition-all flex items-center justify-center space-x-2 shadow-2xs disabled:opacity-50 mt-4"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-3.5 h-3.5" />
             <span>{status === 'submitting' ? 'Mengirim Berkas...' : 'Kirim Berkas Pendaftaran'}</span>
           </button>
         </form>

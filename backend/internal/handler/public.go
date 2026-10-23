@@ -80,12 +80,42 @@ func GetPublicStats(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetPublicMembers(w http.ResponseWriter, r *http.Request) {
+	if Repo != nil {
+		rows, err := Repo.ListPublicMembers(r.Context())
+		if err == nil && len(rows) > 0 {
+			members := make([]MemberDTO, 0, len(rows))
+			for _, m := range rows {
+				dto := MemberDTO{
+					ID:            uuid.UUID(m.ID.Bytes).String(),
+					FullName:      m.FullName,
+					Nickname:      m.Nickname.String,
+					AvatarURL:     m.AvatarUrl.String,
+					PositionTitle: m.PositionTitle.String,
+					PositionLevel: int(m.PositionLevel.Int32),
+					Division:      m.Division.String,
+					Generation:    m.Generation,
+					Major:         m.Major.String,
+					University:    m.University.String,
+					Skills:        m.Skills,
+					Bio:           m.Bio.String,
+					LinkedInURL:   m.LinkedinUrl.String,
+					GitHubURL:     m.GithubUrl.String,
+					IsLeader:      m.PositionLevel.Int32 <= 2,
+				}
+				members = append(members, dto)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(members)
+			return
+		}
+	}
+
 	members := []MemberDTO{
 		{
 			ID:            "m-1",
 			FullName:      "Rianszzz",
 			Nickname:      "Rian",
-			AvatarURL:     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+			AvatarURL:     "",
 			PositionTitle: "Developer Lead",
 			PositionLevel: 1,
 			Division:      "Engineering & Infrastructure",
@@ -102,7 +132,7 @@ func GetPublicMembers(w http.ResponseWriter, r *http.Request) {
 			ID:            "m-2",
 			FullName:      "Mirza Danisywar Noor Wahyu",
 			Nickname:      "Mirza",
-			AvatarURL:     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80",
+			AvatarURL:     "",
 			PositionTitle: "Chairman",
 			PositionLevel: 1,
 			Division:      "Executive Committee",
@@ -119,7 +149,7 @@ func GetPublicMembers(w http.ResponseWriter, r *http.Request) {
 			ID:            "m-3",
 			FullName:      "Muhamad Fauzan Al Farikhi",
 			Nickname:      "Fauzan",
-			AvatarURL:     "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80",
+			AvatarURL:     "",
 			PositionTitle: "Vice Chairman I",
 			PositionLevel: 1,
 			Division:      "Product & Operations",
@@ -136,7 +166,7 @@ func GetPublicMembers(w http.ResponseWriter, r *http.Request) {
 			ID:            "m-4",
 			FullName:      "Rayyan Fathan Addani",
 			Nickname:      "Rayyan",
-			AvatarURL:     "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&auto=format&fit=crop&q=80",
+			AvatarURL:     "",
 			PositionTitle: "Vice Chairman II",
 			PositionLevel: 1,
 			Division:      "Content & Projects",
@@ -153,7 +183,7 @@ func GetPublicMembers(w http.ResponseWriter, r *http.Request) {
 			ID:            "m-5",
 			FullName:      "Annisa Saskia",
 			Nickname:      "Annisa",
-			AvatarURL:     "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&auto=format&fit=crop&q=80",
+			AvatarURL:     "",
 			PositionTitle: "Sekretaris I",
 			PositionLevel: 2,
 			Division:      "Administration & Records",
@@ -170,7 +200,7 @@ func GetPublicMembers(w http.ResponseWriter, r *http.Request) {
 			ID:            "m-6",
 			FullName:      "Putri Aura Wening",
 			Nickname:      "Putri",
-			AvatarURL:     "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&auto=format&fit=crop&q=80",
+			AvatarURL:     "",
 			PositionTitle: "Sekretaris II",
 			PositionLevel: 2,
 			Division:      "Administration & Correspondence",
@@ -187,7 +217,7 @@ func GetPublicMembers(w http.ResponseWriter, r *http.Request) {
 			ID:            "m-7",
 			FullName:      "Muhammad Iqbal Fajri",
 			Nickname:      "Iqbal",
-			AvatarURL:     "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&auto=format&fit=crop&q=80",
+			AvatarURL:     "",
 			PositionTitle: "Bendahara I",
 			PositionLevel: 2,
 			Division:      "Treasury & Kas Maker",
@@ -204,7 +234,7 @@ func GetPublicMembers(w http.ResponseWriter, r *http.Request) {
 			ID:            "m-8",
 			FullName:      "Sri Gunarti Wijiastuti",
 			Nickname:      "Sri",
-			AvatarURL:     "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=80",
+			AvatarURL:     "",
 			PositionTitle: "Bendahara II",
 			PositionLevel: 2,
 			Division:      "Audit & Kas Checker",
@@ -233,7 +263,7 @@ func GetPublicProjects(w http.ResponseWriter, r *http.Request) {
 			TechStack:  []string{"Go", "React 19", "PostgreSQL", "Tailwind CSS", "Chi"},
 			Status:     "ACTIVE",
 			Progress:   85,
-			Thumbnail:  "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=80",
+			Thumbnail:  "",
 			RepoURL:    "https://github.com/ncd/ncd-platform",
 			DemoURL:    "https://ncd.nexatechlabs.my.id",
 			TeamLeader: "Rianszzz",
@@ -246,7 +276,7 @@ func GetPublicProjects(w http.ResponseWriter, r *http.Request) {
 			TechStack:  []string{"Go", "WebRTC", "Postgres", "Redis"},
 			Status:     "ACTIVE",
 			Progress:   60,
-			Thumbnail:  "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80",
+			Thumbnail:  "",
 			RepoURL:    "https://github.com/ncd/smart-attendance",
 			DemoURL:    "",
 			TeamLeader: "Rayyan Fathan Addani",
@@ -259,7 +289,7 @@ func GetPublicProjects(w http.ResponseWriter, r *http.Request) {
 			TechStack:  []string{"React", "TypeScript", "Python", "FastAPI"},
 			Status:     "COMPLETED",
 			Progress:   100,
-			Thumbnail:  "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80",
+			Thumbnail:  "",
 			RepoURL:    "https://github.com/ncd/cp-hub",
 			DemoURL:    "https://cp.nexatechlabs.my.id",
 			TeamLeader: "Muhamad Fauzan Al Farikhi",

@@ -8,10 +8,12 @@ import { Projects } from './pages/Projects'
 import { Join } from './pages/Join'
 import { Finance } from './pages/Finance'
 import { Login } from './pages/Login'
+import { Terms } from './pages/Terms'
+import { Privacy } from './pages/Privacy'
 
 export default function App() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#F4F1EA] text-[#101216] selection:bg-[#6C4DF6] selection:text-white">
+    <div className="min-h-[100dvh] flex flex-col bg-[#F4F1EB] text-[#111215] selection:bg-[#6456EB] selection:text-white">
       <Navbar />
       <main className="flex-1">
         <Routes>
@@ -22,6 +24,8 @@ export default function App() {
           <Route path="/join" element={<Join />} />
           <Route path="/app/finance" element={<Finance />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
         </Routes>
       </main>
       <Footer />

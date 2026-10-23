@@ -2,35 +2,96 @@
 
 @layer base {
   :root {
-    --bg-primary: #F4F1EA;
+    --bg-primary: #F4F1EB;
     --bg-surface: #FFFFFF;
-    --bg-subtle: #EBE7DE;
-    --text-primary: #101216;
-    --text-muted: #585E6C;
-    --border-subtle: rgba(16, 18, 22, 0.08);
-    --accent-ncd: #6C4DF6;
-    --accent-hover: #583BD9;
-    --accent-subtle: rgba(108, 77, 246, 0.10);
+    --bg-subtle: #EDE9E1;
+    --text-primary: #111215;
+    --text-secondary: #525660;
+    --text-muted: #7E8492;
+    --border-hairline: rgba(17, 18, 21, 0.08);
+    --border-subtle: rgba(17, 18, 21, 0.05);
+    --accent-ncd: #6456EB;
+    --accent-hover: #5042D9;
+    --btn-dark: #111215;
   }
 
   .dark {
-    --bg-primary: #0B0C0E;
-    --bg-surface: #14161B;
-    --bg-subtle: #1B1E26;
-    --text-primary: #F4F1EA;
-    --text-muted: #949BA8;
-    --border-subtle: rgba(244, 241, 234, 0.10);
-    --accent-ncd: #8267FF;
-    --accent-hover: #6C4DF6;
-    --accent-subtle: rgba(130, 103, 255, 0.15);
+    --bg-primary: #111215;
+    --bg-surface: #191B20;
+    --bg-subtle: #23262E;
+    --text-primary: #F4F1EB;
+    --text-secondary: #9FA5B5;
+    --text-muted: #7E8492;
+    --border-hairline: rgba(244, 241, 235, 0.10);
+    --border-subtle: rgba(244, 241, 235, 0.06);
+    --accent-ncd: #7A6EFF;
+    --accent-hover: #6456EB;
+    --btn-dark: #F4F1EB;
+  }
+
+  html {
+    scroll-behavior: smooth;
   }
 
   body {
-    font-family: 'Geist', system-ui, -apple-system, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "SF Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
   }
 
   .font-tabular {
-    font-family: 'Geist Mono', monospace;
+    font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum" 1, "zero" 1;
+  }
+
+  /* §1 Response: instant tactile feedback on pointer-down (WWDC Fluid Interfaces) */
+  button:active:not(:disabled),
+  a:active:not([aria-disabled="true"]),
+  [role="button"]:active {
+    transform: scale(0.98);
+    transition: transform 80ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+}
+
+/* Translucent Glass Header */
+.apple-glass {
+  background: rgba(244, 241, 235, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* Typography Hierarchy */
+.apple-display {
+  letter-spacing: -0.028em;
+  line-height: 1.08;
+}
+
+.apple-headline {
+  letter-spacing: -0.022em;
+  line-height: 1.15;
+}
+
+.apple-body {
+  letter-spacing: -0.006em;
+  line-height: 1.55;
+}
+
+/* Apple Squircle Cards */
+.apple-card {
+  border-radius: 20px;
+}
+
+.apple-card-lg {
+  border-radius: 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:active,
+  a:active,
+  [role="button"]:active {
+    transform: none !important;
   }
 }

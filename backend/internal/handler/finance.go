@@ -122,6 +122,36 @@ var (
 )
 
 func GetCashSummary(w http.ResponseWriter, r *http.Request) {
+	if Repo != nil {
+		row, err := Repo.GetCashSummary(r.Context())
+		if err == nil {
+			var income, expense, balance float64
+			if row.TotalIncome.Valid {
+				v, _ := row.TotalIncome.Float64Value()
+				income = v.Float64
+			}
+			if row.TotalExpense.Valid {
+				v, _ := row.TotalExpense.Float64Value()
+				expense = v.Float64
+			}
+			if row.CurrentBalance.Valid {
+				v, _ := row.CurrentBalance.Float64Value()
+				balance = v.Float64
+			}
+
+			summary := map[string]interface{}{
+				"current_balance": balance,
+				"total_income":    income,
+				"total_expense":   expense,
+				"pending_drafts":  0,
+				"last_updated":    time.Now().Format("02 Jan 2006, 15:04 WIB"),
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(summary)
+			return
+		}
+	}
+
 	txLock.RLock()
 	defer txLock.RUnlock()
 
@@ -155,6 +185,41 @@ func GetCashSummary(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListTransactions(w http.ResponseWriter, r *http.Request) {
+	if Repo != nil {
+		rows, err := Repo.ListTransactions(r.Context())
+		if err == nil && len(rows) > 0 {
+			txs := make([]TransactionDTO, 0, len(rows))
+			for _, t := range rows {
+				var amount float64
+				if t.Amount.Valid {
+					v, _ := t.Amount.Float64Value()
+					amount = v.Float64
+				}
+				dto := TransactionDTO{
+					ID:                uuid.UUID(t.ID.Bytes).String(),
+					TransactionNumber: t.TransactionNumber,
+					Type:              string(t.Type),
+					CategoryName:      t.CategoryName,
+					Amount:            amount,
+					Description:       t.Description,
+					PersonInCharge:    t.PersonInCharge,
+					ReceiptURL:        t.ReceiptUrl,
+					Status:            string(t.Status),
+					TransactionDate:   t.TransactionDate.Time.Format("2006-01-02"),
+					MakerName:         "Maker",
+					CreatedAt:         t.CreatedAt.Time,
+				}
+				if t.VoidReason.Valid {
+					dto.VoidReason = t.VoidReason.String
+				}
+				txs = append(txs, dto)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(txs)
+			return
+		}
+	}
+
 	txLock.RLock()
 	defer txLock.RUnlock()
 
