@@ -29,17 +29,16 @@ export function Footer() {
             <li><Link to="/team" className="hover:text-[#111215] transition-colors">Struktur 8 Pengurus</Link></li>
             <li><Link to="/projects" className="hover:text-[#111215] transition-colors">Katalog Portofolio</Link></li>
             <li><Link to="/achievements" className="hover:text-[#111215] transition-colors">Prestasi & Kompetisi</Link></li>
-            <li><Link to="/news" className="hover:text-[#111215] transition-colors">Warta & Pengumuman</Link></li>
+            <li><Link to="/news" className="hover:text-[#111215] transition-colors">Berita & Pengumuman</Link></li>
           </ul>
         </div>
 
         <div>
           <h4 className="font-semibold text-[11px] tracking-wider text-[#111215] uppercase mb-3">Transparansi & Hukum</h4>
           <ul className="space-y-2 text-xs">
-            <li><Link to="/app/finance" className="hover:text-[#111215] transition-colors">Buku Kas Terbuka</Link></li>
             <li><Link to="/terms" className="hover:text-[#111215] transition-colors">Syarat & Ketentuan (T&C)</Link></li>
             <li><Link to="/privacy" className="hover:text-[#111215] transition-colors">Kebijakan Privasi (UU PDP)</Link></li>
-            <li><span className="text-[#7E8492]">Audit Trail & Immutability</span></li>
+            <li><span className="text-[#525660]">Audit Trail & Immutability</span></li>
           </ul>
         </div>
 
@@ -53,7 +52,7 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto pt-6 border-t border-[#111215]/6 flex flex-col md:flex-row items-center justify-between text-[11px] text-[#7E8492]">
+      <div className="max-w-6xl mx-auto pt-6 border-t border-[#111215]/6 flex flex-col md:flex-row items-center justify-between text-[11px] text-[#525660]">
         <p>© 2026 NEXA Community Development. Seluruh hak cipta dilindungi undang-undang.</p>
         <div className="flex items-center space-x-4 mt-2 md:mt-0">
           <Link to="/terms" className="hover:text-[#111215] transition-colors">Terms</Link>

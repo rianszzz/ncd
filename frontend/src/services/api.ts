@@ -5,6 +5,14 @@ export const api = axios.create({
   withCredentials: true,
 })
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('ncd_jwt')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
 export interface Member {
   id: string
   full_name: string
@@ -156,3 +164,40 @@ export interface DashboardSummary {
   }
   recent_activity: ActivityItem[]
 }
+
+export interface AccessKey {
+  id: string
+  key: string
+  role: string
+  assignee: string
+  position: string
+  email: string
+  is_active: boolean
+  created_at: string
+  last_used_at?: string
+}
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('ncd_jwt')
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('ncd_jwt')
+      localStorage.removeItem('ncd_user')
+      if (
+        typeof window !== 'undefined' &&
+        (window.location.pathname.startsWith('/app') || window.location.pathname.startsWith('/finance'))
+      ) {
+        window.location.replace('/login')
+      }
+    }
+    return Promise.reject(error)
+  }
+)

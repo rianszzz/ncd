@@ -46,12 +46,6 @@ export function Home() {
           >
             Struktur Tim
           </Link>
-          <Link
-            to="/app/finance"
-            className="w-full sm:w-auto px-5 py-3 rounded-xl bg-white border border-[#111215]/12 text-[#111215] font-medium text-sm hover:bg-[#111215]/5 transition-all shadow-2xs text-center min-h-[44px] flex items-center justify-center"
-          >
-            Buku Kas Terbuka
-          </Link>
         </div>
       </section>
 

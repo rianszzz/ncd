@@ -23,6 +23,8 @@ type UserClaims struct {
 	jwt.RegisteredClaims
 }
 
+var TokenActiveValidator func(userID string) bool
+
 // RequireAuth memverifikasi token JWT dari Header Authorization (Bearer) atau Cookie (ncd_token)
 func RequireAuth(jwtSecret string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -61,7 +63,13 @@ func RequireAuth(jwtSecret string) func(http.Handler) http.Handler {
 				return
 			}
 
-			// 4. Inject claims ke context
+			// 4. Periksa apakah token telah dicabut (Revocation Check)
+			if TokenActiveValidator != nil && !TokenActiveValidator(claims.UserID) {
+				http.Error(w, `{"error": "Unauthorized: Akses telah dicabut oleh Administrator"}`, http.StatusUnauthorized)
+				return
+			}
+
+			// 5. Inject claims ke context
 			ctx := context.WithValue(r.Context(), UserContextKey, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

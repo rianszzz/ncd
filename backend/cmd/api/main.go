@@ -44,7 +44,9 @@ func main() {
 		}
 	}
 
-	// 2. HTTP Router Setup
+	// 2. HTTP Router Setup & Middleware Hook
+	ncdMiddleware.TokenActiveValidator = handler.IsTokenActive
+
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -54,8 +56,20 @@ func main() {
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{cfg.CORSOrigin, "http://localhost:5173", "http://127.0.0.1:5173"},
-		AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
+		AllowedOrigins: []string{
+			cfg.CORSOrigin,
+			"http://localhost:5173",
+			"http://127.0.0.1:5173",
+			"http://localhost:4173",
+			"http://127.0.0.1:4173",
+		},
+		AllowOriginFunc: func(r *http.Request, origin string) bool {
+			return origin == "http://localhost:5173" ||
+				origin == "http://127.0.0.1:5173" ||
+				origin == "http://localhost:4173" ||
+				origin == "http://127.0.0.1:4173" ||
+				origin == cfg.CORSOrigin
+		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
@@ -79,13 +93,23 @@ func main() {
 		api.Get("/public/posts", handler.GetPublicPosts)
 		api.Post("/public/apply", handler.SubmitApplication)
 
-		// Public Finance Routes (Buku Kas Terbuka - Read-Only Publik)
-		api.Get("/finance/summary", handler.GetCashSummary)
-		api.Get("/finance/transactions", handler.ListTransactions)
-
-		// Sensitive Protected Finance Routes (Hanya Pengurus Terautentikasi)
+		// Sensitive Protected Routes (Hanya Pengguna Terautentikasi)
 		api.Group(func(protected chi.Router) {
 			protected.Use(ncdMiddleware.RequireAuth(cfg.JWTSecret))
+
+			// User Session & Verification
+			protected.Get("/auth/me", handler.GetMe)
+
+			// Token Self-Service (Setiap role dapat mengubah kode tokennya dengan awalan NCD-)
+			protected.Put("/portal/tokens/my-token", handler.UpdateToken)
+			protected.Put("/portal/tokens/{id}", handler.UpdateToken)
+
+			// Portal Dashboard Data (Wajib Login)
+			protected.Get("/portal/dashboard", handler.GetPortalDashboard)
+
+			// Read-Only Finance Summary & Transactions (Wajib Login)
+			protected.Get("/finance/summary", handler.GetCashSummary)
+			protected.Get("/finance/transactions", handler.ListTransactions)
 
 			// Maker: Bendahara I
 			protected.With(ncdMiddleware.RequireRole("BENDAHARA_I", "GOD_ADMIN", "SUPER_ADMIN")).
@@ -100,8 +124,16 @@ func main() {
 				Post("/finance/transactions/{id}/void", handler.VoidTransaction)
 		})
 
-		// Portal Routes
-		api.Get("/portal/dashboard", handler.GetPortalDashboard)
+		// Token & Role Governance (Khusus God Admin)
+		api.Group(func(god chi.Router) {
+			god.Use(ncdMiddleware.RequireAuth(cfg.JWTSecret))
+			god.Use(ncdMiddleware.RequireRole("GOD_ADMIN"))
+
+			god.Get("/portal/tokens", handler.ListTokens)
+			god.Post("/portal/tokens", handler.CreateToken)
+			god.Post("/portal/tokens/{id}/revoke", handler.RevokeToken)
+			god.Delete("/portal/tokens/{id}", handler.DeleteToken)
+		})
 
 		// Auth Routes
 		api.Post("/auth/login", handler.Login(cfg.JWTSecret))

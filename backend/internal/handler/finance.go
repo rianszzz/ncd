@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/ncd/backend/internal/middleware"
 )
 
 type TransactionDTO struct {
@@ -48,77 +50,7 @@ type VoidRequest struct {
 
 var (
 	txLock       sync.RWMutex
-	transactions = []TransactionDTO{
-		{
-			ID:                "tx-1",
-			TransactionNumber: "NCD-TRX-202610-0001",
-			Type:              "INCOME",
-			CategoryName:      "Saldo Awal & Migrasi",
-			Amount:            5000000.00,
-			Description:       "Saldo kas pembuka hasil audit periode kepengurusan sebelumnya",
-			PersonInCharge:    "Muhammad Iqbal Fajri",
-			ReceiptURL:        "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80",
-			Status:            "VERIFIED",
-			TransactionDate:   "2026-10-01",
-			MakerName:         "Muhammad Iqbal Fajri (Bendahara I)",
-			MakerID:           "u-iqbal",
-			VerifierName:      "Sri Gunarti Wijiastuti (Bendahara II)",
-			VerifierID:        "u-sri",
-			VerifiedAt:        "2026-10-02T10:00:00Z",
-			CreatedAt:         time.Now().Add(-20 * 24 * time.Hour),
-		},
-		{
-			ID:                "tx-2",
-			TransactionNumber: "NCD-TRX-202610-0002",
-			Type:              "INCOME",
-			CategoryName:      "Hadiah Kompetisi",
-			Amount:            3500000.00,
-			Description:       "Hadiah Juara 1 Gemastik Software Engineering oleh Tim NCD Alpha",
-			PersonInCharge:    "Muhamad Fauzan Al Farikhi",
-			ReceiptURL:        "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=600&auto=format&fit=crop&q=80",
-			Status:            "VERIFIED",
-			TransactionDate:   "2026-10-10",
-			MakerName:         "Muhammad Iqbal Fajri (Bendahara I)",
-			MakerID:           "u-iqbal",
-			VerifierName:      "Sri Gunarti Wijiastuti (Bendahara II)",
-			VerifierID:        "u-sri",
-			VerifiedAt:        "2026-10-11T14:30:00Z",
-			CreatedAt:         time.Now().Add(-12 * 24 * time.Hour),
-		},
-		{
-			ID:                "tx-3",
-			TransactionNumber: "NCD-TRX-202610-0003",
-			Type:              "EXPENSE",
-			CategoryName:      "Infrastruktur & Cloud",
-			Amount:            650000.00,
-			Description:       "Pembayaran sewa domain ncd.nexatechlabs.my.id & server cloud 3 bulan",
-			PersonInCharge:    "Rianszzz",
-			ReceiptURL:        "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&auto=format&fit=crop&q=80",
-			Status:            "VERIFIED",
-			TransactionDate:   "2026-10-15",
-			MakerName:         "Muhammad Iqbal Fajri (Bendahara I)",
-			MakerID:           "u-iqbal",
-			VerifierName:      "Sri Gunarti Wijiastuti (Bendahara II)",
-			VerifierID:        "u-sri",
-			VerifiedAt:        "2026-10-15T18:00:00Z",
-			CreatedAt:         time.Now().Add(-7 * 24 * time.Hour),
-		},
-		{
-			ID:                "tx-4",
-			TransactionNumber: "NCD-TRX-202610-0004",
-			Type:              "EXPENSE",
-			CategoryName:      "Konsumsi & Rapat Kerja",
-			Amount:            320000.00,
-			Description:       "Konsumsi rapat koordinasi bulanan 8 pengurus NCD",
-			PersonInCharge:    "Annisa Saskia",
-			ReceiptURL:        "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80",
-			Status:            "DRAFT_PENDING",
-			TransactionDate:   "2026-10-21",
-			MakerName:         "Muhammad Iqbal Fajri (Bendahara I)",
-			MakerID:           "u-iqbal",
-			CreatedAt:         time.Now().Add(-1 * 24 * time.Hour),
-		},
-	}
+	transactions = []TransactionDTO{}
 )
 
 func GetCashSummary(w http.ResponseWriter, r *http.Request) {
@@ -267,6 +199,7 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 
 func VerifyTransaction(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	claims, _ := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
 
 	txLock.Lock()
 	defer txLock.Unlock()
@@ -274,16 +207,22 @@ func VerifyTransaction(w http.ResponseWriter, r *http.Request) {
 	for i, tx := range transactions {
 		if tx.ID == id {
 			if tx.Status != "DRAFT_PENDING" {
-				http.Error(w, "Hanya transaksi berstatus DRAFT_PENDING yang dapat diverifikasi", http.StatusBadRequest)
+				http.Error(w, "Hanya transaksi berstatus DRAFT_PENDING yang dapat diverifikasi / disetujui", http.StatusBadRequest)
 				return
 			}
 
-			// Maker-Checker Invariant check
-			// Verifier is Sri (Bendahara II), Maker is Iqbal (Bendahara I)
 			transactions[i].Status = "VERIFIED"
-			transactions[i].VerifierName = "Sri Gunarti Wijiastuti (Bendahara II)"
-			transactions[i].VerifierID = "u-sri"
-			transactions[i].VerifiedAt = time.Now().Format(time.RFC3339)
+			if claims != nil && (claims.Role == "SUPER_ADMIN" || strings.Contains(strings.ToLower(claims.Role), "chair")) {
+				transactions[i].VerifierName = fmt.Sprintf("%s (Persetujuan Chairman)", claims.FullName)
+				transactions[i].VerifierID = claims.UserID
+			} else if claims != nil {
+				transactions[i].VerifierName = fmt.Sprintf("%s (%s)", claims.FullName, claims.Role)
+				transactions[i].VerifierID = claims.UserID
+			} else {
+				transactions[i].VerifierName = "Sri Gunarti Wijiastuti (Bendahara II)"
+				transactions[i].VerifierID = "u-sri"
+			}
+			transactions[i].VerifiedAt = time.Now().Format("2006-01-02 15:04 WIB")
 
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(transactions[i])
@@ -296,10 +235,11 @@ func VerifyTransaction(w http.ResponseWriter, r *http.Request) {
 
 func VoidTransaction(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	claims, _ := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
 
 	var req VoidRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Reason == "" {
-		http.Error(w, "Alasan pembatalan (void) wajib disertakan", http.StatusBadRequest)
+		http.Error(w, "Alasan penolakan / void wajib disertakan", http.StatusBadRequest)
 		return
 	}
 
@@ -310,7 +250,11 @@ func VoidTransaction(w http.ResponseWriter, r *http.Request) {
 		if tx.ID == id {
 			transactions[i].Status = "VOID"
 			transactions[i].VoidReason = req.Reason
-			transactions[i].VoidByName = "Mirza / Fauzan (Super Admin)"
+			if claims != nil {
+				transactions[i].VoidByName = fmt.Sprintf("%s (%s)", claims.FullName, claims.Role)
+			} else {
+				transactions[i].VoidByName = "Mirza Danisywar (Chairman)"
+			}
 
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(transactions[i])

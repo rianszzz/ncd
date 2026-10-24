@@ -82,28 +82,7 @@ func Run(ctx context.Context, pool *pgxpool.Pool) error {
 		return fmt.Errorf("seed categories: %w", err)
 	}
 
-	// 5. Insert Initial Opening Cash Transaction
-	queryTx := `
-	INSERT INTO finance_transactions (
-		id, transaction_number, type, category_id, amount, description,
-		person_in_charge, receipt_url, status, transaction_date,
-		maker_id, verifier_id, verified_at
-	) VALUES (
-		'e0000000-0000-0000-0000-000000000001', 'NCD-TRX-202610-0001', 'INCOME',
-		'd0000000-0000-0000-0000-000000000001', 5000000.00,
-		'Saldo kas pembuka hasil audit periode kepengurusan sebelumnya',
-		'Muhammad Iqbal Fajri', 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80',
-		'VERIFIED', CURRENT_DATE,
-		'b0000000-0000-0000-0000-000000000002',
-		'b0000000-0000-0000-0000-000000000003',
-		NOW()
-	);
-	`
-	if _, err := pool.Exec(ctx, queryTx); err != nil {
-		return fmt.Errorf("seed initial transaction: %w", err)
-	}
-
-	// 6. Insert Projects
+	// 5. Insert Projects
 	queryProjects := `
 	INSERT INTO projects (id, title, slug, summary, description_md, tech_stack, repo_url, demo_url, status, progress_percent, is_public, pic_member_id) VALUES
 		('f0000000-0000-0000-0000-000000000001', 'NCD Integrated Platform', 'ncd-integrated-platform', 'Platform resmi NCD dengan arsitektur Decoupled Go + React dan transparansi kas Maker-Checker.', 'Full-stack platform komunitas', ARRAY['Go', 'React 19', 'PostgreSQL', 'Tailwind CSS'], 'https://github.com/ncd/ncd-platform', 'https://ncd.nexatechlabs.my.id', 'ACTIVE', 85, true, 'c0000000-0000-0000-0000-000000000001'),
