@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { motion, useReducedMotion } from 'motion/react'
 import {
   ExternalLink,
   CheckCircle2,
@@ -12,6 +13,8 @@ import { AchievementSkeleton } from '../components/Skeletons'
 type TierFilter = 'ALL' | 'Internasional' | 'Nasional' | 'Regional / Kampus'
 
 export function Achievements() {
+  const shouldReduceMotion = useReducedMotion()
+  const ease = [0.22, 1, 0.36, 1] as const
   const [activeTier, setActiveTier] = useState<TierFilter>('ALL')
   const [activeTab, setActiveTab] = useState<'hall-of-fame' | 'agenda'>('hall-of-fame')
 
@@ -76,22 +79,34 @@ export function Achievements() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12 md:py-20 text-left">
-      {/* Header Section without sub-heading / eyebrow per brand rules */}
-      <div className="mb-10 md:mb-12">
+      {/* Header Section */}
+      <motion.div
+        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: shouldReduceMotion ? 0 : 0.5, ease }}
+        className="mb-10 md:mb-12"
+      >
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-[-0.03em] text-[#111215]">
           Pencapaian & Kompetisi NCD
         </h1>
         <p className="text-xs sm:text-sm text-[#525660] mt-2 leading-relaxed max-w-2xl">
           Eksplorasi rekam jejak kejuaraan, inovasi karya teknologi, dan agenda kompetitif talenta mahasiswa Nusantara Cyber Developer.
         </p>
-      </div>
+      </motion.div>
 
       {/* Metrics Strip */}
-      <div className="bg-white rounded-2xl border border-[#111215]/8 grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[#111215]/8 mb-10 overflow-hidden shadow-2xs">
+      <motion.div
+        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-40px' }}
+        transition={{ duration: shouldReduceMotion ? 0 : 0.45, ease }}
+        className="bg-white rounded-none border border-[#111215]/8 grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[#111215]/8 mb-10 overflow-hidden shadow-2xs"
+      >
         <div className="p-5 sm:p-6">
           <span className="text-xs font-medium text-[#525660] block mb-1">Total Prestasi</span>
           <div className="text-2xl sm:text-3xl font-bold font-tabular text-[#111215]">
-            {isLoadingAchievements ? '—' : `${stats.total}+`}
+            {isLoadingAchievements ? '—' : stats.total}
           </div>
           <p className="text-[11px] text-[#525660] mt-1">Kejuaraan resmi tercatat</p>
         </div>
@@ -119,16 +134,16 @@ export function Achievements() {
           </div>
           <p className="text-[11px] text-[#525660] mt-1">Puspresnas & Techfest</p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Mode Tabs and Tier Filter Controls */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-[#111215]/8 pb-4 mb-8">
         {/* Segmented Control for Mode Switch */}
-        <div className="inline-flex p-1 bg-[#111215]/4 rounded-xl border border-[#111215]/6 self-start">
+        <div className="inline-flex p-1 bg-[#111215]/4 rounded-none border border-[#111215]/6 self-start">
           <button
             type="button"
             onClick={() => setActiveTab('hall-of-fame')}
-            className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+            className={`px-4 py-2 text-xs font-semibold rounded-none transition-all cursor-pointer ${
               activeTab === 'hall-of-fame'
                 ? 'bg-white text-[#111215] shadow-2xs'
                 : 'text-[#525660] hover:text-[#111215]'
@@ -139,7 +154,7 @@ export function Achievements() {
           <button
             type="button"
             onClick={() => setActiveTab('agenda')}
-            className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+            className={`px-4 py-2 text-xs font-semibold rounded-none transition-all cursor-pointer ${
               activeTab === 'agenda'
                 ? 'bg-white text-[#111215] shadow-2xs'
                 : 'text-[#525660] hover:text-[#111215]'
@@ -159,7 +174,7 @@ export function Achievements() {
                   key={tier}
                   type="button"
                   onClick={() => setActiveTier(tier)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-none text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
                     isActive
                       ? 'bg-[#111215] text-[#F4F1EB]'
                       : 'text-[#525660] hover:text-[#111215] hover:bg-[#111215]/4'
@@ -184,20 +199,26 @@ export function Achievements() {
               ))}
             </div>
           ) : filteredAchievements.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-[#111215]/8 p-12 text-center shadow-2xs">
+            <div className="bg-white rounded-none border border-[#111215]/8 p-12 text-center shadow-2xs">
               <h3 className="text-base font-semibold text-[#111215] mb-1">
-                Belum ada prestasi pada kategori ini
+                {achievements && achievements.length === 0
+                  ? 'Belum ada prestasi terdaftar'
+                  : 'Belum ada prestasi pada kategori ini'}
               </h3>
               <p className="text-xs text-[#525660] mb-4">
-                Pilih filter tingkat lain atau kembali ke Semua Tingkat untuk melihat seluruh rekaman kejuaraan.
+                {achievements && achievements.length === 0
+                  ? 'Informasi rekam jejak prestasi resmi NCD akan ditambahkan dan dikelola oleh administrator.'
+                  : 'Pilih filter tingkat lain atau kembali ke Semua Tingkat untuk melihat seluruh rekaman kejuaraan.'}
               </p>
-              <button
-                type="button"
-                onClick={() => setActiveTier('ALL')}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#111215] text-[#F4F1EB] hover:bg-[#6456EB] transition-colors cursor-pointer"
-              >
-                Tampilkan Semua Prestasi
-              </button>
+              {achievements && achievements.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTier('ALL')}
+                  className="px-4 py-2 rounded-none text-xs font-semibold bg-[#111215] text-[#F4F1EB] hover:bg-[#6456EB] transition-colors cursor-pointer"
+                >
+                  Tampilkan Semua Prestasi
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -209,7 +230,7 @@ export function Achievements() {
                 return (
                   <div
                     key={item.id}
-                    className="bg-white rounded-2xl border border-[#111215]/8 p-6 shadow-2xs hover:border-[#111215]/20 hover:shadow-xs transition-all flex flex-col justify-between group"
+                    className="bg-white rounded-none border border-[#111215]/8 p-6 shadow-2xs hover:border-[#111215]/20 hover:shadow-xs transition-all flex flex-col justify-between group"
                   >
                     <div>
                       {/* Top Metadata & Rank */}
@@ -219,7 +240,7 @@ export function Achievements() {
                         </span>
 
                         <span
-                          className={`text-[11px] font-semibold px-2 py-0.5 rounded shrink-0 tracking-tight ${getRankBadgeStyle(
+                          className={`text-[11px] font-semibold px-2 py-0.5 rounded-none shrink-0 tracking-tight ${getRankBadgeStyle(
                             item.rank
                           )}`}
                         >
@@ -330,7 +351,7 @@ export function Achievements() {
               {competitions.map((comp) => (
                 <div
                   key={comp.id}
-                  className="bg-white rounded-2xl border border-[#111215]/8 p-6 shadow-2xs hover:border-[#111215]/20 hover:shadow-xs transition-all flex flex-col justify-between"
+                  className="bg-white rounded-none border border-[#111215]/8 p-6 shadow-2xs hover:border-[#111215]/20 hover:shadow-xs transition-all flex flex-col justify-between"
                 >
                   <div>
                     {/* Top Tier & Status */}
@@ -340,7 +361,7 @@ export function Achievements() {
                       </span>
 
                       <span
-                        className={`text-[11px] font-semibold px-2 py-0.5 rounded tracking-tight ${
+                        className={`text-[11px] font-semibold px-2 py-0.5 rounded-none tracking-tight ${
                           comp.status === 'Open Registration'
                             ? 'text-emerald-800 bg-emerald-500/10'
                             : 'text-[#525660] bg-[#111215]/6'
@@ -363,7 +384,7 @@ export function Achievements() {
                       {comp.description}
                     </p>
 
-                    <div className="p-3.5 bg-[#F4F1EB]/50 rounded-xl border border-[#111215]/6 space-y-2 text-xs">
+                    <div className="p-3.5 bg-[#F4F1EB]/50 rounded-none border border-[#111215]/6 space-y-2 text-xs">
                       <div className="flex justify-between items-center">
                         <span className="text-[#525660]">Batas Pendaftaran</span>
                         <span className="font-semibold text-rose-700 font-tabular">
@@ -400,12 +421,12 @@ export function Achievements() {
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-[#111215]/8 p-12 text-center shadow-2xs">
+            <div className="bg-white rounded-none border border-[#111215]/8 p-12 text-center shadow-2xs">
               <h3 className="text-base font-semibold text-[#111215] mb-1">
-                Belum ada kompetisi aktif saat ini
+                Belum ada agenda kompetisi aktif
               </h3>
               <p className="text-xs text-[#525660]">
-                Pantau terus saluran pengumuman NCD untuk pembukaan delegasi kejuaraan berikutnya.
+                Jadwal kompetisi dan agenda lomba mendatang akan dikelola dan ditambahkan oleh administrator.
               </p>
             </div>
           )}

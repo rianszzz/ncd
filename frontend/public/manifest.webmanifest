@@ -1,0 +1,23 @@
+{
+  "name": "NEXA Community Development",
+  "short_name": "NCD",
+  "description": "Komunitas riset dan inkubasi rekayasa perangkat lunak mandiri mahasiswa di bawah naungan resmi NEXA Tech Labs.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4F1EB",
+  "theme_color": "#111215",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

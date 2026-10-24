@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -28,6 +29,7 @@ type AccessKey struct {
 }
 
 type CreateTokenRequest struct {
+	Key      string `json:"key,omitempty"`
 	Role     string `json:"role"`
 	Assignee string `json:"assignee"`
 	Position string `json:"position"`
@@ -100,6 +102,48 @@ var (
 	}
 )
 
+func getTokensFilePath() string {
+	if _, err := os.Stat("backend/data"); err == nil {
+		return "backend/data/tokens.json"
+	}
+	if _, err := os.Stat("data"); err == nil {
+		return "data/tokens.json"
+	}
+	if _, err := os.Stat("../../data"); err == nil {
+		return "../../data/tokens.json"
+	}
+	return "data/tokens.json"
+}
+
+func saveTokensToDiskLocked() {
+	filePath := getTokensFilePath()
+	bytes, err := json.MarshalIndent(accessKeys, "", "  ")
+	if err == nil {
+		_ = os.WriteFile(filePath, bytes, 0644)
+	}
+}
+
+func loadTokensFromDisk() {
+	tokenLock.Lock()
+	defer tokenLock.Unlock()
+
+	filePath := getTokensFilePath()
+	bytes, err := os.ReadFile(filePath)
+	if err == nil && len(bytes) > 0 {
+		var loaded []AccessKey
+		if err := json.Unmarshal(bytes, &loaded); err == nil && len(loaded) > 0 {
+			accessKeys = loaded
+			return
+		}
+	}
+	// Initial save of default tokens if file does not exist yet
+	saveTokensToDiskLocked()
+}
+
+func init() {
+	loadTokensFromDisk()
+}
+
 func AuthenticateByKey(rawKey string) (*AccessKey, bool) {
 	cleanKey := strings.TrimSpace(rawKey)
 	if cleanKey == "" {
@@ -149,7 +193,9 @@ func ListTokens(w http.ResponseWriter, r *http.Request) {
 func CreateToken(w http.ResponseWriter, r *http.Request) {
 	var req CreateTokenRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `{"error": "Format payload token tidak valid"}`, http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Format payload token tidak valid"})
 		return
 	}
 
@@ -159,7 +205,10 @@ func CreateToken(w http.ResponseWriter, r *http.Request) {
 	}
 	assignee := strings.TrimSpace(req.Assignee)
 	if assignee == "" {
-		assignee = "Pengguna Portal"
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Nama penerima token wajib diisi"})
+		return
 	}
 	position := strings.TrimSpace(req.Position)
 	if position == "" {
@@ -170,11 +219,61 @@ func CreateToken(w http.ResponseWriter, r *http.Request) {
 		email = fmt.Sprintf("%s@ncd.dev", strings.ToLower(strings.ReplaceAll(assignee, " ", ".")))
 	}
 
-	// Generate clean human-readable access key: NCD-{ROLE}-{RAND8}
-	randomBytes := make([]byte, 4)
-	_, _ = rand.Read(randomBytes)
-	suffix := strings.ToUpper(hex.EncodeToString(randomBytes))
-	generatedKey := fmt.Sprintf("NCD-%s-%s", strings.ReplaceAll(role, "_", ""), suffix)
+	tokenLock.Lock()
+	defer tokenLock.Unlock()
+
+	// Tolak jika terdapat token dengan nama (assignee) yang sama (case-insensitive)
+	for _, k := range accessKeys {
+		if strings.EqualFold(strings.TrimSpace(k.Assignee), assignee) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusConflict)
+			_ = json.NewEncoder(w).Encode(map[string]string{
+				"error": fmt.Sprintf("Token dengan nama penerima '%s' sudah terdaftar dalam sistem", assignee),
+			})
+			return
+		}
+	}
+
+	var generatedKey string
+	if req.Key != "" {
+		cleanKey := strings.ToUpper(strings.TrimSpace(req.Key))
+		if !strings.HasPrefix(cleanKey, "NCD-") {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "Kode token wajib diawali dengan 'NCD-'"})
+			return
+		}
+		for _, k := range accessKeys {
+			if strings.EqualFold(k.Key, cleanKey) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusConflict)
+				_ = json.NewEncoder(w).Encode(map[string]string{
+					"error": fmt.Sprintf("Token dengan kode '%s' sudah terdaftar", cleanKey),
+				})
+				return
+			}
+		}
+		generatedKey = cleanKey
+	} else {
+		// Generate clean human-readable access key: NCD-{ROLE}-{RAND8}
+		for {
+			randomBytes := make([]byte, 4)
+			_, _ = rand.Read(randomBytes)
+			suffix := strings.ToUpper(hex.EncodeToString(randomBytes))
+			candidate := fmt.Sprintf("NCD-%s-%s", strings.ReplaceAll(role, "_", ""), suffix)
+			exists := false
+			for _, k := range accessKeys {
+				if strings.EqualFold(k.Key, candidate) {
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				generatedKey = candidate
+				break
+			}
+		}
+	}
 
 	newKey := AccessKey{
 		ID:        "tok-" + uuid.New().String()[:8],
@@ -187,10 +286,9 @@ func CreateToken(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: time.Now(),
 	}
 
-	tokenLock.Lock()
 	// Prepend so the newest token appears at the top
 	accessKeys = append([]AccessKey{newKey}, accessKeys...)
-	tokenLock.Unlock()
+	saveTokensToDiskLocked()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -210,6 +308,7 @@ func RevokeToken(w http.ResponseWriter, r *http.Request) {
 	for i := range accessKeys {
 		if accessKeys[i].ID == id {
 			accessKeys[i].IsActive = !accessKeys[i].IsActive
+			saveTokensToDiskLocked()
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(accessKeys[i])
 			return
@@ -236,6 +335,7 @@ func DeleteToken(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			accessKeys = append(accessKeys[:i], accessKeys[i+1:]...)
+			saveTokensToDiskLocked()
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]string{"message": "Token berhasil dihapus"})
 			return
@@ -308,6 +408,7 @@ func UpdateToken(w http.ResponseWriter, r *http.Request) {
 	for i := range accessKeys {
 		if accessKeys[i].ID == targetID {
 			accessKeys[i].Key = cleanKey
+			saveTokensToDiskLocked()
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"message": "Kode token berhasil diperbarui",

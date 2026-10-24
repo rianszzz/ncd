@@ -1,0 +1,12 @@
+.variable-proximity {
+  font-family: 'Roboto Flex', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: normal;
+  display: inline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .variable-proximity span {
+    transition: none !important;
+    animation: none !important;
+  }
+}

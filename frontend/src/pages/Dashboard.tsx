@@ -21,8 +21,13 @@ import {
   XCircle,
   Clock,
   ArrowRight,
+  Award,
+  Newspaper,
 } from 'lucide-react'
-import { api, AccessKey, Transaction, CashSummary } from '../services/api'
+import { api, AccessKey, Transaction, CashSummary, Achievement, Post } from '../services/api'
+import { RubberSegment } from '../components/ui/RubberSegment'
+import { DashboardRowSkeleton, TokenRowSkeleton } from '../components/Skeletons'
+import { AnimatePresence, motion } from 'motion/react'
 
 const AVAILABLE_ROLES = [
   { value: 'GOD_ADMIN', label: 'God Admin (Developer Lead)', desc: 'Akses tanpa batas ke seluruh sistem' },
@@ -67,10 +72,38 @@ export function Dashboard() {
     currentUser.role === 'SUPER_ADMIN' ||
     currentUser.position.toLowerCase().includes('chair')
 
-  // Active Tab: 'overview' | 'tokens' | 'approvals' | 'finance' | 'profile'
+  // Active Tab: 'overview' | 'tokens' | 'approvals' | 'achievements' | 'news' | 'finance' | 'profile'
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'tokens' | 'approvals' | 'finance' | 'profile'
+    'overview' | 'tokens' | 'approvals' | 'achievements' | 'news' | 'finance' | 'profile'
   >('overview')
+
+  const canManageContent =
+    currentUser.role === 'GOD_ADMIN' || currentUser.role === 'SUPER_ADMIN'
+
+  // New Achievement Form State
+  const [achTitle, setAchTitle] = useState('')
+  const [achEventName, setAchEventName] = useState('')
+  const [achTier, setAchTier] = useState('Nasional')
+  const [achRank, setAchRank] = useState('Juara 1 (Medali Emas)')
+  const [achAwardDate, setAchAwardDate] = useState('')
+  const [achTeamName, setAchTeamName] = useState('')
+  const [achMembers, setAchMembers] = useState('')
+  const [achProjectTitle, setAchProjectTitle] = useState('')
+  const [achDescription, setAchDescription] = useState('')
+  const [achCertUrl, setAchCertUrl] = useState('')
+  const [achSuccess, setAchSuccess] = useState('')
+  const [achError, setAchError] = useState('')
+
+  // New News Post Form State
+  const [newsTitle, setNewsTitle] = useState('')
+  const [newsCategory, setNewsCategory] = useState('Pengumuman')
+  const [newsSummary, setNewsSummary] = useState('')
+  const [newsContentMD, setNewsContentMD] = useState('')
+  const [newsTags, setNewsTags] = useState('')
+  const [newsAuthor, setNewsAuthor] = useState('')
+  const [newsIsPinned, setNewsIsPinned] = useState(false)
+  const [newsSuccess, setNewsSuccess] = useState('')
+  const [newsError, setNewsError] = useState('')
 
   // Selected receipt modal
   const [activeReceipt, setActiveReceipt] = useState<Transaction | null>(null)
@@ -195,8 +228,12 @@ export function Dashboard() {
       setFormError('')
       setTimeout(() => setFormSuccess(''), 4000)
     },
-    onError: () => {
-      setFormError('Gagal menerbitkan token. Pastikan hak akses God Admin valid.')
+    onError: (err: any) => {
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        'Gagal menerbitkan token. Pastikan hak akses God Admin valid.'
+      setFormError(msg)
     },
   })
 
@@ -221,6 +258,152 @@ export function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ['accessTokens'] })
     },
   })
+
+  // Queries for Achievements and News Management (God Admin & Super Admin)
+  const { data: achievementsList = [], isLoading: isLoadingAchList } = useQuery<Achievement[]>({
+    queryKey: ['portalAchievements'],
+    queryFn: async () => {
+      const res = await api.get('/public/achievements')
+      return res.data
+    },
+    enabled: canManageContent,
+  })
+
+  const { data: newsList = [], isLoading: isLoadingNewsList } = useQuery<Post[]>({
+    queryKey: ['portalPosts'],
+    queryFn: async () => {
+      const res = await api.get('/public/posts')
+      return res.data
+    },
+    enabled: canManageContent,
+  })
+
+  // Mutation: Create Achievement
+  const createAchievementMutation = useMutation({
+    mutationFn: async (payload: Partial<Achievement>) => {
+      const res = await api.post('/portal/achievements', payload)
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['portalAchievements'] })
+      queryClient.invalidateQueries({ queryKey: ['publicAchievements'] })
+      setAchTitle('')
+      setAchEventName('')
+      setAchAwardDate('')
+      setAchTeamName('')
+      setAchMembers('')
+      setAchProjectTitle('')
+      setAchDescription('')
+      setAchCertUrl('')
+      setAchSuccess('Prestasi baru berhasil ditambahkan!')
+      setAchError('')
+      setTimeout(() => setAchSuccess(''), 3000)
+    },
+    onError: (err: any) => {
+      setAchError(err?.response?.data?.error || 'Gagal menambahkan prestasi')
+    },
+  })
+
+  // Mutation: Delete Achievement
+  const deleteAchievementMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.delete(`/portal/achievements/${id}`)
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['portalAchievements'] })
+      queryClient.invalidateQueries({ queryKey: ['publicAchievements'] })
+    },
+  })
+
+  // Mutation: Create Post
+  const createPostMutation = useMutation({
+    mutationFn: async (payload: Partial<Post>) => {
+      const res = await api.post('/portal/posts', payload)
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['portalPosts'] })
+      queryClient.invalidateQueries({ queryKey: ['publicPosts'] })
+      setNewsTitle('')
+      setNewsSummary('')
+      setNewsContentMD('')
+      setNewsTags('')
+      setNewsIsPinned(false)
+      setNewsSuccess('Warta baru berhasil diterbitkan!')
+      setNewsError('')
+      setTimeout(() => setNewsSuccess(''), 3000)
+    },
+    onError: (err: any) => {
+      setNewsError(err?.response?.data?.error || 'Gagal menerbitkan warta')
+    },
+  })
+
+  // Mutation: Delete Post
+  const deletePostMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.delete(`/portal/posts/${id}`)
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['portalPosts'] })
+      queryClient.invalidateQueries({ queryKey: ['publicPosts'] })
+    },
+  })
+
+  const handleCreateAchievement = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!achTitle.trim()) {
+      setAchError('Judul prestasi wajib diisi')
+      return
+    }
+    const membersArr = achMembers
+      .split(',')
+      .map((m) => m.trim())
+      .filter(Boolean)
+
+    createAchievementMutation.mutate({
+      title: achTitle.trim(),
+      event_name: achEventName.trim() || achTitle.trim(),
+      competition: achEventName.trim() || achTitle.trim(),
+      tier: achTier,
+      rank: achRank.trim() || 'Juara 1',
+      date: achAwardDate.trim() || new Date().getFullYear().toString(),
+      award_date: achAwardDate.trim() || new Date().getFullYear().toString(),
+      team_name: achTeamName.trim(),
+      members: membersArr,
+      team_members: membersArr,
+      project_title: achProjectTitle.trim(),
+      description: achDescription.trim(),
+      certificate_url: achCertUrl.trim(),
+    })
+  }
+
+  const handleCreateNews = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newsTitle.trim()) {
+      setNewsError('Judul warta wajib diisi')
+      return
+    }
+    if (!newsSummary.trim()) {
+      setNewsError('Rangkuman warta wajib diisi')
+      return
+    }
+    const tagsArr = newsTags
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean)
+
+    createPostMutation.mutate({
+      title: newsTitle.trim(),
+      category: newsCategory,
+      summary: newsSummary.trim(),
+      content_md: newsContentMD.trim() || newsSummary.trim(),
+      tags: tagsArr,
+      author_name: newsAuthor.trim() || currentUser.name,
+      is_pinned: newsIsPinned,
+    })
+  }
 
   // Mutation: Update Token Key
   const updateTokenMutation = useMutation({
@@ -296,14 +479,24 @@ export function Dashboard() {
 
   const handleCreateToken = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newAssignee.trim()) {
+    const trimmedAssignee = newAssignee.trim()
+    if (!trimmedAssignee) {
       setFormError('Nama penerima token wajib diisi.')
       return
     }
+
+    const isDuplicate = tokens.some(
+      (t) => t.assignee.trim().toLowerCase() === trimmedAssignee.toLowerCase()
+    )
+    if (isDuplicate) {
+      setFormError(`Token dengan nama "${trimmedAssignee}" sudah terdaftar dalam sistem.`)
+      return
+    }
+
     setFormError('')
     createTokenMutation.mutate({
       role: newRole,
-      assignee: newAssignee.trim(),
+      assignee: trimmedAssignee,
       position: newPosition.trim() || newRole,
     })
   }
@@ -409,6 +602,24 @@ export function Dashboard() {
           },
         ]
       : []),
+    ...(canManageContent
+      ? [
+          {
+            id: 'achievements' as const,
+            shortLabel: 'Prestasi',
+            label: 'Kelola Prestasi',
+            icon: Award,
+            badge: 0,
+          },
+          {
+            id: 'news' as const,
+            shortLabel: 'Warta',
+            label: 'Kelola Warta',
+            icon: Newspaper,
+            badge: 0,
+          },
+        ]
+      : []),
     {
       id: 'finance' as const,
       shortLabel: 'Arus Kas',
@@ -475,40 +686,52 @@ export function Dashboard() {
           </span>
         </div>
 
-        {/* Tab Navigation: Balanced Grid on Mobile, Flex on Desktop */}
-        <div className="mt-4 pt-3.5 border-t border-[#111215]/8">
-          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5 sm:gap-2">
-            {navTabs.map((tab) => {
+        {/* Tab Navigation: React Bits RubberSegment */}
+        <div className="mt-4 pt-3.5 border-t border-[#111215]/8 w-full overflow-hidden">
+          <RubberSegment
+            items={navTabs.map((tab) => {
               const Icon = tab.icon
-              const isActive = activeTab === tab.id
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-2.5 sm:px-3.5 py-2.5 min-h-[44px] rounded-xl text-xs font-medium transition-all flex items-center justify-center sm:justify-start space-x-1.5 sm:space-x-2 cursor-pointer ${
-                    isActive
-                      ? 'bg-[#111215] text-[#F4F1EB] shadow-2xs font-semibold'
-                      : 'bg-[#F4F1EB] text-[#525660] hover:text-[#111215] hover:bg-[#111215]/8'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5 shrink-0" />
-                  <span className="sm:hidden">{tab.shortLabel}</span>
-                  <span className="hidden sm:inline">{tab.label}</span>
-                  {tab.badge > 0 && (
-                    <span
-                      className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                        isActive
-                          ? 'bg-rose-500 text-white'
-                          : 'bg-rose-600 text-white'
-                      }`}
-                    >
-                      {tab.badge}
-                    </span>
-                  )}
-                </button>
-              )
+              return {
+                value: tab.id,
+                title: tab.label,
+                label: (
+                  <span className="hidden sm:inline-flex items-center space-x-1.5 min-w-0">
+                    <span className="truncate">{tab.label}</span>
+                    {tab.badge > 0 && (
+                      <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-600 text-white shrink-0">
+                        {tab.badge}
+                      </span>
+                    )}
+                  </span>
+                ),
+                icon: (
+                  <span className="relative inline-flex items-center justify-center">
+                    <Icon className="w-4 h-4 shrink-0" />
+                    {tab.badge > 0 && (
+                      <span className="sm:hidden absolute -top-1 -right-1 w-2 h-2 rounded-full bg-rose-600 ring-2 ring-white" />
+                    )}
+                  </span>
+                ),
+              }
             })}
-          </div>
+            value={activeTab}
+            onChange={(val) => setActiveTab(val as typeof activeTab)}
+            trackColor="#F4F1EB"
+            thumbColor="#111215"
+            textColor="#525660"
+            activeTextColor="#F4F1EB"
+            size="lg"
+            radius={14}
+            inset={3}
+            equalSlots
+            stretch={75}
+            squash={2}
+            speed={1.1}
+            glide={50}
+            draggable
+            className="w-full"
+            aria-label="Navigasi Menu Dasbor"
+          />
         </div>
       </div>
 
@@ -638,28 +861,30 @@ export function Dashboard() {
                 </p>
               </div>
 
-              {/* Status Filter */}
-              <div className="flex items-center space-x-1 bg-[#F4F1EB] p-1 rounded-xl shrink-0 w-full sm:w-auto">
-                {(
-                  [
-                    { id: 'PENDING', label: `Menunggu (${pendingCompetitionCount})` },
-                    { id: 'ALL', label: 'Semua' },
-                    { id: 'VERIFIED', label: 'Disetujui' },
-                    { id: 'VOID', label: 'Ditolak' },
-                  ] as const
-                ).map((mode) => (
-                  <button
-                    key={mode.id}
-                    onClick={() => setApprovalFilter(mode.id)}
-                    className={`flex-1 sm:flex-initial px-3 py-2 min-h-[40px] rounded-lg text-xs font-medium transition-all text-center cursor-pointer ${
-                      approvalFilter === mode.id
-                        ? 'bg-[#111215] text-[#F4F1EB]'
-                        : 'text-[#525660] hover:text-[#111215]'
-                    }`}
-                  >
-                    {mode.label}
-                  </button>
-                ))}
+              {/* Status Filter: React Bits RubberSegment */}
+              <div className="w-full sm:w-auto shrink-0 overflow-hidden">
+                <RubberSegment
+                  items={[
+                    { value: 'PENDING', label: `Menunggu (${pendingCompetitionCount})` },
+                    { value: 'ALL', label: 'Semua' },
+                    { value: 'VERIFIED', label: 'Disetujui' },
+                    { value: 'VOID', label: 'Ditolak' },
+                  ]}
+                  value={approvalFilter}
+                  onChange={(mode) => setApprovalFilter(mode as typeof approvalFilter)}
+                  trackColor="#F4F1EB"
+                  thumbColor="#111215"
+                  textColor="#525660"
+                  activeTextColor="#F4F1EB"
+                  size="sm"
+                  radius={10}
+                  inset={2}
+                  equalSlots
+                  stretch={50}
+                  speed={1.2}
+                  className="w-full sm:w-auto"
+                  aria-label="Filter Persetujuan Lomba"
+                />
               </div>
             </div>
 
@@ -674,8 +899,10 @@ export function Dashboard() {
               </div>
 
               {loadingTx ? (
-                <div className="p-8 text-center text-xs text-[#7E8492]">
-                  Memuat data pengajuan dana lomba...
+                <div className="divide-y divide-[#111215]/6">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <DashboardRowSkeleton key={i} />
+                  ))}
                 </div>
               ) : filteredCompetitionTx.length === 0 ? (
                 <div className="p-10 text-center text-xs text-[#7E8492] space-y-1">
@@ -978,8 +1205,10 @@ export function Dashboard() {
               </div>
 
               {loadingTokens ? (
-                <div className="p-8 text-center text-xs text-[#7E8492]">
-                  Memuat daftar token...
+                <div className="divide-y divide-[#111215]/6">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <TokenRowSkeleton key={i} />
+                  ))}
                 </div>
               ) : tokens.length === 0 ? (
                 <div className="p-8 text-center text-xs text-[#7E8492]">
@@ -1185,6 +1414,497 @@ export function Dashboard() {
         </div>
       )}
 
+      {/* TAB: KELOLA PRESTASI (GOD ADMIN & SUPER ADMIN) */}
+      {canManageContent && activeTab === 'achievements' && (
+        <div className="space-y-6 mb-8">
+          <div className="bg-white rounded-none border border-[#111215]/8 p-5 sm:p-7 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-[#111215]/8">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <Award className="w-4 h-4 text-[#111215]" />
+                  <h2 className="text-lg font-semibold tracking-tight text-[#111215]">
+                    Manajemen Hall of Fame & Prestasi
+                  </h2>
+                </div>
+                <p className="text-xs text-[#525660] mt-1">
+                  Otoritas eksklusif GOD-ADMIN & SUPER ADMIN untuk menerbitkan atau menghapus rekam jejak kejuaraan pada rute publik /achievements.
+                </p>
+              </div>
+              <span className="self-start sm:self-auto px-2 py-0.5 rounded-none text-[10px] font-semibold bg-[#111215] text-[#F4F1EB]">
+                {achievementsList.length} Prestasi Terdaftar
+              </span>
+            </div>
+
+            {/* Notification messages */}
+            {achSuccess && (
+              <div className="mb-6 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium rounded-none flex items-center justify-between">
+                <span>{achSuccess}</span>
+                <button type="button" onClick={() => setAchSuccess('')} className="p-1 cursor-pointer">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+            {achError && (
+              <div className="mb-6 p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium rounded-none flex items-center justify-between">
+                <span>{achError}</span>
+                <button type="button" onClick={() => setAchError('')} className="p-1 cursor-pointer">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Form Tambah Prestasi */}
+            <form onSubmit={handleCreateAchievement} className="space-y-4 mb-8 bg-[#F4F1EB]/40 p-4 sm:p-6 border border-[#111215]/10 rounded-none">
+              <h3 className="text-sm font-semibold text-[#111215] flex items-center gap-1.5">
+                <Plus className="w-4 h-4 text-[#6456EB]" />
+                <span>Tambah Rekam Jejak Prestasi Baru</span>
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div>
+                  <label className="block text-[11px] font-medium text-[#525660] mb-1">
+                    Judul Prestasi / Divisi <span className="text-rose-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={achTitle}
+                    onChange={(e) => setAchTitle(e.target.value)}
+                    placeholder="e.g. Juara 1 Divisi Piranti Lunak"
+                    required
+                    className="w-full p-2.5 bg-white border border-[#111215]/15 rounded-none text-xs text-[#111215] focus:outline-none focus:border-[#6456EB]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-medium text-[#525660] mb-1">
+                    Nama Kompetisi / Event <span className="text-rose-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={achEventName}
+                    onChange={(e) => setAchEventName(e.target.value)}
+                    placeholder="e.g. GEMASTIK XVII 2024"
+                    required
+                    className="w-full p-2.5 bg-white border border-[#111215]/15 rounded-none text-xs text-[#111215] focus:outline-none focus:border-[#6456EB]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-medium text-[#525660] mb-1">
+                    Tingkat Kejuaraan (Tier)
+                  </label>
+                  <select
+                    value={achTier}
+                    onChange={(e) => setAchTier(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-[#111215]/15 rounded-none text-xs text-[#111215] focus:outline-none focus:border-[#6456EB]"
+                  >
+                    <option value="Nasional">Nasional</option>
+                    <option value="Internasional">Internasional</option>
+                    <option value="Regional / Kampus">Regional / Kampus</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-medium text-[#525660] mb-1">
+                    Peringkat / Medali
+                  </label>
+                  <input
+                    type="text"
+                    value={achRank}
+                    onChange={(e) => setAchRank(e.target.value)}
+                    placeholder="e.g. Juara 1 (Medali Emas)"
+                    className="w-full p-2.5 bg-white border border-[#111215]/15 rounded-none text-xs text-[#111215] focus:outline-none focus:border-[#6456EB]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-medium text-[#525660] mb-1">
+                    Bulan & Tahun Perolehan
+                  </label>
+                  <input
+                    type="text"
+                    value={achAwardDate}
+                    onChange={(e) => setAchAwardDate(e.target.value)}
+                    placeholder="e.g. September 2024"
+                    className="w-full p-2.5 bg-white border border-[#111215]/15 rounded-none text-xs text-[#111215] focus:outline-none focus:border-[#6456EB]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-medium text-[#525660] mb-1">
+                    Nama Tim Delegasi
+                  </label>
+                  <input
+                    type="text"
+                    value={achTeamName}
+                    onChange={(e) => setAchTeamName(e.target.value)}
+                    placeholder="e.g. NCD Alpha Core"
+                    className="w-full p-2.5 bg-white border border-[#111215]/15 rounded-none text-xs text-[#111215] focus:outline-none focus:border-[#6456EB]"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-medium text-[#525660] mb-1">
+                    Anggota Tim (Pisahkan dengan koma)
+                  </label>
+                  <input
+                    type="text"
+                    value={achMembers}
+                    onChange={(e) => setAchMembers(e.target.value)}
+                    placeholder="e.g. Mirza Danisywar, Rianszzz, Rafly Syahputra"
+                    className="w-full p-2.5 bg-white border border-[#111215]/15 rounded-none text-xs text-[#111215] focus:outline-none focus:border-[#6456EB]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-medium text-[#525660] mb-1">
+                    Judul Karya / Proyek (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    value={achProjectTitle}
+                    onChange={(e) => setAchProjectTitle(e.target.value)}
+                    placeholder="e.g. OpenKas: Realtime Public Ledger"
+                    className="w-full p-2.5 bg-white border border-[#111215]/15 rounded-none text-xs text-[#111215] focus:outline-none focus:border-[#6456EB]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-medium text-[#525660] mb-1">
+                    Tautan Sertifikat / Bukti (Opsional)
+                  </label>
+                  <input
+                    type="url"
+                    value={achCertUrl}
+                    onChange={(e) => setAchCertUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full p-2.5 bg-white border border-[#111215]/15 rounded-none text-xs text-[#111215] focus:outline-none focus:border-[#6456EB]"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-medium text-[#525660] mb-1">
+                    Deskripsi Ringkas Pencapaian
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={achDescription}
+                    onChange={(e) => setAchDescription(e.target.value)}
+                    placeholder="Penjelasan ringkas kontribusi teknis dan prestasi..."
+                    className="w-full p-2.5 bg-white border border-[#111215]/15 rounded-none text-xs text-[#111215] focus:outline-none focus:border-[#6456EB]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  disabled={createAchievementMutation.isPending}
+                  className="px-5 py-2.5 bg-[#111215] text-[#F4F1EB] hover:bg-[#6456EB] transition-colors rounded-none text-xs font-semibold cursor-pointer disabled:opacity-50"
+                >
+                  {createAchievementMutation.isPending ? 'Menerbitkan...' : 'Terbitkan Prestasi'}
+                </button>
+              </div>
+            </form>
+
+            {/* List Prestasi */}
+            <div>
+              <h3 className="text-sm font-semibold text-[#111215] mb-3">
+                Daftar Prestasi ({achievementsList.length})
+              </h3>
+              {isLoadingAchList ? (
+                <div className="space-y-3">
+                  <DashboardRowSkeleton />
+                  <DashboardRowSkeleton />
+                </div>
+              ) : achievementsList.length === 0 ? (
+                <div className="p-8 text-center border border-dashed border-[#111215]/15 rounded-none bg-[#F4F1EB]/30">
+                  <p className="text-xs font-semibold text-[#111215]">Belum ada prestasi terdaftar</p>
+                  <p className="text-[11px] text-[#525660] mt-1">
+                    Gunakan formulir di atas untuk menerbitkan rekam jejak prestasi kejuaraan resmi.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {achievementsList.map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-4 bg-white border border-[#111215]/10 rounded-none flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-semibold uppercase px-2 py-0.5 bg-[#6456EB]/10 text-[#6456EB] rounded-none">
+                            {item.tier}
+                          </span>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 bg-[#111215]/6 text-[#111215] rounded-none">
+                            {item.rank}
+                          </span>
+                          <span className="text-[11px] text-[#525660]">
+                            {item.award_date || item.date}
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-semibold text-[#111215]">{item.title}</h4>
+                        <p className="text-xs text-[#525660]">
+                          {item.event_name || item.competition}
+                          {item.team_name ? ` · Tim ${item.team_name}` : ''}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                        {item.certificate_url && (
+                          <a
+                            href={item.certificate_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 border border-[#111215]/15 text-[#525660] hover:text-[#111215] rounded-none text-xs flex items-center gap-1"
+                            title="Buka sertifikat"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`Hapus prestasi "${item.title}"?`)) {
+                              deleteAchievementMutation.mutate(item.id)
+                            }
+                          }}
+                          disabled={deleteAchievementMutation.isPending}
+                          className="px-3 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-none text-xs font-medium flex items-center gap-1 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Hapus</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: KELOLA WARTA & BERITA (GOD ADMIN & SUPER ADMIN) */}
+      {canManageContent && activeTab === 'news' && (
+        <div className="space-y-6 mb-8">
+          <div className="bg-white rounded-none border border-[#111215]/8 p-5 sm:p-7 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-[#111215]/8">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <Newspaper className="w-4 h-4 text-[#111215]" />
+                  <h2 className="text-lg font-semibold tracking-tight text-[#111215]">
+                    Manajemen Publikasi Warta & Berita
+                  </h2>
+                </div>
+                <p className="text-xs text-[#525660] mt-1">
+                  Otoritas eksklusif GOD-ADMIN & SUPER ADMIN untuk menerbitkan atau menghapus artikel pada rute publik /news.
+                </p>
+              </div>
+              <span className="self-start sm:self-auto px-2 py-0.5 rounded-none text-[10px] font-semibold bg-[#111215] text-[#F4F1EB]">
+                {newsList.length} Warta Diterbitkan
+              </span>
+            </div>
+
+            {/* Notification messages */}
+            {newsSuccess && (
+              <div className="mb-6 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium rounded-none flex items-center justify-between">
+                <span>{newsSuccess}</span>
+                <button type="button" onClick={() => setNewsSuccess('')} className="p-1 cursor-pointer">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+            {newsError && (
+              <div className="mb-6 p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium rounded-none flex items-center justify-between">
+                <span>{newsError}</span>
+                <button type="button" onClick={() => setNewsError('')} className="p-1 cursor-pointer">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Form Tambah Warta */}
+            <form onSubmit={handleCreateNews} className="space-y-4 mb-8 bg-[#F4F1EB]/40 p-4 sm:p-6 border border-[#111215]/10 rounded-none">
+              <h3 className="text-sm font-semibold text-[#111215] flex items-center gap-1.5">
+                <Plus className="w-4 h-4 text-[#6456EB]" />
+                <span>Terbitkan Artikel Warta Baru</span>
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-medium text-[#525660] mb-1">
+                    Judul Warta / Berita <span className="text-rose-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={newsTitle}
+                    onChange={(e) => setNewsTitle(e.target.value)}
+                    placeholder="e.g. Pembukaan Pendaftaran Rekrutmen Calon Anggota Batch 2026"
+                    required
+                    className="w-full p-2.5 bg-white border border-[#111215]/15 rounded-none text-xs text-[#111215] focus:outline-none focus:border-[#6456EB]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-medium text-[#525660] mb-1">
+                    Kategori Publikasi
+                  </label>
+                  <select
+                    value={newsCategory}
+                    onChange={(e) => setNewsCategory(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-[#111215]/15 rounded-none text-xs text-[#111215] focus:outline-none focus:border-[#6456EB]"
+                  >
+                    <option value="Pengumuman">Pengumuman</option>
+                    <option value="Rilis Produk">Rilis Produk</option>
+                    <option value="Riset & Edukasi">Riset & Edukasi</option>
+                    <option value="Kegiatan Komunitas">Kegiatan Komunitas</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-medium text-[#525660] mb-1">
+                    Nama Penulis
+                  </label>
+                  <input
+                    type="text"
+                    value={newsAuthor}
+                    onChange={(e) => setNewsAuthor(e.target.value)}
+                    placeholder={`e.g. ${currentUser.name}`}
+                    className="w-full p-2.5 bg-white border border-[#111215]/15 rounded-none text-xs text-[#111215] focus:outline-none focus:border-[#6456EB]"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-medium text-[#525660] mb-1">
+                    Tagar / Topik (Pisahkan dengan koma)
+                  </label>
+                  <input
+                    type="text"
+                    value={newsTags}
+                    onChange={(e) => setNewsTags(e.target.value)}
+                    placeholder="e.g. Rekrutmen, Onboarding, Batch 2026"
+                    className="w-full p-2.5 bg-white border border-[#111215]/15 rounded-none text-xs text-[#111215] focus:outline-none focus:border-[#6456EB]"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-[#111215]">
+                    <input
+                      type="checkbox"
+                      checked={newsIsPinned}
+                      onChange={(e) => setNewsIsPinned(e.target.checked)}
+                      className="rounded-none border-[#111215]/20 text-[#111215] focus:ring-0 cursor-pointer"
+                    />
+                    <span>Sematkan warta ini pada sorotan paling atas (Pinned Article)</span>
+                  </label>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-medium text-[#525660] mb-1">
+                    Rangkuman Singkat (Tampil pada kartu tinjauan) <span className="text-rose-600">*</span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={newsSummary}
+                    onChange={(e) => setNewsSummary(e.target.value)}
+                    placeholder="Rangkuman artikel dalam 1-2 kalimat..."
+                    required
+                    className="w-full p-2.5 bg-white border border-[#111215]/15 rounded-none text-xs text-[#111215] focus:outline-none focus:border-[#6456EB]"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-medium text-[#525660] mb-1">
+                    Konten Lengkap (Mendukung format Markdown)
+                  </label>
+                  <textarea
+                    rows={6}
+                    value={newsContentMD}
+                    onChange={(e) => setNewsContentMD(e.target.value)}
+                    placeholder="### Judul Bab&#10;&#10;Tuliskan isi warta atau siaran pengumuman lengkap..."
+                    className="w-full p-2.5 bg-white border border-[#111215]/15 rounded-none text-xs text-[#111215] font-mono focus:outline-none focus:border-[#6456EB]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  disabled={createPostMutation.isPending}
+                  className="px-5 py-2.5 bg-[#111215] text-[#F4F1EB] hover:bg-[#6456EB] transition-colors rounded-none text-xs font-semibold cursor-pointer disabled:opacity-50"
+                >
+                  {createPostMutation.isPending ? 'Menerbitkan...' : 'Terbitkan Warta'}
+                </button>
+              </div>
+            </form>
+
+            {/* List Warta */}
+            <div>
+              <h3 className="text-sm font-semibold text-[#111215] mb-3">
+                Daftar Warta Diterbitkan ({newsList.length})
+              </h3>
+              {isLoadingNewsList ? (
+                <div className="space-y-3">
+                  <DashboardRowSkeleton />
+                  <DashboardRowSkeleton />
+                </div>
+              ) : newsList.length === 0 ? (
+                <div className="p-8 text-center border border-dashed border-[#111215]/15 rounded-none bg-[#F4F1EB]/30">
+                  <p className="text-xs font-semibold text-[#111215]">Belum ada warta diterbitkan</p>
+                  <p className="text-[11px] text-[#525660] mt-1">
+                    Gunakan formulir di atas untuk menerbitkan artikel warta atau rilis resmi NCD.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {newsList.map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-4 bg-white border border-[#111215]/10 rounded-none flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-semibold uppercase px-2 py-0.5 bg-[#111215]/6 text-[#111215] rounded-none">
+                            {item.category}
+                          </span>
+                          {item.is_pinned && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 bg-[#6456EB]/10 text-[#6456EB] rounded-none">
+                              Disorot
+                            </span>
+                          )}
+                          <span className="text-[11px] text-[#525660]">
+                            {item.author_name}
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-semibold text-[#111215]">{item.title}</h4>
+                        <p className="text-xs text-[#525660] line-clamp-1">{item.summary}</p>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`Hapus warta "${item.title}"?`)) {
+                              deletePostMutation.mutate(item.id)
+                            }
+                          }}
+                          disabled={deletePostMutation.isPending}
+                          className="px-3 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-none text-xs font-medium flex items-center gap-1 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Hapus</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* TAB: ARUS KEUANGAN & BUKTI NOTA (SEE-ALL AUDIT FOR GOD ADMIN & CHAIRMAN) */}
       {(activeTab === 'finance' || activeTab === 'overview') && (
         <div className="space-y-6 mb-8">
@@ -1204,25 +1924,29 @@ export function Dashboard() {
                 </p>
               </div>
 
-              {/* Filter */}
-              <div className="flex items-center space-x-1 bg-[#F4F1EB] p-1 rounded-xl shrink-0 w-full sm:w-auto">
-                {(['ALL', 'INCOME', 'EXPENSE'] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => setTxFilter(mode)}
-                    className={`flex-1 sm:flex-initial px-3 py-2 min-h-[40px] rounded-lg text-xs font-medium transition-all text-center cursor-pointer ${
-                      txFilter === mode
-                        ? 'bg-[#111215] text-[#F4F1EB]'
-                        : 'text-[#525660] hover:text-[#111215]'
-                    }`}
-                  >
-                    {mode === 'ALL'
-                      ? 'Semua'
-                      : mode === 'INCOME'
-                      ? 'Pemasukan'
-                      : 'Pengeluaran'}
-                  </button>
-                ))}
+              {/* Filter: React Bits RubberSegment */}
+              <div className="w-full sm:w-auto shrink-0 overflow-hidden">
+                <RubberSegment
+                  items={[
+                    { value: 'ALL', label: 'Semua' },
+                    { value: 'INCOME', label: 'Pemasukan' },
+                    { value: 'EXPENSE', label: 'Pengeluaran' },
+                  ]}
+                  value={txFilter}
+                  onChange={(mode) => setTxFilter(mode as typeof txFilter)}
+                  trackColor="#F4F1EB"
+                  thumbColor="#111215"
+                  textColor="#525660"
+                  activeTextColor="#F4F1EB"
+                  size="sm"
+                  radius={10}
+                  inset={2}
+                  equalSlots
+                  stretch={50}
+                  speed={1.2}
+                  className="w-full sm:w-auto"
+                  aria-label="Filter Aliran Kas"
+                />
               </div>
             </div>
 
@@ -1237,8 +1961,10 @@ export function Dashboard() {
               </div>
 
               {loadingTx ? (
-                <div className="p-8 text-center text-xs text-[#7E8492]">
-                  Memuat data arus kas...
+                <div className="divide-y divide-[#111215]/6">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <DashboardRowSkeleton key={i} />
+                  ))}
                 </div>
               ) : filteredTransactions.length === 0 ? (
                 <div className="p-8 text-center text-xs text-[#7E8492]">
@@ -1612,17 +2338,26 @@ export function Dashboard() {
       )}
 
       {/* MODAL: BUKTI NOTA VIEWER */}
-      {activeReceipt && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-[#111215]/60 flex items-center justify-center p-4 sm:p-6"
-          onClick={() => setActiveReceipt(null)}
-        >
-          <div
-            className="bg-white rounded-2xl border border-[#111215]/10 max-w-lg w-full max-h-[90vh] flex flex-col shadow-xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {activeReceipt && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 bg-[#111215]/60 flex items-center justify-center p-4 sm:p-6"
+            onClick={() => setActiveReceipt(null)}
           >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="bg-white rounded-2xl border border-[#111215]/10 max-w-lg w-full max-h-[90vh] flex flex-col shadow-xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
             {/* Header */}
             <div className="p-4 sm:p-5 border-b border-[#111215]/8 flex items-center justify-between">
               <div>
@@ -1774,26 +2509,36 @@ export function Dashboard() {
                 Tutup
               </button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+    </AnimatePresence>
 
       {/* MODAL: TOLAK / VOID TRANSAKSI PENGAJUAN LOMBA */}
-      {rejectModalTx && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-[#111215]/60 flex items-center justify-center p-4 sm:p-6"
-          onClick={() => {
-            setRejectModalTx(null)
-            setRejectReason('')
-            setRejectError('')
-          }}
-        >
-          <div
-            className="bg-white rounded-2xl border border-[#111215]/10 max-w-md w-full p-5 sm:p-6 shadow-xl space-y-4"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {rejectModalTx && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 bg-[#111215]/60 flex items-center justify-center p-4 sm:p-6"
+            onClick={() => {
+              setRejectModalTx(null)
+              setRejectReason('')
+              setRejectError('')
+            }}
           >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="bg-white rounded-2xl border border-[#111215]/10 max-w-md w-full p-5 sm:p-6 shadow-xl space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
             <div className="flex items-center justify-between pb-3 border-b border-[#111215]/8">
               <div>
                 <h3 className="font-semibold text-sm text-rose-800 flex items-center space-x-1.5">
@@ -1868,22 +2613,32 @@ export function Dashboard() {
                 {voidTxMutation.isPending ? 'Memproses...' : 'Konfirmasi Tolak'}
               </button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+    </AnimatePresence>
 
       {/* MODAL: EDIT TOKEN KEY */}
-      {editingTokenItem && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-[#111215]/60 flex items-center justify-center p-4 sm:p-6"
-          onClick={() => setEditingTokenItem(null)}
-        >
-          <div
-            className="bg-white rounded-2xl border border-[#111215]/10 max-w-md w-full p-5 sm:p-6 shadow-xl space-y-4"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {editingTokenItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 bg-[#111215]/60 flex items-center justify-center p-4 sm:p-6"
+            onClick={() => setEditingTokenItem(null)}
           >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="bg-white rounded-2xl border border-[#111215]/10 max-w-md w-full p-5 sm:p-6 shadow-xl space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
             <div className="flex items-center justify-between pb-3 border-b border-[#111215]/8">
               <div>
                 <h3 className="font-semibold text-sm text-[#111215]">
@@ -1954,9 +2709,10 @@ export function Dashboard() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+    </AnimatePresence>
     </div>
   )
 }

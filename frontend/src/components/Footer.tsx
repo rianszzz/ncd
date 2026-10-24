@@ -22,7 +22,7 @@ export function Footer() {
         </div>
 
         <div>
-          <h4 className="font-semibold text-[11px] tracking-wider text-[#111215] uppercase mb-3">Navigasi</h4>
+          <p className="font-semibold text-[11px] tracking-wider text-[#111215] uppercase mb-3">Navigasi</p>
           <ul className="space-y-2 text-xs">
             <li><Link to="/" className="hover:text-[#111215] transition-colors">Beranda</Link></li>
             <li><Link to="/about" className="hover:text-[#111215] transition-colors">Tentang NCD & Visi</Link></li>
@@ -34,7 +34,7 @@ export function Footer() {
         </div>
 
         <div>
-          <h4 className="font-semibold text-[11px] tracking-wider text-[#111215] uppercase mb-3">Transparansi & Hukum</h4>
+          <p className="font-semibold text-[11px] tracking-wider text-[#111215] uppercase mb-3">Transparansi & Hukum</p>
           <ul className="space-y-2 text-xs">
             <li><Link to="/terms" className="hover:text-[#111215] transition-colors">Syarat & Ketentuan (T&C)</Link></li>
             <li><Link to="/privacy" className="hover:text-[#111215] transition-colors">Kebijakan Privasi (UU PDP)</Link></li>
@@ -43,7 +43,7 @@ export function Footer() {
         </div>
 
         <div>
-          <h4 className="font-semibold text-[11px] tracking-wider text-[#111215] uppercase mb-3">Naungan & Kontak</h4>
+          <p className="font-semibold text-[11px] tracking-wider text-[#111215] uppercase mb-3">Naungan & Kontak</p>
           <p className="text-xs text-[#525660] leading-relaxed">
             NEXA Tech Labs Ecosystem<br />
             Universitas Gunadarma, Indonesia<br />

@@ -1,21 +1,21 @@
 export function ProjectSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-[#111215]/8 overflow-hidden shadow-2xs flex flex-col animate-pulse">
-      <div className="p-5 border-b border-[#111215]/8 flex items-center justify-between bg-[#F4F1EB]/40">
-        <div className="w-10 h-10 rounded-xl bg-[#111215]/10" />
-        <div className="w-16 h-5 rounded-md bg-[#111215]/10" />
+    <div className="min-h-[380px] sm:min-h-[410px] w-full rounded-none border border-[#111215]/20 bg-[#111215] shadow-xs flex flex-col justify-between p-5 animate-pulse">
+      <div className="flex items-center justify-between">
+        <div className="w-16 h-4 rounded-none bg-white/10" />
+        <div className="w-14 h-4 rounded-none bg-white/10" />
       </div>
-      <div className="p-6 flex-1 flex flex-col">
-        <div className="flex gap-1.5 mb-3">
-          <div className="w-12 h-5 rounded-md bg-[#111215]/8" />
-          <div className="w-16 h-5 rounded-md bg-[#111215]/8" />
+      <div>
+        <div className="flex gap-1.5 mb-2.5">
+          <div className="w-12 h-3.5 rounded-none bg-white/10" />
+          <div className="w-16 h-3.5 rounded-none bg-white/10" />
         </div>
-        <div className="w-3/4 h-5 rounded-md bg-[#111215]/10 mb-2" />
-        <div className="w-full h-3 rounded bg-[#111215]/6 mb-1.5" />
-        <div className="w-4/5 h-3 rounded bg-[#111215]/6 mb-4 flex-1" />
-        <div className="pt-4 border-t border-[#111215]/8 flex items-center justify-between">
-          <div className="w-20 h-4 rounded bg-[#111215]/8" />
-          <div className="w-14 h-4 rounded bg-[#111215]/8" />
+        <div className="w-3/4 h-5 rounded-none bg-white/15 mb-2" />
+        <div className="w-full h-3 rounded-none bg-white/10 mb-1" />
+        <div className="w-4/5 h-3 rounded-none bg-white/10 mb-4" />
+        <div className="pt-3 border-t border-white/10 flex items-center justify-between">
+          <div className="w-20 h-3 rounded-none bg-white/10" />
+          <div className="w-14 h-3 rounded-none bg-white/10" />
         </div>
       </div>
     </div>
@@ -24,17 +24,9 @@ export function ProjectSkeleton() {
 
 export function MemberSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-[#111215]/8 p-6 shadow-2xs flex flex-col items-center text-center animate-pulse">
-      <div className="w-16 h-16 rounded-2xl bg-[#111215]/10 mb-4" />
-      <div className="w-20 h-4 rounded-md bg-[#111215]/8 mb-2" />
-      <div className="w-32 h-5 rounded-md bg-[#111215]/10 mb-1" />
-      <div className="w-24 h-3 rounded bg-[#111215]/6 mb-3" />
-      <div className="w-full h-3 rounded bg-[#111215]/6 mb-1.5" />
-      <div className="w-5/6 h-3 rounded bg-[#111215]/6 mb-4 flex-1" />
-      <div className="w-full pt-4 border-t border-[#111215]/8 flex items-center justify-center space-x-3">
-        <div className="w-4 h-4 rounded-full bg-[#111215]/10" />
-        <div className="w-4 h-4 rounded-full bg-[#111215]/10" />
-      </div>
+    <div className="bg-[#111215]/5 rounded-[20px] border border-[#111215]/8 h-[420px] p-6 shadow-2xs flex flex-col justify-end animate-pulse">
+      <div className="w-24 h-4 bg-[#111215]/10 mb-2 rounded" />
+      <div className="w-32 h-3.5 bg-[#111215]/8 rounded" />
     </div>
   )
 }
@@ -103,6 +95,68 @@ export function AchievementSkeleton() {
       <div className="pt-4 border-t border-[#111215]/8 flex items-center justify-between">
         <div className="w-32 h-4 rounded bg-[#111215]/8" />
         <div className="w-20 h-4 rounded bg-[#111215]/8" />
+      </div>
+    </div>
+  )
+}
+
+export function HistorySkeleton() {
+  return (
+    <div className="bg-white rounded-2xl border border-[#111215]/8 p-5 sm:p-6 shadow-2xs animate-pulse flex flex-col sm:flex-row gap-4 sm:gap-6">
+      <div className="sm:w-36 shrink-0">
+        <div className="w-24 h-4 rounded bg-[#111215]/10" />
+      </div>
+      <div className="flex-1 space-y-2">
+        <div className="w-48 h-5 rounded bg-[#111215]/10" />
+        <div className="w-full h-4 rounded bg-[#111215]/6" />
+      </div>
+    </div>
+  )
+}
+
+export function DashboardRowSkeleton() {
+  return (
+    <div className="p-4 border-b border-[#111215]/6 animate-pulse grid grid-cols-12 gap-3 items-center">
+      <div className="col-span-3 space-y-1.5">
+        <div className="w-24 h-3.5 rounded bg-[#111215]/10" />
+        <div className="w-16 h-2.5 rounded bg-[#111215]/6" />
+      </div>
+      <div className="col-span-4 space-y-1.5">
+        <div className="w-44 h-3.5 rounded bg-[#111215]/10" />
+        <div className="w-28 h-2.5 rounded bg-[#111215]/6" />
+      </div>
+      <div className="col-span-2">
+        <div className="w-20 h-4 rounded bg-[#111215]/10" />
+      </div>
+      <div className="col-span-1">
+        <div className="w-14 h-5 rounded bg-[#111215]/8" />
+      </div>
+      <div className="col-span-2 flex justify-end">
+        <div className="w-16 h-7 rounded-lg bg-[#111215]/8" />
+      </div>
+    </div>
+  )
+}
+
+export function TokenRowSkeleton() {
+  return (
+    <div className="p-4 border-b border-[#111215]/6 animate-pulse grid grid-cols-12 gap-3 items-center">
+      <div className="col-span-4 space-y-1.5">
+        <div className="w-32 h-4 rounded bg-[#111215]/10" />
+      </div>
+      <div className="col-span-3 space-y-1.5">
+        <div className="w-28 h-3.5 rounded bg-[#111215]/10" />
+        <div className="w-20 h-2.5 rounded bg-[#111215]/6" />
+      </div>
+      <div className="col-span-2">
+        <div className="w-20 h-5 rounded bg-[#111215]/8" />
+      </div>
+      <div className="col-span-1">
+        <div className="w-12 h-5 rounded bg-[#111215]/8" />
+      </div>
+      <div className="col-span-2 flex justify-end space-x-1.5">
+        <div className="w-7 h-7 rounded-lg bg-[#111215]/8" />
+        <div className="w-7 h-7 rounded-lg bg-[#111215]/8" />
       </div>
     </div>
   )

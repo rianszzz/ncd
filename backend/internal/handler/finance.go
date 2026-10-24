@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -52,6 +53,47 @@ var (
 	txLock       sync.RWMutex
 	transactions = []TransactionDTO{}
 )
+
+func getTransactionsFilePath() string {
+	if _, err := os.Stat("backend/data"); err == nil {
+		return "backend/data/transactions.json"
+	}
+	if _, err := os.Stat("data"); err == nil {
+		return "data/transactions.json"
+	}
+	if _, err := os.Stat("../../data"); err == nil {
+		return "../../data/transactions.json"
+	}
+	return "data/transactions.json"
+}
+
+func saveTransactionsToDiskLocked() {
+	filePath := getTransactionsFilePath()
+	bytes, err := json.MarshalIndent(transactions, "", "  ")
+	if err == nil {
+		_ = os.WriteFile(filePath, bytes, 0644)
+	}
+}
+
+func loadTransactionsFromDisk() {
+	txLock.Lock()
+	defer txLock.Unlock()
+
+	filePath := getTransactionsFilePath()
+	bytes, err := os.ReadFile(filePath)
+	if err == nil && len(bytes) > 0 {
+		var loaded []TransactionDTO
+		if err := json.Unmarshal(bytes, &loaded); err == nil {
+			transactions = loaded
+			return
+		}
+	}
+	saveTransactionsToDiskLocked()
+}
+
+func init() {
+	loadTransactionsFromDisk()
+}
 
 func GetCashSummary(w http.ResponseWriter, r *http.Request) {
 	if Repo != nil {
@@ -191,6 +233,7 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	transactions = append([]TransactionDTO{newTx}, transactions...)
+	saveTransactionsToDiskLocked()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -223,6 +266,7 @@ func VerifyTransaction(w http.ResponseWriter, r *http.Request) {
 				transactions[i].VerifierID = "u-sri"
 			}
 			transactions[i].VerifiedAt = time.Now().Format("2006-01-02 15:04 WIB")
+			saveTransactionsToDiskLocked()
 
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(transactions[i])
@@ -255,6 +299,7 @@ func VoidTransaction(w http.ResponseWriter, r *http.Request) {
 			} else {
 				transactions[i].VoidByName = "Mirza Danisywar (Chairman)"
 			}
+			saveTransactionsToDiskLocked()
 
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(transactions[i])

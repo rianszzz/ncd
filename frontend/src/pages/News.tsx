@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { motion, useReducedMotion } from 'motion/react'
 import {
   ArrowRight,
   Share2,
@@ -60,7 +61,7 @@ function renderInlineFormatting(text: string) {
       return (
         <code
           key={i}
-          className="px-1.5 py-0.5 rounded bg-[#111215]/6 font-mono text-xs text-[#6456EB]"
+          className="px-1.5 py-0.5 rounded-none bg-[#111215]/6 font-mono text-xs text-[#6456EB]"
         >
           {part.slice(1, -1)}
         </code>
@@ -104,7 +105,7 @@ const MarkdownContent = React.memo(function MarkdownContent({ content }: { conte
         return (
           <blockquote
             key={idx}
-            className="p-3.5 my-3 rounded-xl bg-[#111215]/5 border-l-4 border-[#6456EB] font-mono text-xs md:text-sm text-[#111215] overflow-x-auto"
+            className="p-3.5 my-3 rounded-none bg-[#111215]/5 border-l-4 border-[#6456EB] font-mono text-xs md:text-sm text-[#111215] overflow-x-auto"
           >
             {trimmed.replace('> ', '')}
           </blockquote>
@@ -145,6 +146,8 @@ const MarkdownContent = React.memo(function MarkdownContent({ content }: { conte
 })
 
 export function News() {
+  const shouldReduceMotion = useReducedMotion()
+  const ease = [0.22, 1, 0.36, 1] as const
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('ALL')
   const [selectedPost, setSelectedPost] = useState<Post | null>(null)
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
@@ -213,7 +216,13 @@ export function News() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12 md:py-20 text-left">
-      <div className="mb-10 md:mb-12">
+      <motion.div
+        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: shouldReduceMotion ? 0 : 0.5, ease }}
+        className="mb-10 md:mb-12"
+      >
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-[-0.03em] text-[#111215]">
           Portal Warta & Berita
         </h1>
@@ -234,7 +243,7 @@ export function News() {
                 key={cat}
                 type="button"
                 onClick={() => setActiveCategory(cat)}
-                className={`px-3 py-2 min-h-[40px] rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer ${
+                className={`px-3 py-2 min-h-[40px] rounded-none text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer ${
                   isActive
                     ? 'bg-[#111215] text-[#F4F1EB]'
                     : 'text-[#525660] hover:text-[#111215] hover:bg-[#111215]/4'
@@ -248,18 +257,18 @@ export function News() {
             )
           })}
         </div>
-      </div>
+      </motion.div>
 
       {isLoading && (
         <div className="space-y-8">
-          <div className="w-full h-64 rounded-2xl bg-white border border-[#111215]/8 p-8 animate-pulse flex flex-col justify-between">
+          <div className="w-full h-64 rounded-none bg-white border border-[#111215]/8 p-8 animate-pulse flex flex-col justify-between">
             <div className="space-y-3">
-              <div className="w-28 h-6 rounded-xl bg-[#111215]/8" />
-              <div className="w-2/3 h-8 rounded-lg bg-[#111215]/10" />
-              <div className="w-full h-4 rounded bg-[#111215]/6" />
-              <div className="w-4/5 h-4 rounded bg-[#111215]/6" />
+              <div className="w-28 h-6 rounded-none bg-[#111215]/8" />
+              <div className="w-2/3 h-8 rounded-none bg-[#111215]/10" />
+              <div className="w-full h-4 rounded-none bg-[#111215]/6" />
+              <div className="w-4/5 h-4 rounded-none bg-[#111215]/6" />
             </div>
-            <div className="w-36 h-5 rounded bg-[#111215]/8" />
+            <div className="w-36 h-5 rounded-none bg-[#111215]/8" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <NewsCardSkeleton />
@@ -270,7 +279,7 @@ export function News() {
       )}
 
       {isError && !isLoading && (
-        <div className="p-8 rounded-2xl bg-white border border-rose-200 text-center max-w-lg mx-auto">
+        <div className="p-8 rounded-none bg-white border border-rose-200 text-center max-w-lg mx-auto">
           <p className="text-sm font-semibold text-rose-600 mb-1">Koneksi Terputus atau Lambat</p>
           <p className="text-xs text-[#525660] mb-4">
             Terjadi kendala saat mengambil data publikasi. Periksa koneksi Anda dan coba kembali.
@@ -279,7 +288,7 @@ export function News() {
             type="button"
             onClick={() => refetch()}
             disabled={isFetching}
-            className="inline-flex items-center gap-2 px-4 py-2 min-h-[40px] rounded-xl bg-[#111215] text-[#F4F1EB] text-xs font-semibold hover:bg-[#6456EB] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 min-h-[40px] rounded-none bg-[#111215] text-[#F4F1EB] text-xs font-semibold hover:bg-[#6456EB] transition-colors cursor-pointer"
           >
             <RotateCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
             <span>{isFetching ? 'Memuat Ulang...' : 'Coba Lagi'}</span>
@@ -292,7 +301,7 @@ export function News() {
           {pinnedPost && (
             <article
               onClick={() => setSelectedPost(pinnedPost)}
-              className="bg-white rounded-2xl border border-[#111215]/8 p-6 md:p-8 shadow-2xs hover:border-[#111215]/20 hover:shadow-xs transition-all cursor-pointer group"
+              className="bg-white rounded-none border border-[#111215]/8 p-6 md:p-8 shadow-2xs hover:border-[#111215]/20 hover:shadow-xs transition-all cursor-pointer group"
             >
               <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#111215]/6 text-xs">
                 <span className="font-semibold uppercase tracking-wider text-[11px] text-[#6456EB]">
@@ -323,7 +332,7 @@ export function News() {
                   <button
                     type="button"
                     onClick={(e) => handleCopyLink(pinnedPost, e)}
-                    className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[#525660] hover:bg-[#111215]/5 hover:text-[#111215] transition-colors cursor-pointer"
+                    className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-none text-[#525660] hover:bg-[#111215]/5 hover:text-[#111215] transition-colors cursor-pointer"
                     title="Salin tautan artikel"
                   >
                     {copiedSlug === pinnedPost.slug ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4" />}
@@ -338,17 +347,27 @@ export function News() {
           )}
 
           <div>
-            {gridPosts.length === 0 ? (
-              <div className="p-12 text-center rounded-2xl bg-white border border-[#111215]/8">
-                <h3 className="text-sm font-semibold text-[#111215] mb-1">Tidak Ada Berita Ditemukan</h3>
-                <p className="text-xs text-[#525660] mb-4">Belum ada artikel untuk kategori "{activeCategory}".</p>
-                <button
-                  type="button"
-                  onClick={() => setActiveCategory('ALL')}
-                  className="px-4 py-2 min-h-[40px] rounded-xl bg-[#111215] text-[#F4F1EB] text-xs font-semibold hover:bg-[#6456EB] transition-colors cursor-pointer"
-                >
-                  Tampilkan Semua Berita
-                </button>
+            {!pinnedPost && gridPosts.length === 0 ? (
+              <div className="p-12 text-center rounded-none bg-white border border-[#111215]/8 shadow-2xs">
+                <h3 className="text-base font-semibold text-[#111215] mb-1">
+                  {posts && posts.length === 0
+                    ? 'Belum ada warta publikasi'
+                    : 'Tidak Ada Berita Ditemukan'}
+                </h3>
+                <p className="text-xs text-[#525660] mb-4">
+                  {posts && posts.length === 0
+                    ? 'Informasi warta dan pengumuman resmi NCD akan diterbitkan dan dikelola oleh administrator.'
+                    : `Belum ada artikel untuk kategori "${activeCategory}".`}
+                </p>
+                {posts && posts.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('ALL')}
+                    className="px-4 py-2 min-h-[40px] rounded-none bg-[#111215] text-[#F4F1EB] text-xs font-semibold hover:bg-[#6456EB] transition-colors cursor-pointer"
+                  >
+                    Tampilkan Semua Berita
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -356,7 +375,7 @@ export function News() {
                   <article
                     key={post.id}
                     onClick={() => setSelectedPost(post)}
-                    className="bg-white rounded-2xl border border-[#111215]/8 p-6 shadow-2xs hover:border-[#111215]/20 hover:shadow-xs transition-all flex flex-col justify-between cursor-pointer group"
+                    className="bg-white rounded-none border border-[#111215]/8 p-6 shadow-2xs hover:border-[#111215]/20 hover:shadow-xs transition-all flex flex-col justify-between cursor-pointer group"
                   >
                     <div>
                       <div className="flex items-center justify-between pb-3 border-b border-[#111215]/6 text-xs gap-2">
@@ -375,7 +394,7 @@ export function News() {
                       {post.tags && post.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-2">
                           {post.tags.slice(0, 3).map((tag) => (
-                            <span key={tag} className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#111215]/4 text-[#525660]">
+                            <span key={tag} className="px-2 py-0.5 rounded-none text-[10px] font-medium bg-[#111215]/4 text-[#525660]">
                               #{tag}
                             </span>
                           ))}
@@ -395,7 +414,7 @@ export function News() {
         </div>
       )}
 
-      {/* Reader Modal (Mobile-First Sheet / Desktop Dialog) */}
+      {/* Reader Modal */}
       {selectedPost && (
         <div
           role="dialog"
@@ -404,84 +423,78 @@ export function News() {
           onClick={() => setSelectedPost(null)}
         >
           <div
-            className="bg-white w-full h-[100dvh] sm:h-auto sm:max-h-[88vh] sm:max-w-3xl sm:rounded-2xl border-0 sm:border border-[#111215]/10 shadow-xl flex flex-col overflow-hidden will-change-transform transform-gpu overscroll-contain"
+            className="bg-white w-full h-[100dvh] sm:h-auto sm:max-h-[88vh] sm:max-w-3xl rounded-none border-0 sm:border border-[#111215]/10 shadow-xl flex flex-col overflow-hidden will-change-transform transform-gpu overscroll-contain"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header: Sticky on mobile */}
+            {/* Header */}
             <div className="shrink-0 p-4 sm:p-5 md:px-8 border-b border-[#111215]/8 flex items-center justify-between bg-white z-10">
-              <span className="font-semibold uppercase tracking-wider text-[11px] text-[#6456EB]">
-                {selectedPost.is_pinned ? 'Disorot · ' : ''}{selectedPost.category}
-              </span>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-semibold uppercase tracking-wider ${getCategoryColor(selectedPost.category)}`}>
+                  {selectedPost.category}
+                </span>
+                <span className="text-[#525660] text-xs">•</span>
+                <span className="text-xs text-[#525660] font-tabular">{formatDate(selectedPost.published_at)}</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={(e) => handleCopyLink(selectedPost, e)}
-                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[#525660] hover:bg-[#111215]/5 hover:text-[#111215] transition-colors cursor-pointer"
-                  title="Salin Tautan"
-                  aria-label="Salin Tautan Artikel"
+                  className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-none text-[#525660] hover:bg-[#111215]/5 transition-colors cursor-pointer"
+                  title="Bagikan tautan artikel"
                 >
-                  {copiedSlug === selectedPost.slug ? <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600"><Check className="w-4 h-4" /><span>Tersalin</span></span> : <Share2 className="w-4 h-4" />}
+                  {copiedSlug === selectedPost.slug ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4" />}
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedPost(null)}
-                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[#525660] hover:bg-[#111215]/5 hover:text-[#111215] transition-colors cursor-pointer"
+                  className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-none text-[#525660] hover:bg-[#111215]/5 hover:text-[#111215] transition-colors cursor-pointer"
                   title="Tutup (Esc)"
-                  aria-label="Tutup jendela artikel"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            {/* Scrollable Body: Single independent scrolling layer */}
-            <div className="overflow-y-auto flex-1 p-5 sm:p-6 md:p-8 space-y-6 overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch]">
-              <div className="flex flex-wrap items-center gap-2 text-xs text-[#525660] font-tabular">
-                <span className="font-semibold text-[#111215]">{selectedPost.author_name}</span>
-                <span>•</span>
-                <span>{formatDate(selectedPost.published_at)}</span>
-                <span>•</span>
-                <span>{getReadingTime(selectedPost.content_md)}</span>
-              </div>
-
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold tracking-[-0.02em] text-[#111215] leading-tight">
+            {/* Scrollable Reader Body */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 md:p-8 overscroll-contain">
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-[-0.02em] text-[#111215] mb-4 leading-tight">
                 {selectedPost.title}
-              </h2>
+              </h1>
 
-              <div className="pl-4 border-l-2 border-[#6456EB] text-xs md:text-sm text-[#111215] font-medium leading-relaxed">
-                {selectedPost.summary}
+              <div className="flex flex-wrap items-center gap-3 pb-6 mb-6 border-b border-[#111215]/8 text-xs text-[#525660]">
+                <div>
+                  Ditulis oleh <span className="font-semibold text-[#111215]">{selectedPost.author_name}</span>
+                </div>
+                <span>•</span>
+                <div className="font-tabular">{getReadingTime(selectedPost.content_md)}</div>
               </div>
 
-              <div className="pt-2">
-                <MarkdownContent content={selectedPost.content_md} />
-              </div>
+              {/* Parsed Markdown Output */}
+              <MarkdownContent content={selectedPost.content_md} />
 
+              {/* Tags Section */}
               {selectedPost.tags && selectedPost.tags.length > 0 && (
-                <div className="pt-6 border-t border-[#111215]/8">
-                  <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-[#525660]">
-                    <Tag className="w-3.5 h-3.5 text-[#6456EB]" />
-                    <span>Topik & Label:</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
+                <div className="mt-8 pt-6 border-t border-[#111215]/8">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Tag className="w-3.5 h-3.5 text-[#525660]" />
                     {selectedPost.tags.map((tag) => (
-                      <span key={tag} className="px-2.5 py-1 rounded-md text-xs font-medium bg-[#111215]/4 text-[#525660]">#{tag}</span>
+                      <span key={tag} className="px-2 py-0.5 rounded-none text-xs bg-[#111215]/5 text-[#525660] font-medium">
+                        #{tag}
+                      </span>
                     ))}
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Bottom Bar: Sticky on mobile */}
-            <div className="shrink-0 p-4 px-5 sm:px-6 md:px-8 border-t border-[#111215]/8 bg-[#F4F1EB]/60 flex items-center justify-between z-10">
-              <span className="text-[11px] text-[#525660] truncate max-w-[50%]">
-                ID: <span className="font-mono text-[#111215]">{selectedPost.slug}</span>
-              </span>
+            {/* Footer */}
+            <div className="shrink-0 p-4 border-t border-[#111215]/8 bg-[#F4F1EB]/40 flex items-center justify-end">
               <button
                 type="button"
                 onClick={() => setSelectedPost(null)}
-                className="px-4 py-2 min-h-[44px] rounded-xl bg-[#111215] text-[#F4F1EB] text-xs font-semibold hover:bg-[#6456EB] transition-colors cursor-pointer"
+                className="px-4 py-2 min-h-[40px] rounded-none bg-[#111215] text-[#F4F1EB] text-xs font-semibold hover:bg-[#6456EB] transition-colors cursor-pointer"
               >
-                Selesai Membaca
+                Tutup Bacaan
               </button>
             </div>
           </div>

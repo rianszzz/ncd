@@ -1,5 +1,6 @@
 import React, { lazy, Suspense } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { motion, useReducedMotion } from 'motion/react'
 import { Analytics } from '@vercel/analytics/react'
 import { Navbar } from './components/Navbar'
 import { Footer } from './components/Footer'
@@ -42,28 +43,39 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const location = useLocation()
+  const shouldReduceMotion = useReducedMotion()
+
   return (
     <div className="min-h-[100dvh] flex flex-col bg-[#F4F1EB] text-[#111215] selection:bg-[#6456EB] selection:text-white">
       <RouteMeta />
       <Navbar />
       <main className="flex-1">
         <Suspense fallback={<PageFallback />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/team" element={<Team />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/achievements" element={<Achievements />} />
-            <Route path="/news" element={<News />} />
-            <Route path="/join" element={<Join />} />
-            <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/app/finance" element={<Navigate to="/app" replace />} />
-            <Route path="/finance" element={<Navigate to="/app" replace />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: shouldReduceMotion ? 1 : 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.2, ease: 'easeOut' }}
+          >
+            <Routes location={location}>
+              <Route path="/" element={<Home />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/team" element={<Team />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/achievements" element={<Achievements />} />
+              <Route path="/news" element={<News />} />
+              <Route path="/join" element={<Join />} />
+              <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<Navigate to="/app" replace />} />
+              <Route path="/app/finance" element={<Navigate to="/app" replace />} />
+              <Route path="/finance" element={<Navigate to="/app" replace />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </motion.div>
         </Suspense>
       </main>
       <Footer />

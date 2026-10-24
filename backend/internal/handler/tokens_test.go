@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/ncd/backend/internal/middleware"
 )
@@ -15,8 +18,21 @@ func TestTokenLoginFlow(t *testing.T) {
 	jwtSecret := "test-secret-key-32-bytes-minimum"
 	loginHandler := Login(jwtSecret)
 
-	// 1. Valid God Admin Token
-	payload := []byte(`{"key": "NCD-GOD-MASTER-2026"}`)
+	// 1. Valid God Admin Token (dynamically fetch current active key)
+	var godKey string
+	tokenLock.RLock()
+	for _, k := range accessKeys {
+		if k.Role == "GOD_ADMIN" && k.IsActive {
+			godKey = k.Key
+			break
+		}
+	}
+	tokenLock.RUnlock()
+	if godKey == "" {
+		godKey = "NCD-GOD-MASTER-2026"
+	}
+
+	payload, _ := json.Marshal(map[string]string{"key": godKey})
 	req := httptest.NewRequest("POST", "/api/v1/auth/login", bytes.NewBuffer(payload))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -50,8 +66,14 @@ func TestTokenLoginFlow(t *testing.T) {
 }
 
 func TestTokenManagement(t *testing.T) {
+	testName := fmt.Sprintf("Ahmad Tester %d", time.Now().UnixNano())
+
 	// 1. Create Token
-	createPayload := []byte(`{"role": "BENDAHARA_I", "assignee": "Ahmad Tester", "position": "Bendahara Tim"}`)
+	createPayload, _ := json.Marshal(map[string]string{
+		"role":     "BENDAHARA_I",
+		"assignee": testName,
+		"position": "Bendahara Tim",
+	})
 	req := httptest.NewRequest("POST", "/api/v1/portal/tokens", bytes.NewBuffer(createPayload))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -66,25 +88,74 @@ func TestTokenManagement(t *testing.T) {
 		t.Fatalf("failed to decode created token: %v", err)
 	}
 
-	if created.Role != "BENDAHARA_I" || created.Assignee != "Ahmad Tester" {
+	if created.Role != "BENDAHARA_I" || created.Assignee != testName {
 		t.Fatalf("unexpected token fields: %+v", created)
 	}
 
-	// 2. Authenticate with newly created token
+	// 2. Reject duplicate token with same name (409 Conflict)
+	dupReq := httptest.NewRequest("POST", "/api/v1/portal/tokens", bytes.NewBuffer(createPayload))
+	dupReq.Header.Set("Content-Type", "application/json")
+	wDup := httptest.NewRecorder()
+
+	CreateToken(wDup, dupReq)
+	if wDup.Code != http.StatusConflict {
+		t.Fatalf("expected 409 Conflict for duplicate token name, got %d. Body: %s", wDup.Code, wDup.Body.String())
+	}
+
+	// 3. Reject duplicate with different case
+	casePayload, _ := json.Marshal(map[string]string{
+		"role":     "MEMBER",
+		"assignee": strings.ToUpper(testName),
+	})
+	caseReq := httptest.NewRequest("POST", "/api/v1/portal/tokens", bytes.NewBuffer(casePayload))
+	caseReq.Header.Set("Content-Type", "application/json")
+	wCase := httptest.NewRecorder()
+
+	CreateToken(wCase, caseReq)
+	if wCase.Code != http.StatusConflict {
+		t.Fatalf("expected 409 Conflict for case-insensitive duplicate token name, got %d", wCase.Code)
+	}
+
+	// 4. Authenticate with newly created token
 	acc, ok := AuthenticateByKey(created.Key)
 	if !ok || acc.ID != created.ID {
 		t.Fatalf("expected to authenticate newly created token %s", created.Key)
 	}
+
+	// Clean up created test token
+	tokenLock.Lock()
+	for i := range accessKeys {
+		if accessKeys[i].ID == created.ID {
+			accessKeys = append(accessKeys[:i], accessKeys[i+1:]...)
+			saveTokensToDiskLocked()
+			break
+		}
+	}
+	tokenLock.Unlock()
 }
 
 func TestUpdateTokenPrefixRequirement(t *testing.T) {
-	// 1. Updating token without NCD- prefix must fail (400)
+	// Preserve current god key
+	tokenLock.RLock()
+	var origGodKey string
+	for _, k := range accessKeys {
+		if k.ID == "tok-god-1" {
+			origGodKey = k.Key
+			break
+		}
+	}
+	tokenLock.RUnlock()
+	if origGodKey == "" {
+		origGodKey = "NCD-GOD-MASTER-2026"
+	}
+
 	claims := &middleware.UserClaims{
 		UserID: "tok-god-1",
 		Role:   "GOD_ADMIN",
 	}
 	ctx := context.WithValue(context.Background(), middleware.UserContextKey, claims)
 
+	// 1. Updating token without NCD- prefix must fail (400)
 	invalidPayload := []byte(`{"new_key": "INVALID-PREFIX-123"}`)
 	req := httptest.NewRequest("PUT", "/api/v1/portal/tokens/my-token", bytes.NewBuffer(invalidPayload)).WithContext(ctx)
 	req.Header.Set("Content-Type", "application/json")
@@ -112,8 +183,8 @@ func TestUpdateTokenPrefixRequirement(t *testing.T) {
 		t.Fatalf("expected newly updated token to authenticate successfully")
 	}
 
-	// Reset key back to default
-	resetPayload := []byte(`{"new_key": "NCD-GOD-MASTER-2026"}`)
+	// Reset key back to original
+	resetPayload, _ := json.Marshal(map[string]string{"new_key": origGodKey})
 	req3 := httptest.NewRequest("PUT", "/api/v1/portal/tokens/my-token", bytes.NewBuffer(resetPayload)).WithContext(ctx)
 	req3.Header.Set("Content-Type", "application/json")
 	w3 := httptest.NewRecorder()

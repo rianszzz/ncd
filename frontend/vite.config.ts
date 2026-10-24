@@ -20,6 +20,15 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    port: 4173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     target: 'es2020',
     cssCodeSplit: true,
@@ -28,6 +37,12 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            if (id.includes('gsap')) {
+              return 'vendor-gsap'
+            }
+            if (id.includes('motion') || id.includes('framer-motion')) {
+              return 'vendor-motion'
+            }
             if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
               return 'vendor-react'
             }

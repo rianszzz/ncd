@@ -122,6 +122,16 @@ func main() {
 			// Void Action: Super Admin & God Admin
 			protected.With(ncdMiddleware.RequireRole("GOD_ADMIN", "SUPER_ADMIN")).
 				Post("/finance/transactions/{id}/void", handler.VoidTransaction)
+
+			// Content Governance: Achievements, Competitions, News (Khusus God Admin & Super Admin)
+			protected.With(ncdMiddleware.RequireRole("GOD_ADMIN", "SUPER_ADMIN")).Group(func(admin chi.Router) {
+				admin.Post("/portal/achievements", handler.CreateAchievement)
+				admin.Delete("/portal/achievements/{id}", handler.DeleteAchievement)
+				admin.Post("/portal/competitions", handler.CreateCompetition)
+				admin.Delete("/portal/competitions/{id}", handler.DeleteCompetition)
+				admin.Post("/portal/posts", handler.CreatePost)
+				admin.Delete("/portal/posts/{id}", handler.DeletePost)
+			})
 		})
 
 		// Token & Role Governance (Khusus God Admin)

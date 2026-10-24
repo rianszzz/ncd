@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
+import { motion, useReducedMotion } from 'motion/react'
 import { api, HistoryItem } from '../services/api'
 import { CheckCircle2 } from 'lucide-react'
+import { HistorySkeleton } from '../components/Skeletons'
 
 const MISSIONS = [
   {
@@ -22,6 +24,9 @@ const MISSIONS = [
 ]
 
 export function About() {
+  const shouldReduceMotion = useReducedMotion()
+  const ease = [0.22, 1, 0.36, 1] as const
+
   const { data: history, isLoading } = useQuery({
     queryKey: ['history'],
     queryFn: async () => {
@@ -33,17 +38,29 @@ export function About() {
   return (
     <div className="max-w-6xl mx-auto px-6 py-12 md:py-20 text-left">
       {/* Header Section */}
-      <div className="mb-10 md:mb-12">
+      <motion.div
+        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: shouldReduceMotion ? 0 : 0.5, ease }}
+        className="mb-10 md:mb-12"
+      >
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-[-0.03em] text-[#111215]">
           Tentang Organisasi NCD
         </h1>
         <p className="text-xs sm:text-sm text-[#525660] mt-2.5 leading-relaxed max-w-2xl">
           Mengenal visi, mandat operasional, kemitraan strategis di bawah naungan NEXA Tech Labs, serta lini masa perkembangan komunitas.
         </p>
-      </div>
+      </motion.div>
 
       {/* Vision & Mission Segmented Block */}
-      <div className="bg-white rounded-2xl border border-[#111215]/8 grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-[#111215]/8 mb-12 overflow-hidden shadow-2xs">
+      <motion.div
+        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-50px' }}
+        transition={{ duration: shouldReduceMotion ? 0 : 0.5, ease }}
+        className="bg-white rounded-2xl border border-[#111215]/8 grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-[#111215]/8 mb-12 overflow-hidden shadow-2xs"
+      >
         {/* Visi (5 cols) */}
         <div className="p-6 sm:p-8 lg:col-span-5 flex flex-col justify-between">
           <div>
@@ -83,10 +100,16 @@ export function About() {
             ))}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Naungan & Kemitraan NEXA Tech Labs */}
-      <div className="bg-white rounded-2xl border border-[#111215]/8 p-6 sm:p-8 mb-14 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <motion.div
+        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-50px' }}
+        transition={{ duration: shouldReduceMotion ? 0 : 0.5, ease }}
+        className="bg-white rounded-2xl border border-[#111215]/8 p-6 sm:p-8 mb-14 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-6"
+      >
         <div className="max-w-2xl text-left">
           <span className="font-semibold uppercase tracking-wider text-[11px] text-[#6456EB] block mb-1.5">
             Naungan & Standarisasi Resmi
@@ -106,10 +129,16 @@ export function About() {
             Afiliasi Terverifikasi
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Perjalanan Organisasi (Timeline) */}
-      <div className="text-left">
+      <motion.div
+        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-50px' }}
+        transition={{ duration: shouldReduceMotion ? 0 : 0.5, ease }}
+        className="text-left"
+      >
         <div className="mb-8">
           <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#111215]">
             Perjalanan & Rekam Jejak Organisasi
@@ -122,16 +151,7 @@ export function About() {
         <div className="space-y-4">
           {isLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-2xl border border-[#111215]/8 p-5 sm:p-6 shadow-2xs animate-pulse flex flex-col sm:flex-row gap-4 sm:gap-6"
-              >
-                <div className="w-28 h-4 rounded bg-[#111215]/8" />
-                <div className="flex-1 space-y-2">
-                  <div className="w-48 h-5 rounded bg-[#111215]/10" />
-                  <div className="w-full h-4 rounded bg-[#111215]/6" />
-                </div>
-              </div>
+              <HistorySkeleton key={i} />
             ))
           ) : (
             history?.map((item) => (
@@ -157,7 +177,7 @@ export function About() {
             ))
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }
