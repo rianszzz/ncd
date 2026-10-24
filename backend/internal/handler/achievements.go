@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // AchievementDTO represents an achievement / trophy earned by NCD teams.
@@ -137,8 +139,112 @@ func init() {
 	loadCompetitionsFromDisk()
 }
 
+// InitAchievementsDB creates the PostgreSQL tables for achievements and competitions if not existing.
+func InitAchievementsDB(pool *pgxpool.Pool) {
+	if pool == nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	createTablesQuery := `
+	CREATE TABLE IF NOT EXISTS portal_achievements (
+		id VARCHAR(100) PRIMARY KEY,
+		title VARCHAR(255) NOT NULL,
+		event_name VARCHAR(255) NOT NULL,
+		competition VARCHAR(255) NOT NULL,
+		organizer VARCHAR(255) NOT NULL,
+		tier VARCHAR(50) NOT NULL,
+		rank VARCHAR(100) NOT NULL,
+		category VARCHAR(100) NOT NULL,
+		year INT NOT NULL,
+		date VARCHAR(100) NOT NULL,
+		award_date VARCHAR(100) NOT NULL,
+		team_name VARCHAR(150) NOT NULL,
+		members TEXT[] DEFAULT '{}',
+		team_members TEXT[] DEFAULT '{}',
+		project_title VARCHAR(255) DEFAULT '',
+		description TEXT NOT NULL,
+		certificate_url TEXT DEFAULT '',
+		created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+	);
+
+	CREATE TABLE IF NOT EXISTS portal_competitions (
+		id VARCHAR(100) PRIMARY KEY,
+		name VARCHAR(255) NOT NULL,
+		organizer VARCHAR(255) NOT NULL,
+		tier VARCHAR(50) NOT NULL,
+		category VARCHAR(100) NOT NULL,
+		registration_deadline VARCHAR(100) NOT NULL,
+		event_date VARCHAR(100) NOT NULL,
+		status VARCHAR(50) NOT NULL,
+		description TEXT NOT NULL,
+		url TEXT DEFAULT '',
+		created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+	);
+	`
+	if _, err := pool.Exec(ctx, createTablesQuery); err != nil {
+		return
+	}
+
+	SyncAchievementsFromDB(ctx, pool)
+}
+
+// SyncAchievementsFromDB loads achievements and competitions from PostgreSQL.
+func SyncAchievementsFromDB(ctx context.Context, pool *pgxpool.Pool) {
+	if pool == nil {
+		return
+	}
+
+	// 1. Sync Achievements
+	rows, err := pool.Query(ctx, `
+		SELECT id, title, event_name, competition, organizer, tier, rank, category, year, date, award_date, team_name, members, team_members, project_title, description, certificate_url
+		FROM portal_achievements
+		ORDER BY created_at DESC
+	`)
+	if err == nil {
+		var loaded []AchievementDTO
+		for rows.Next() {
+			var a AchievementDTO
+			if err := rows.Scan(&a.ID, &a.Title, &a.EventName, &a.Competition, &a.Organizer, &a.Tier, &a.Rank, &a.Category, &a.Year, &a.Date, &a.AwardDate, &a.TeamName, &a.Members, &a.TeamMembers, &a.ProjectTitle, &a.Description, &a.CertificateURL); err == nil {
+				loaded = append(loaded, a)
+			}
+		}
+		rows.Close()
+		achLock.Lock()
+		achievementsList = loaded
+		saveAchievementsToDiskLocked()
+		achLock.Unlock()
+	}
+
+	// 2. Sync Competitions
+	compRows, err := pool.Query(ctx, `
+		SELECT id, name, organizer, tier, category, registration_deadline, event_date, status, description, url
+		FROM portal_competitions
+		ORDER BY created_at DESC
+	`)
+	if err == nil {
+		var loadedComp []CompetitionDTO
+		for compRows.Next() {
+			var c CompetitionDTO
+			if err := compRows.Scan(&c.ID, &c.Name, &c.Organizer, &c.Tier, &c.Category, &c.RegistrationDeadline, &c.EventDate, &c.Status, &c.Description, &c.URL); err == nil {
+				loadedComp = append(loadedComp, c)
+			}
+		}
+		compRows.Close()
+		compLock.Lock()
+		competitionsList = loadedComp
+		saveCompetitionsToDiskLocked()
+		compLock.Unlock()
+	}
+}
+
 // GetPublicAchievements returns public achievements, filtered by ?tier=... if provided.
 func GetPublicAchievements(w http.ResponseWriter, r *http.Request) {
+	if DBPool != nil {
+		SyncAchievementsFromDB(r.Context(), DBPool)
+	}
+
 	achLock.RLock()
 	defer achLock.RUnlock()
 
@@ -190,8 +296,27 @@ func CreateAchievement(w http.ResponseWriter, r *http.Request) {
 	if len(req.TeamMembers) > 0 && len(req.Members) == 0 {
 		req.Members = req.TeamMembers
 	}
+	if req.Members == nil {
+		req.Members = []string{}
+	}
+	if req.TeamMembers == nil {
+		req.TeamMembers = []string{}
+	}
 	if req.Competition == "" && req.EventName != "" {
 		req.Competition = req.EventName
+	}
+
+	if DBPool != nil {
+		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+		defer cancel()
+		_, err := DBPool.Exec(ctx, `
+			INSERT INTO portal_achievements (id, title, event_name, competition, organizer, tier, rank, category, year, date, award_date, team_name, members, team_members, project_title, description, certificate_url)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+		`, req.ID, req.Title, req.EventName, req.Competition, req.Organizer, req.Tier, req.Rank, req.Category, req.Year, req.Date, req.AwardDate, req.TeamName, req.Members, req.TeamMembers, req.ProjectTitle, req.Description, req.CertificateURL)
+		if err != nil {
+			http.Error(w, `{"error":"Gagal menyimpan prestasi ke database"}`, http.StatusInternalServerError)
+			return
+		}
 	}
 
 	achLock.Lock()
@@ -212,6 +337,12 @@ func DeleteAchievement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if DBPool != nil {
+		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+		defer cancel()
+		_, _ = DBPool.Exec(ctx, "DELETE FROM portal_achievements WHERE id = $1", id)
+	}
+
 	achLock.Lock()
 	defer achLock.Unlock()
 
@@ -225,7 +356,7 @@ func DeleteAchievement(w http.ResponseWriter, r *http.Request) {
 		updated = append(updated, item)
 	}
 
-	if !found {
+	if !found && DBPool == nil {
 		http.Error(w, `{"error":"Prestasi tidak ditemukan"}`, http.StatusNotFound)
 		return
 	}
@@ -242,6 +373,10 @@ func DeleteAchievement(w http.ResponseWriter, r *http.Request) {
 
 // GetPublicCompetitions returns active, upcoming, or tracked competitions.
 func GetPublicCompetitions(w http.ResponseWriter, r *http.Request) {
+	if DBPool != nil {
+		SyncAchievementsFromDB(r.Context(), DBPool)
+	}
+
 	compLock.RLock()
 	defer compLock.RUnlock()
 
@@ -270,6 +405,19 @@ func CreateCompetition(w http.ResponseWriter, r *http.Request) {
 		req.Status = "Open Registration"
 	}
 
+	if DBPool != nil {
+		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+		defer cancel()
+		_, err := DBPool.Exec(ctx, `
+			INSERT INTO portal_competitions (id, name, organizer, tier, category, registration_deadline, event_date, status, description, url)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		`, req.ID, req.Name, req.Organizer, req.Tier, req.Category, req.RegistrationDeadline, req.EventDate, req.Status, req.Description, req.URL)
+		if err != nil {
+			http.Error(w, `{"error":"Gagal menyimpan kompetisi ke database"}`, http.StatusInternalServerError)
+			return
+		}
+	}
+
 	compLock.Lock()
 	competitionsList = append([]CompetitionDTO{req}, competitionsList...)
 	saveCompetitionsToDiskLocked()
@@ -288,6 +436,12 @@ func DeleteCompetition(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if DBPool != nil {
+		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+		defer cancel()
+		_, _ = DBPool.Exec(ctx, "DELETE FROM portal_competitions WHERE id = $1", id)
+	}
+
 	compLock.Lock()
 	defer compLock.Unlock()
 
@@ -301,7 +455,7 @@ func DeleteCompetition(w http.ResponseWriter, r *http.Request) {
 		updated = append(updated, item)
 	}
 
-	if !found {
+	if !found && DBPool == nil {
 		http.Error(w, `{"error":"Kompetisi tidak ditemukan"}`, http.StatusNotFound)
 		return
 	}

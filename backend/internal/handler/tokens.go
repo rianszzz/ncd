@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ncd/backend/internal/middleware"
 )
 
@@ -41,7 +43,7 @@ var (
 	accessKeys = []AccessKey{
 		{
 			ID:        "tok-god-1",
-			Key:       "NCD-GOD-MASTER-2026",
+			Key:       "NCD-OPUNG",
 			Role:      "GOD_ADMIN",
 			Assignee:  "Rianszzz",
 			Position:  "Developer Lead & System Architect",
@@ -51,13 +53,23 @@ var (
 		},
 		{
 			ID:        "tok-chair-1",
-			Key:       "NCD-CHAIRMAN-2026",
+			Key:       "NCD-MIRJOY",
 			Role:      "SUPER_ADMIN",
 			Assignee:  "Mirza Danisywar Noor Wahyu",
 			Position:  "Chairman",
 			Email:     "chairman@ncd.dev",
 			IsActive:  true,
 			CreatedAt: time.Date(2026, 1, 10, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			ID:        "tok-ec5b6008",
+			Key:       "NCD-MANGU",
+			Role:      "SUPER_ADMIN",
+			Assignee:  "Fauzan Al Farikhi",
+			Position:  "Vice Chairman",
+			Email:     "fauzan.al.farikhi@ncd.dev",
+			IsActive:  true,
+			CreatedAt: time.Date(2026, 1, 12, 0, 0, 0, 0, time.UTC),
 		},
 		{
 			ID:        "tok-bend1-1",
@@ -88,16 +100,6 @@ var (
 			Email:     "sekretaris1@ncd.dev",
 			IsActive:  true,
 			CreatedAt: time.Date(2026, 1, 20, 0, 0, 0, 0, time.UTC),
-		},
-		{
-			ID:        "tok-member-1",
-			Key:       "NCD-MEMBER-DEMO",
-			Role:      "MEMBER",
-			Assignee:  "Anggota Komunitas NCD",
-			Position:  "Active Member",
-			Email:     "member@ncd.dev",
-			IsActive:  true,
-			CreatedAt: time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC),
 		},
 	}
 )
@@ -136,12 +138,85 @@ func loadTokensFromDisk() {
 			return
 		}
 	}
-	// Initial save of default tokens if file does not exist yet
 	saveTokensToDiskLocked()
 }
 
 func init() {
 	loadTokensFromDisk()
+}
+
+// InitTokensDB initializes the access_tokens table in PostgreSQL and syncs tokens.
+func InitTokensDB(pool *pgxpool.Pool) {
+	if pool == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	createTableQuery := `
+	CREATE TABLE IF NOT EXISTS access_tokens (
+		id VARCHAR(100) PRIMARY KEY,
+		key VARCHAR(255) NOT NULL UNIQUE,
+		role VARCHAR(50) NOT NULL,
+		assignee VARCHAR(150) NOT NULL,
+		position VARCHAR(150) NOT NULL,
+		email VARCHAR(255) NOT NULL,
+		is_active BOOLEAN NOT NULL DEFAULT TRUE,
+		created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+		last_used_at TIMESTAMPTZ
+	);
+	`
+	if _, err := pool.Exec(ctx, createTableQuery); err != nil {
+		return
+	}
+
+	var count int
+	_ = pool.QueryRow(ctx, "SELECT COUNT(*) FROM access_tokens").Scan(&count)
+	if count == 0 {
+		tokenLock.RLock()
+		keysToSeed := make([]AccessKey, len(accessKeys))
+		copy(keysToSeed, accessKeys)
+		tokenLock.RUnlock()
+
+		for _, k := range keysToSeed {
+			_, _ = pool.Exec(ctx, `
+				INSERT INTO access_tokens (id, key, role, assignee, position, email, is_active, created_at, last_used_at)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+				ON CONFLICT (id) DO UPDATE SET key = EXCLUDED.key, is_active = EXCLUDED.is_active
+			`, k.ID, k.Key, k.Role, k.Assignee, k.Position, k.Email, k.IsActive, k.CreatedAt, k.LastUsedAt)
+		}
+	} else {
+		SyncTokensFromDB(ctx, pool)
+	}
+}
+
+// SyncTokensFromDB fetches all tokens from PostgreSQL into memory and updates disk cache.
+func SyncTokensFromDB(ctx context.Context, pool *pgxpool.Pool) {
+	if pool == nil {
+		return
+	}
+
+	rows, err := pool.Query(ctx, "SELECT id, key, role, assignee, position, email, is_active, created_at, last_used_at FROM access_tokens ORDER BY created_at ASC")
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	var loaded []AccessKey
+	for rows.Next() {
+		var k AccessKey
+		if err := rows.Scan(&k.ID, &k.Key, &k.Role, &k.Assignee, &k.Position, &k.Email, &k.IsActive, &k.CreatedAt, &k.LastUsedAt); err == nil {
+			loaded = append(loaded, k)
+		}
+	}
+
+	if len(loaded) > 0 {
+		tokenLock.Lock()
+		accessKeys = loaded
+		saveTokensToDiskLocked()
+		tokenLock.Unlock()
+	}
 }
 
 func AuthenticateByKey(rawKey string) (*AccessKey, bool) {
@@ -150,6 +225,39 @@ func AuthenticateByKey(rawKey string) (*AccessKey, bool) {
 		return nil, false
 	}
 
+	// 1. Try PostgreSQL if available
+	if DBPool != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+
+		var k AccessKey
+		err := DBPool.QueryRow(ctx, `
+			SELECT id, key, role, assignee, position, email, is_active, created_at, last_used_at
+			FROM access_tokens
+			WHERE UPPER(key) = UPPER($1) AND is_active = true
+		`, cleanKey).Scan(&k.ID, &k.Key, &k.Role, &k.Assignee, &k.Position, &k.Email, &k.IsActive, &k.CreatedAt, &k.LastUsedAt)
+
+		if err == nil {
+			now := time.Now()
+			k.LastUsedAt = &now
+			_, _ = DBPool.Exec(ctx, "UPDATE access_tokens SET last_used_at = $1 WHERE id = $2", now, k.ID)
+
+			tokenLock.Lock()
+			for i := range accessKeys {
+				if accessKeys[i].ID == k.ID {
+					accessKeys[i].LastUsedAt = &now
+					accessKeys[i].Key = k.Key
+					break
+				}
+			}
+			saveTokensToDiskLocked()
+			tokenLock.Unlock()
+
+			return &k, true
+		}
+	}
+
+	// 2. In-Memory fallback
 	tokenLock.Lock()
 	defer tokenLock.Unlock()
 
@@ -158,6 +266,7 @@ func AuthenticateByKey(rawKey string) (*AccessKey, bool) {
 			now := time.Now()
 			accessKeys[i].LastUsedAt = &now
 			copied := accessKeys[i]
+			saveTokensToDiskLocked()
 			return &copied, true
 		}
 	}
@@ -169,6 +278,17 @@ func IsTokenActive(keyOrID string) bool {
 	if clean == "" {
 		return false
 	}
+
+	if DBPool != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		var isActive bool
+		err := DBPool.QueryRow(ctx, "SELECT is_active FROM access_tokens WHERE id = $1 OR UPPER(key) = UPPER($1)", clean).Scan(&isActive)
+		if err == nil {
+			return isActive
+		}
+	}
+
 	tokenLock.RLock()
 	defer tokenLock.RUnlock()
 	for i := range accessKeys {
@@ -180,6 +300,10 @@ func IsTokenActive(keyOrID string) bool {
 }
 
 func ListTokens(w http.ResponseWriter, r *http.Request) {
+	if DBPool != nil {
+		SyncTokensFromDB(r.Context(), DBPool)
+	}
+
 	tokenLock.RLock()
 	defer tokenLock.RUnlock()
 
@@ -255,7 +379,6 @@ func CreateToken(w http.ResponseWriter, r *http.Request) {
 		}
 		generatedKey = cleanKey
 	} else {
-		// Generate clean human-readable access key: NCD-{ROLE}-{RAND8}
 		for {
 			randomBytes := make([]byte, 4)
 			_, _ = rand.Read(randomBytes)
@@ -286,6 +409,22 @@ func CreateToken(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: time.Now(),
 	}
 
+	// Persist to PostgreSQL if available
+	if DBPool != nil {
+		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+		defer cancel()
+		_, err := DBPool.Exec(ctx, `
+			INSERT INTO access_tokens (id, key, role, assignee, position, email, is_active, created_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		`, newKey.ID, newKey.Key, newKey.Role, newKey.Assignee, newKey.Position, newKey.Email, newKey.IsActive, newKey.CreatedAt)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "Gagal menyimpan token ke database"})
+			return
+		}
+	}
+
 	// Prepend so the newest token appears at the top
 	accessKeys = append([]AccessKey{newKey}, accessKeys...)
 	saveTokensToDiskLocked()
@@ -307,7 +446,15 @@ func RevokeToken(w http.ResponseWriter, r *http.Request) {
 
 	for i := range accessKeys {
 		if accessKeys[i].ID == id {
-			accessKeys[i].IsActive = !accessKeys[i].IsActive
+			newStatus := !accessKeys[i].IsActive
+
+			if DBPool != nil {
+				ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+				defer cancel()
+				_, _ = DBPool.Exec(ctx, "UPDATE access_tokens SET is_active = $1 WHERE id = $2", newStatus, id)
+			}
+
+			accessKeys[i].IsActive = newStatus
 			saveTokensToDiskLocked()
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(accessKeys[i])
@@ -330,10 +477,17 @@ func DeleteToken(w http.ResponseWriter, r *http.Request) {
 
 	for i := range accessKeys {
 		if accessKeys[i].ID == id {
-			if accessKeys[i].Key == "NCD-GOD-MASTER-2026" {
+			if accessKeys[i].Role == "GOD_ADMIN" && len(accessKeys) <= 1 {
 				http.Error(w, `{"error": "Master God Admin key tidak dapat dihapus"}`, http.StatusBadRequest)
 				return
 			}
+
+			if DBPool != nil {
+				ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+				defer cancel()
+				_, _ = DBPool.Exec(ctx, "DELETE FROM access_tokens WHERE id = $1", id)
+			}
+
 			accessKeys = append(accessKeys[:i], accessKeys[i+1:]...)
 			saveTokensToDiskLocked()
 			w.Header().Set("Content-Type", "application/json")
@@ -361,7 +515,6 @@ func UpdateToken(w http.ResponseWriter, r *http.Request) {
 		targetID = claims.UserID
 	}
 
-	// IDOR Protection: regular users can only update their own token
 	if claims.Role != "GOD_ADMIN" && claims.UserID != targetID {
 		http.Error(w, `{"error": "Forbidden: Anda hanya berhak mengubah token milik akun Anda sendiri"}`, http.StatusForbidden)
 		return
@@ -375,7 +528,6 @@ func UpdateToken(w http.ResponseWriter, r *http.Request) {
 
 	cleanKey := strings.ToUpper(strings.TrimSpace(req.NewKey))
 
-	// Requirement: Token harus berawalan dengan NCD-
 	if !strings.HasPrefix(cleanKey, "NCD-") {
 		http.Error(w, `{"error": "Token tidak valid: Kode token wajib diawali dengan awalan 'NCD-'" }`, http.StatusBadRequest)
 		return
@@ -386,7 +538,6 @@ func UpdateToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Valid character check: only A-Z, 0-9, '-', '_'
 	for _, ch := range cleanKey {
 		if !((ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '-' || ch == '_') {
 			http.Error(w, `{"error": "Token hanya boleh mengandung huruf kapital, angka, tanda minus (-), dan garis bawah (_)"}`, http.StatusBadRequest)
@@ -407,6 +558,16 @@ func UpdateToken(w http.ResponseWriter, r *http.Request) {
 
 	for i := range accessKeys {
 		if accessKeys[i].ID == targetID {
+			if DBPool != nil {
+				ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+				defer cancel()
+				_, err := DBPool.Exec(ctx, "UPDATE access_tokens SET key = $1 WHERE id = $2", cleanKey, targetID)
+				if err != nil {
+					http.Error(w, `{"error": "Gagal memperbarui token di database"}`, http.StatusInternalServerError)
+					return
+				}
+			}
+
 			accessKeys[i].Key = cleanKey
 			saveTokensToDiskLocked()
 			w.Header().Set("Content-Type", "application/json")

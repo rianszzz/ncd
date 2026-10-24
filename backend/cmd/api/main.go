@@ -37,7 +37,7 @@ func main() {
 		defer pool.Close()
 
 		repo := repository.New(pool)
-		handler.SetRepository(repo)
+		handler.SetDB(pool, repo)
 
 		if err := seed.Run(ctx, pool); err != nil {
 			log.Printf("[NCD Seed] Peringatan error saat seed data: %v\n", err)

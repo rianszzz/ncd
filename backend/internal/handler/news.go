@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // PostDTO represents a public news or announcement entry for NCD.
@@ -83,10 +85,74 @@ func slugify(text string) string {
 	return strings.Trim(slug, "-")
 }
 
+// InitNewsDB creates the PostgreSQL table for portal posts if not existing.
+func InitNewsDB(pool *pgxpool.Pool) {
+	if pool == nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	createTableQuery := `
+	CREATE TABLE IF NOT EXISTS portal_posts (
+		id VARCHAR(100) PRIMARY KEY,
+		title VARCHAR(255) NOT NULL,
+		slug VARCHAR(280) NOT NULL UNIQUE,
+		summary TEXT NOT NULL,
+		content_md TEXT NOT NULL,
+		category VARCHAR(50) NOT NULL,
+		tags TEXT[] DEFAULT '{}',
+		author_name VARCHAR(150) NOT NULL,
+		is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
+		published_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+		created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+	);
+	`
+	if _, err := pool.Exec(ctx, createTableQuery); err != nil {
+		return
+	}
+
+	SyncPostsFromDB(ctx, pool)
+}
+
+// SyncPostsFromDB loads news posts from PostgreSQL into memory and disk cache.
+func SyncPostsFromDB(ctx context.Context, pool *pgxpool.Pool) {
+	if pool == nil {
+		return
+	}
+
+	rows, err := pool.Query(ctx, `
+		SELECT id, title, slug, summary, content_md, category, tags, author_name, is_pinned, published_at
+		FROM portal_posts
+		ORDER BY published_at DESC
+	`)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	var loaded []PostDTO
+	for rows.Next() {
+		var p PostDTO
+		if err := rows.Scan(&p.ID, &p.Title, &p.Slug, &p.Summary, &p.ContentMD, &p.Category, &p.Tags, &p.AuthorName, &p.IsPinned, &p.PublishedAt); err == nil {
+			loaded = append(loaded, p)
+		}
+	}
+
+	postLock.Lock()
+	postsList = loaded
+	savePostsToDiskLocked()
+	postLock.Unlock()
+}
+
 // GetPublicPosts returns the list of public announcements and news articles.
 // It supports filtering by category via query parameter ?category=... (e.g. Pengumuman, Rilis Produk, Riset & Edukasi).
 // Pinned posts are prioritized at the top, followed by reverse chronological order.
 func GetPublicPosts(w http.ResponseWriter, r *http.Request) {
+	if DBPool != nil {
+		SyncPostsFromDB(r.Context(), DBPool)
+	}
+
 	postLock.RLock()
 	defer postLock.RUnlock()
 
@@ -149,6 +215,19 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 		req.Tags = []string{}
 	}
 
+	if DBPool != nil {
+		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+		defer cancel()
+		_, err := DBPool.Exec(ctx, `
+			INSERT INTO portal_posts (id, title, slug, summary, content_md, category, tags, author_name, is_pinned, published_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		`, req.ID, req.Title, req.Slug, req.Summary, req.ContentMD, req.Category, req.Tags, req.AuthorName, req.IsPinned, req.PublishedAt)
+		if err != nil {
+			http.Error(w, `{"error":"Gagal menyimpan warta ke database"}`, http.StatusInternalServerError)
+			return
+		}
+	}
+
 	postLock.Lock()
 	postsList = append([]PostDTO{req}, postsList...)
 	savePostsToDiskLocked()
@@ -167,6 +246,12 @@ func DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if DBPool != nil {
+		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+		defer cancel()
+		_, _ = DBPool.Exec(ctx, "DELETE FROM portal_posts WHERE id = $1", id)
+	}
+
 	postLock.Lock()
 	defer postLock.Unlock()
 
@@ -180,7 +265,7 @@ func DeletePost(w http.ResponseWriter, r *http.Request) {
 		updated = append(updated, item)
 	}
 
-	if !found {
+	if !found && DBPool == nil {
 		http.Error(w, `{"error":"Warta tidak ditemukan"}`, http.StatusNotFound)
 		return
 	}
