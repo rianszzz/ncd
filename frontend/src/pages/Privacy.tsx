@@ -2,8 +2,8 @@ import { Lock, Database, Eye, UserCheck, Mail } from 'lucide-react'
 
 export function Privacy() {
   return (
-    <div className="max-w-4xl mx-auto px-6 py-20 text-left">
-      <div className="mb-12 text-center md:text-left border-b border-[#111215]/8 pb-8">
+    <div className="max-w-4xl mx-auto px-6 py-12 md:py-20 text-left">
+      <div className="mb-10 md:mb-12 text-center md:text-left border-b border-[#111215]/8 pb-6 md:pb-8">
         <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-[#111215]">
           Kebijakan Privasi (Privacy Policy)
         </h1>
@@ -12,9 +12,9 @@ export function Privacy() {
         </p>
       </div>
 
-      <div className="space-y-10 text-xs md:text-sm text-[#525660] leading-relaxed">
+      <div className="space-y-8 md:space-y-10 text-xs md:text-sm text-[#525660] leading-relaxed">
         {/* Section 1 */}
-        <section className="bg-white p-7 rounded-2xl border border-[#111215]/8 shadow-2xs">
+        <section className="bg-white p-5 sm:p-7 rounded-2xl border border-[#111215]/8 shadow-2xs">
           <div className="flex items-center space-x-3 mb-3">
             <div className="w-8 h-8 rounded-lg bg-[#111215]/5 flex items-center justify-center text-[#111215]">
               <Database className="w-4 h-4 text-[#6456EB]" />
@@ -32,7 +32,7 @@ export function Privacy() {
         </section>
 
         {/* Section 2 */}
-        <section className="bg-white p-7 rounded-2xl border border-[#111215]/8 shadow-2xs">
+        <section className="bg-white p-5 sm:p-7 rounded-2xl border border-[#111215]/8 shadow-2xs">
           <div className="flex items-center space-x-3 mb-3">
             <div className="w-8 h-8 rounded-lg bg-[#111215]/5 flex items-center justify-center text-[#111215]">
               <Eye className="w-4 h-4 text-[#6456EB]" />
@@ -51,7 +51,7 @@ export function Privacy() {
         </section>
 
         {/* Section 3 */}
-        <section className="bg-white p-7 rounded-2xl border border-[#111215]/8 shadow-2xs">
+        <section className="bg-white p-5 sm:p-7 rounded-2xl border border-[#111215]/8 shadow-2xs">
           <div className="flex items-center space-x-3 mb-3">
             <div className="w-8 h-8 rounded-lg bg-[#111215]/5 flex items-center justify-center text-[#111215]">
               <Lock className="w-4 h-4 text-[#6456EB]" />
@@ -69,7 +69,7 @@ export function Privacy() {
         </section>
 
         {/* Section 4 */}
-        <section className="bg-white p-7 rounded-2xl border border-[#111215]/8 shadow-2xs">
+        <section className="bg-white p-5 sm:p-7 rounded-2xl border border-[#111215]/8 shadow-2xs">
           <div className="flex items-center space-x-3 mb-3">
             <div className="w-8 h-8 rounded-lg bg-[#111215]/5 flex items-center justify-center text-[#111215]">
               <UserCheck className="w-4 h-4 text-[#6456EB]" />
@@ -87,7 +87,7 @@ export function Privacy() {
         </section>
 
         {/* Section 5 */}
-        <section className="bg-white p-7 rounded-2xl border border-[#111215]/8 shadow-2xs">
+        <section className="bg-white p-5 sm:p-7 rounded-2xl border border-[#111215]/8 shadow-2xs">
           <div className="flex items-center space-x-3 mb-3">
             <div className="w-8 h-8 rounded-lg bg-[#111215]/5 flex items-center justify-center text-[#111215]">
               <Mail className="w-4 h-4 text-[#6456EB]" />

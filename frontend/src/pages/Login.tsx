@@ -31,7 +31,7 @@ export function Login() {
   }
 
   return (
-    <div className="max-w-md mx-auto px-6 py-20 text-left">
+    <div className="max-w-md mx-auto px-6 py-12 md:py-20 text-left">
       <div className="text-center mb-8">
         <div className="w-12 h-12 rounded-xl bg-[#111215] flex items-center justify-center text-white mx-auto mb-4 shadow-2xs">
           <Lock className="w-5 h-5 text-white" />
@@ -42,7 +42,7 @@ export function Login() {
         </p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-[#111215]/8 p-8 shadow-2xs">
+      <div className="bg-white rounded-2xl border border-[#111215]/8 p-6 sm:p-8 shadow-2xs">
         {error && (
           <div className="mb-4 p-3 rounded-xl bg-red-50 text-[#D83B01] text-xs font-medium border border-red-100">
             {error}
@@ -58,7 +58,7 @@ export function Login() {
               placeholder="nama@ncd.dev"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#F4F1EB] outline-none focus:bg-white focus:border-[#111215]/20 border border-transparent transition-all placeholder:text-[#7E8492]"
+              className="w-full px-3.5 py-2.5 min-h-[44px] rounded-xl bg-[#F4F1EB] outline-none focus:bg-white focus:border-[#111215]/20 border border-transparent transition-all placeholder:text-[#7E8492]"
             />
           </div>
 
@@ -70,14 +70,14 @@ export function Login() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#F4F1EB] outline-none focus:bg-white focus:border-[#111215]/20 border border-transparent transition-all placeholder:text-[#7E8492]"
+              className="w-full px-3.5 py-2.5 min-h-[44px] rounded-xl bg-[#F4F1EB] outline-none focus:bg-white focus:border-[#111215]/20 border border-transparent transition-all placeholder:text-[#7E8492]"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 rounded-xl bg-[#111215] text-[#F4F1EB] font-medium hover:bg-[#252830] transition-all flex items-center justify-center space-x-2 shadow-2xs disabled:opacity-50 mt-2 cursor-pointer disabled:cursor-not-allowed"
+            className="w-full py-3 min-h-[44px] rounded-xl bg-[#111215] text-[#F4F1EB] font-medium hover:bg-[#252830] transition-all flex items-center justify-center space-x-2 shadow-2xs disabled:opacity-50 mt-2 cursor-pointer disabled:cursor-not-allowed"
           >
             <span>{loading ? 'Mengautentikasi...' : 'Masuk Portal'}</span>
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}

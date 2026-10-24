@@ -45,8 +45,8 @@ export function Join() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-20 text-left">
-      <div className="text-center mb-14">
+    <div className="max-w-3xl mx-auto px-6 py-12 md:py-20 text-left">
+      <div className="text-center mb-10 md:mb-14">
         <h1 className="text-3xl md:text-5xl font-semibold tracking-[-0.03em] text-[#111215]">
           Formulir Pendaftaran Terbuka
         </h1>
@@ -56,7 +56,7 @@ export function Join() {
       </div>
 
       {status === 'success' ? (
-        <div className="p-10 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs text-center">
+        <div className="p-8 sm:p-10 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs text-center">
           <div className="w-16 h-16 rounded-full bg-[#107C41]/10 text-[#107C41] flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-8 h-8" />
           </div>
@@ -80,13 +80,13 @@ export function Join() {
               })
               setConsent(false)
             }}
-            className="mt-6 px-5 py-2.5 rounded-xl bg-[#111215] text-[#F4F1EB] font-medium text-xs hover:bg-[#252830] transition-all"
+            className="mt-6 px-5 py-3 min-h-[44px] rounded-xl bg-[#111215] text-[#F4F1EB] font-medium text-xs hover:bg-[#252830] transition-all cursor-pointer"
           >
             Kirim Formulir Lain
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="p-8 md:p-10 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 sm:p-8 md:p-10 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs space-y-5">
           {status === 'error' && (
             <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-[#D83B01] text-xs flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 shrink-0" />

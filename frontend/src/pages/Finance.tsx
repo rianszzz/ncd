@@ -57,9 +57,9 @@ export function Finance() {
   const categories = Array.from(new Set(transactions?.map((t) => t.category_name) || []))
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-20 text-left">
+    <div className="max-w-6xl mx-auto px-6 py-12 md:py-20 text-left">
       {/* Header & Title */}
-      <div className="mb-10">
+      <div className="mb-8 md:mb-10">
         <h1 className="text-3xl md:text-5xl font-semibold tracking-[-0.03em] text-[#111215]">
           Buku Kas Terbuka & Maker-Checker
         </h1>
@@ -69,7 +69,7 @@ export function Finance() {
       </div>
 
       {/* Financial Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 md:mb-10">
         {isSummaryLoading ? (
           <>
             <SummarySkeleton />
@@ -127,7 +127,7 @@ export function Finance() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="p-4 rounded-2xl bg-white border border-[#111215]/8 mb-6 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+      <div className="p-4 rounded-2xl bg-white border border-[#111215]/8 mb-6 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         <div className="relative w-full md:w-80">
           <Search className="w-4 h-4 text-[#7E8492] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
@@ -135,17 +135,17 @@ export function Finance() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cari transaksi, deskripsi, maker..."
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-[#F4F1EB]/70 border border-transparent focus:border-[#111215]/20 focus:bg-white outline-none transition-all placeholder:text-[#7E8492]"
+            className="w-full pl-9 pr-4 py-2.5 min-h-[40px] text-xs rounded-xl bg-[#F4F1EB]/70 border border-transparent focus:border-[#111215]/20 focus:bg-white outline-none transition-all placeholder:text-[#7E8492]"
           />
         </div>
 
-        <div className="flex items-center space-x-2 w-full md:w-auto">
-          <div className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-[#F4F1EB] text-xs text-[#525660] border border-[#111215]/6">
-            <Filter className="w-3.5 h-3.5 text-[#7E8492]" />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
+          <div className="flex items-center space-x-1.5 px-3 py-2 min-h-[40px] rounded-xl bg-[#F4F1EB] text-xs text-[#525660] border border-[#111215]/6 flex-1 sm:flex-none">
+            <Filter className="w-3.5 h-3.5 text-[#7E8492] shrink-0" />
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="bg-transparent border-none text-xs font-medium text-[#111215] focus:outline-none cursor-pointer"
+              className="bg-transparent border-none text-xs font-medium text-[#111215] focus:outline-none cursor-pointer w-full"
             >
               <option value="ALL">Semua Tipe</option>
               <option value="INCOME">Pemasukan (Debet)</option>
@@ -153,11 +153,11 @@ export function Finance() {
             </select>
           </div>
 
-          <div className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-[#F4F1EB] text-xs text-[#525660] border border-[#111215]/6">
+          <div className="flex items-center space-x-1.5 px-3 py-2 min-h-[40px] rounded-xl bg-[#F4F1EB] text-xs text-[#525660] border border-[#111215]/6 flex-1 sm:flex-none">
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="bg-transparent border-none text-xs font-medium text-[#111215] focus:outline-none cursor-pointer"
+              className="bg-transparent border-none text-xs font-medium text-[#111215] focus:outline-none cursor-pointer w-full"
             >
               <option value="ALL">Semua Kategori</option>
               {categories.map((c) => (

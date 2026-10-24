@@ -1,6 +1,25 @@
 import { useQuery } from '@tanstack/react-query'
 import { api, HistoryItem } from '../services/api'
-import { Target, Compass, Award, Calendar } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
+
+const MISSIONS = [
+  {
+    title: 'Ekosistem Pembelajaran Mandiri',
+    desc: 'Mengakselerasi kurikulum rekayasa terarah bagi talenta mahasiswa lintas disiplin teknologi.',
+  },
+  {
+    title: 'Produk Digital Berdampak',
+    desc: 'Membangun perangkat lunak mandiri yang dapat diadopsi publik dan mitra industri secara nyata.',
+  },
+  {
+    title: 'Transparansi Finansial Radikal',
+    desc: 'Menerapkan tata kelola kas 100% terbuka dengan mekanisme maker-checker tanpa kompromi.',
+  },
+  {
+    title: 'Reputasi Kompetitif Nasional & Global',
+    desc: 'Mengirimkan delegasi talenta berprestasi untuk bersaing di pagelaran kejuaraan teknologi bergengsi.',
+  },
+]
 
 export function About() {
   const { data: history, isLoading } = useQuery({
@@ -12,103 +31,134 @@ export function About() {
   })
 
   return (
-    <div className="w-full flex flex-col items-center">
-      {/* Top Section */}
-      <div className="w-full max-w-5xl mx-auto px-6 pt-20 pb-16 text-left">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <h1 className="text-3xl md:text-5xl font-semibold tracking-[-0.03em] text-[#111215]">
-            Visi, Integritas & Jejak NCD
-          </h1>
-          <p className="text-sm md:text-base text-[#525660] mt-3.5 leading-relaxed">
-            NEXA Community Development (NCD) adalah badan inkubasi teknologi mahasiswa di bawah naungan NEXA Tech Labs.
-          </p>
-        </div>
+    <div className="max-w-6xl mx-auto px-6 py-12 md:py-20 text-left">
+      {/* Header Section */}
+      <div className="mb-10 md:mb-12">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-[-0.03em] text-[#111215]">
+          Tentang Organisasi NCD
+        </h1>
+        <p className="text-xs sm:text-sm text-[#525660] mt-2.5 leading-relaxed max-w-2xl">
+          Mengenal visi, mandat operasional, kemitraan strategis di bawah naungan NEXA Tech Labs, serta lini masa perkembangan komunitas.
+        </p>
+      </div>
 
-        {/* Vision & Mission Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-8 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs flex flex-col">
-            <div className="w-11 h-11 rounded-xl bg-[#F4F1EB] border border-[#111215]/6 flex items-center justify-center text-[#111215] mb-5">
-              <Target className="w-5 h-5 text-[#6456EB]" />
-            </div>
-            <h2 className="text-lg font-semibold text-[#111215] mb-2.5">Visi Utama</h2>
-            <p className="text-xs md:text-sm text-[#525660] leading-relaxed flex-1">
-              Menjadi komunitas rekayasa teknologi mahasiswa terdepan dan tepercaya yang melahirkan inovasi digital berdampak nyata, berintegritas tata kelola kas terbuka, dan diakui di kancah nasional maupun internasional.
+      {/* Vision & Mission Segmented Block */}
+      <div className="bg-white rounded-2xl border border-[#111215]/8 grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-[#111215]/8 mb-12 overflow-hidden shadow-2xs">
+        {/* Visi (5 cols) */}
+        <div className="p-6 sm:p-8 lg:col-span-5 flex flex-col justify-between">
+          <div>
+            <span className="font-semibold uppercase tracking-wider text-[11px] text-[#6456EB] block mb-2">
+              Visi Utama
+            </span>
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#111215] leading-snug">
+              Inkubasi rekayasa teknologi mahasiswa berdaya saing global dan berintegritas radikal.
+            </h2>
+            <p className="text-xs sm:text-sm text-[#525660] mt-3 leading-relaxed">
+              Menjadi wadah rekayasa teknologi mahasiswa terdepan yang melahirkan inovasi digital berdampak nyata, berlandaskan prinsip tata kelola kas terbuka, dan diakui di kancah nasional maupun internasional.
             </p>
           </div>
 
-          <div className="p-8 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs flex flex-col">
-            <div className="w-11 h-11 rounded-xl bg-[#F4F1EB] border border-[#111215]/6 flex items-center justify-center text-[#111215] mb-5">
-              <Compass className="w-5 h-5 text-[#6456EB]" />
-            </div>
-            <h2 className="text-lg font-semibold text-[#111215] mb-2.5">Misi Strategis</h2>
-            <ul className="text-xs md:text-sm text-[#525660] space-y-2 leading-relaxed flex-1 list-disc pl-4">
-              <li>Menyediakan ekosistem pembelajaran teknologi terarah bagi talenta mahasiswa.</li>
-              <li>Mengembangkan produk perangkat lunak mandiri yang dapat digunakan oleh publik dan mitra industri.</li>
-              <li>Menerapkan transparansi finansial 100% dengan prinsip Maker-Checker tanpa kompromi.</li>
-              <li>Mengirim delegasi berprestasi pada kejuaraan kompetisi teknologi bergengsi.</li>
-            </ul>
+          <div className="mt-6 pt-4 border-t border-[#111215]/6 flex items-center gap-2 text-xs text-[#525660]">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <span>Fokus pada kualitas rekayasa, tata kelola, dan etika profesional</span>
+          </div>
+        </div>
+
+        {/* Misi (7 cols) */}
+        <div className="p-6 sm:p-8 lg:col-span-7">
+          <span className="font-semibold uppercase tracking-wider text-[11px] text-[#6456EB] block mb-4">
+            Pilar Misi Strategis
+          </span>
+          <div className="space-y-4">
+            {MISSIONS.map((m, idx) => (
+              <div key={idx} className="flex items-start gap-3.5 text-xs sm:text-sm">
+                <span className="font-semibold text-[#6456EB] font-tabular shrink-0 text-xs mt-0.5">
+                  0{idx + 1}
+                </span>
+                <div>
+                  <h3 className="font-semibold text-[#111215]">{m.title}</h3>
+                  <p className="text-xs text-[#525660] mt-0.5 leading-relaxed">{m.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Naungan NEXA Tech Labs (Full-width banner dari ujung kiri ke ujung kanan) */}
-      <section className="w-full bg-[#111215] text-white border-y border-white/10 shadow-md py-16 md:py-20 my-6">
-        <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="max-w-xl text-left">
-            <div className="text-[11px] font-semibold text-[#7A6EFF] uppercase tracking-wider mb-2">
-              Hubungan Kelembagaan
-            </div>
-            <h3 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#F4F1EB]">
-              Di Bawah Naungan Resmi NEXA Tech Labs
-            </h3>
-            <p className="text-xs md:text-sm text-[#9FA5B5] mt-3 leading-relaxed">
-              NCD beroperasi di bawah bimbingan riset dan standarisasi kualitas NEXA Tech Labs. Sinergi ini memastikan setiap arsitektur kode, kepatuhan data privasi, dan alur kerja keorganisasian memenuhi standar profesional industri.
-            </p>
-          </div>
-          <div className="p-6 rounded-xl bg-white/5 border border-white/10 text-center min-w-[220px]">
-            <Award className="w-8 h-8 text-[#7A6EFF] mx-auto mb-2" />
-            <div className="text-sm font-semibold text-[#F4F1EB]">NEXA Tech Labs</div>
-            <div className="text-[10px] text-[#9FA5B5] mt-1">Innovation & Research Entity</div>
+      {/* Naungan & Kemitraan NEXA Tech Labs */}
+      <div className="bg-white rounded-2xl border border-[#111215]/8 p-6 sm:p-8 mb-14 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="max-w-2xl text-left">
+          <span className="font-semibold uppercase tracking-wider text-[11px] text-[#6456EB] block mb-1.5">
+            Naungan & Standarisasi Resmi
+          </span>
+          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#111215]">
+            Di Bawah Bimbingan Riset NEXA Tech Labs
+          </h2>
+          <p className="text-xs sm:text-sm text-[#525660] mt-2 leading-relaxed">
+            NCD beroperasi di bawah supervisi riset dan standarisasi rekayasa NEXA Tech Labs. Kolaborasi ini menjamin setiap arsitektur kode, kepatuhan keamanan data privasi, dan alur kerja keorganisasian memenuhi standar profesional industri.
+          </p>
+        </div>
+
+        <div className="shrink-0 p-5 rounded-xl bg-[#F4F1EB]/60 border border-[#111215]/6 text-left sm:text-center min-w-[220px]">
+          <div className="text-xs font-semibold text-[#111215]">NEXA Tech Labs</div>
+          <div className="text-[11px] text-[#525660] mt-0.5">R&D & Incubation Entity</div>
+          <div className="mt-3 pt-2.5 border-t border-[#111215]/6 text-[10px] text-[#6456EB] font-semibold tracking-wider uppercase">
+            Afiliasi Terverifikasi
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Interactive Timeline */}
-      <div className="w-full max-w-5xl mx-auto px-6 pt-10 pb-24 text-left">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-semibold tracking-tight text-[#111215]">Perjalanan & Milestone Organisasi</h2>
-            <p className="text-xs text-[#525660] mt-1">Jejak pembentukan NCD dari awal pendirian hingga sekarang</p>
-          </div>
+      {/* Perjalanan Organisasi (Timeline) */}
+      <div className="text-left">
+        <div className="mb-8">
+          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#111215]">
+            Perjalanan & Rekam Jejak Organisasi
+          </h2>
+          <p className="text-xs sm:text-sm text-[#525660] mt-1">
+            Tahapan penting perkembangan NCD dari awal inisiasi hingga konsolidasi platform modern.
+          </p>
+        </div>
 
-          <div className="relative border-l border-[#111215]/15 ml-6 pl-8 space-y-10">
-            {isLoading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="relative animate-pulse">
-                  <div className="absolute -left-[38px] top-1.5 w-4 h-4 rounded-full bg-[#111215]/10" />
-                  <div className="w-24 h-4 rounded bg-[#111215]/8 mb-2" />
-                  <div className="w-48 h-5 rounded bg-[#111215]/10 mb-2" />
-                  <div className="w-full h-16 rounded-xl bg-white border border-[#111215]/8 shadow-2xs" />
+        <div className="space-y-4">
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl border border-[#111215]/8 p-5 sm:p-6 shadow-2xs animate-pulse flex flex-col sm:flex-row gap-4 sm:gap-6"
+              >
+                <div className="w-28 h-4 rounded bg-[#111215]/8" />
+                <div className="flex-1 space-y-2">
+                  <div className="w-48 h-5 rounded bg-[#111215]/10" />
+                  <div className="w-full h-4 rounded bg-[#111215]/6" />
                 </div>
-              ))
-            ) : (
-              history?.map((item) => (
-                <div key={item.id} className="relative group">
-                  <div className="absolute -left-[38px] top-1.5 w-4 h-4 rounded-full bg-[#F4F1EB] border-3 border-[#6456EB] shadow-2xs"></div>
-                  <div className="flex items-center space-x-2 text-xs font-semibold text-[#6456EB] mb-1">
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>{item.month} {item.year}</span>
-                  </div>
-                  <h3 className="text-base font-semibold text-[#111215]">{item.title}</h3>
-                  <p className="text-xs text-[#525660] mt-1.5 leading-relaxed bg-white p-4 rounded-xl border border-[#111215]/8 shadow-2xs">
+              </div>
+            ))
+          ) : (
+            history?.map((item) => (
+              <div
+                key={item.id}
+                className="bg-white rounded-2xl border border-[#111215]/8 p-5 sm:p-6 shadow-2xs hover:border-[#111215]/20 hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-6"
+              >
+                <div className="sm:w-36 shrink-0">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#6456EB] font-tabular">
+                    {item.month} {item.year}
+                  </span>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-semibold text-[#111215] leading-snug">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#525660] mt-1.5 leading-relaxed">
                     {item.description}
                   </p>
                 </div>
-              ))
-            )}
-          </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
   )
 }
+export default About

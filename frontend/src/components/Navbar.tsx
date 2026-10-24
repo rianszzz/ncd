@@ -18,7 +18,9 @@ export function Navbar() {
     { name: 'Tentang', path: '/about' },
     { name: 'Struktur & Tim', path: '/team' },
     { name: 'Proyek', path: '/projects' },
-    { name: 'Transparansi Kas', path: '/app/finance' },
+    { name: 'Prestasi', path: '/achievements' },
+    { name: 'Berita', path: '/news' },
+    { name: 'Buku Kas', path: '/app/finance' },
   ]
 
   return (
@@ -29,6 +31,8 @@ export function Navbar() {
           <img
             src="/logo.svg"
             alt="NCD Logo"
+            width={24}
+            height={24}
             className="h-6 w-auto object-contain"
           />
           <div className="hidden sm:flex flex-col text-left pl-1 border-l border-[#111215]/10">
@@ -72,7 +76,7 @@ export function Navbar() {
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           aria-label={isOpen ? 'Tutup menu' : 'Buka menu'}
-          className="md:hidden p-2 rounded-xl text-[#111215] hover:bg-[#111215]/5 transition-colors focus:outline-none"
+          className="md:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-[#111215] hover:bg-[#111215]/5 transition-colors focus:outline-none cursor-pointer"
         >
           {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -86,14 +90,14 @@ export function Navbar() {
               key={item.path}
               to={item.path}
               onClick={() => setIsOpen(false)}
-              className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left flex items-center justify-between ${
+              className={`px-3.5 py-3 min-h-[44px] rounded-xl text-sm font-medium transition-colors text-left flex items-center justify-between ${
                 isActive(item.path)
                   ? 'bg-[#111215] text-[#F4F1EB]'
                   : 'text-[#111215] hover:bg-[#111215]/5'
               }`}
             >
               <span>{item.name}</span>
-              {isActive(item.path) && <span className="w-1.5 h-1.5 rounded-full bg-[#6456EB]"></span>}
+              {isActive(item.path) && <span className="w-1.5 h-1.5 rounded-full bg-white"></span>}
             </Link>
           ))}
 
@@ -101,7 +105,7 @@ export function Navbar() {
             <Link
               to="/login"
               onClick={() => setIsOpen(false)}
-              className="w-full px-4 py-2.5 text-xs font-medium rounded-xl text-[#111215] bg-white border border-[#111215]/10 hover:bg-[#111215]/5 transition-colors flex items-center justify-center space-x-2"
+              className="w-full px-4 py-3 min-h-[44px] text-xs font-medium rounded-xl text-[#111215] bg-white border border-[#111215]/10 hover:bg-[#111215]/5 transition-colors flex items-center justify-center space-x-2"
             >
               <Lock className="w-3.5 h-3.5 text-[#7E8492]" />
               <span>Portal Member</span>
@@ -109,7 +113,7 @@ export function Navbar() {
             <Link
               to="/join"
               onClick={() => setIsOpen(false)}
-              className="w-full px-4 py-2.5 text-xs font-medium rounded-xl bg-[#111215] text-[#F4F1EB] hover:bg-[#252830] transition-all text-center shadow-2xs"
+              className="w-full px-4 py-3 min-h-[44px] text-xs font-medium rounded-xl bg-[#111215] text-[#F4F1EB] hover:bg-[#252830] transition-all flex items-center justify-center shadow-2xs"
             >
               Gabung NCD
             </Link>

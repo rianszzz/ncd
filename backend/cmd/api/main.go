@@ -74,6 +74,9 @@ func main() {
 		api.Get("/public/members", handler.GetPublicMembers)
 		api.Get("/public/projects", handler.GetPublicProjects)
 		api.Get("/public/history", handler.GetPublicHistory)
+		api.Get("/public/achievements", handler.GetPublicAchievements)
+		api.Get("/public/competitions", handler.GetPublicCompetitions)
+		api.Get("/public/posts", handler.GetPublicPosts)
 		api.Post("/public/apply", handler.SubmitApplication)
 
 		// Public Finance Routes (Buku Kas Terbuka - Read-Only Publik)
@@ -96,6 +99,9 @@ func main() {
 			protected.With(ncdMiddleware.RequireRole("GOD_ADMIN", "SUPER_ADMIN")).
 				Post("/finance/transactions/{id}/void", handler.VoidTransaction)
 		})
+
+		// Portal Routes
+		api.Get("/portal/dashboard", handler.GetPortalDashboard)
 
 		// Auth Routes
 		api.Post("/auth/login", handler.Login(cfg.JWTSecret))

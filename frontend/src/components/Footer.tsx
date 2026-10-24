@@ -2,13 +2,17 @@ import { Link } from 'react-router-dom'
 
 export function Footer() {
   return (
-    <footer className="border-t border-[#111215]/8 py-14 px-6 bg-[#F4F1EB] text-[#525660] text-xs">
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10 mb-10 text-left">
+    <footer className="border-t border-[#111215]/8 py-10 md:py-14 px-6 bg-[#F4F1EB] text-[#525660] text-xs">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 mb-10 text-left">
         <div>
           <div className="flex items-center space-x-2 mb-3">
             <img
               src="/logo.svg"
               alt="NCD Logo"
+              width={20}
+              height={20}
+              loading="lazy"
+              decoding="async"
               className="h-5 w-auto object-contain"
             />
           </div>
@@ -24,6 +28,8 @@ export function Footer() {
             <li><Link to="/about" className="hover:text-[#111215] transition-colors">Tentang NCD & Visi</Link></li>
             <li><Link to="/team" className="hover:text-[#111215] transition-colors">Struktur 8 Pengurus</Link></li>
             <li><Link to="/projects" className="hover:text-[#111215] transition-colors">Katalog Portofolio</Link></li>
+            <li><Link to="/achievements" className="hover:text-[#111215] transition-colors">Prestasi & Kompetisi</Link></li>
+            <li><Link to="/news" className="hover:text-[#111215] transition-colors">Warta & Pengumuman</Link></li>
           </ul>
         </div>
 

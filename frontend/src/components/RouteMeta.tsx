@@ -30,6 +30,18 @@ const metaByPath: Record<string, { title: string; description: string }> = {
     title: 'Portal Pengurus • NCD',
     description: 'Autentikasi verifikator dan bendahara pengelola keuangan organisasi NCD.',
   },
+  '/achievements': {
+    title: 'Hall of Fame Prestasi & Kompetisi • NCD',
+    description: 'Daftar rekapitulasi penghargaan, delegasi kompetisi, dan prestasi mahasiswa anggota NCD.',
+  },
+  '/news': {
+    title: 'Warta & Berita Komunitas • NCD',
+    description: 'Kumpulan warta pengumuman resmi, rilis produk, dan riset teknologi terkini dari NCD.',
+  },
+  '/app': {
+    title: 'Dashboard Portal Pengurus • NCD',
+    description: 'Workspace manajemen internal NCD untuk pengawasan kas, proyek, dan koordinasi divisi.',
+  },
   '/terms': {
     title: 'Syarat & Ketentuan • NCD',
     description: 'Pedoman keanggotaan, aturan kode etik, dan ketentuan operasional NEXA Community Development.',

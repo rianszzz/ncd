@@ -13,9 +13,9 @@ export function Projects() {
   })
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-20 text-left">
+    <div className="max-w-6xl mx-auto px-6 py-12 md:py-20 text-left">
       {/* Title */}
-      <div className="mb-12">
+      <div className="mb-10 md:mb-12">
         <h1 className="text-3xl md:text-5xl font-semibold tracking-[-0.03em] text-[#111215]">
           Proyek Komunitas
         </h1>
@@ -25,13 +25,13 @@ export function Projects() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <ProjectSkeleton />
           <ProjectSkeleton />
           <ProjectSkeleton />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects?.map((p) => (
             <div
               key={p.id}

@@ -66,3 +66,44 @@ export function TableRowSkeleton() {
     </tr>
   )
 }
+
+export function NewsCardSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl border border-[#111215]/8 overflow-hidden shadow-2xs flex flex-col p-6 animate-pulse">
+      <div className="flex items-center justify-between mb-4">
+        <div className="w-24 h-6 rounded-xl bg-[#111215]/8" />
+        <div className="w-16 h-4 rounded bg-[#111215]/6" />
+      </div>
+      <div className="w-4/5 h-6 rounded-md bg-[#111215]/10 mb-3" />
+      <div className="w-full h-3.5 rounded bg-[#111215]/6 mb-2" />
+      <div className="w-full h-3.5 rounded bg-[#111215]/6 mb-2" />
+      <div className="w-2/3 h-3.5 rounded bg-[#111215]/6 mb-6 flex-1" />
+      <div className="pt-4 border-t border-[#111215]/8 flex items-center justify-between">
+        <div className="w-28 h-4 rounded bg-[#111215]/8" />
+        <div className="w-16 h-4 rounded bg-[#111215]/8" />
+      </div>
+    </div>
+  )
+}
+
+export function AchievementSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl border border-[#111215]/8 overflow-hidden shadow-2xs flex flex-col p-6 animate-pulse">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 rounded-xl bg-[#111215]/8" />
+          <div className="w-24 h-6 rounded-xl bg-[#111215]/8" />
+        </div>
+        <div className="w-20 h-5 rounded-md bg-[#111215]/8" />
+      </div>
+      <div className="w-3/4 h-5 rounded-md bg-[#111215]/10 mb-2" />
+      <div className="w-1/2 h-4 rounded bg-[#111215]/8 mb-4" />
+      <div className="w-full h-3 rounded bg-[#111215]/6 mb-2" />
+      <div className="w-5/6 h-3 rounded bg-[#111215]/6 mb-5 flex-1" />
+      <div className="pt-4 border-t border-[#111215]/8 flex items-center justify-between">
+        <div className="w-32 h-4 rounded bg-[#111215]/8" />
+        <div className="w-20 h-4 rounded bg-[#111215]/8" />
+      </div>
+    </div>
+  )
+}

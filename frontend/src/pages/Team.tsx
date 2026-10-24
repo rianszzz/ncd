@@ -52,9 +52,9 @@ export function Team() {
   )
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-20 text-left">
+    <div className="max-w-6xl mx-auto px-6 py-12 md:py-20 text-left">
       {/* Title */}
-      <div className="mb-12">
+      <div className="mb-10 md:mb-12">
         <h1 className="text-3xl md:text-5xl font-semibold tracking-[-0.03em] text-[#111215]">
           Pengurus dan Kontributor
         </h1>
@@ -64,12 +64,12 @@ export function Team() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center space-x-1.5 overflow-x-auto pb-4 mb-10 text-xs no-scrollbar">
+      <div className="flex items-center space-x-2 overflow-x-auto pb-4 mb-8 md:mb-10 text-xs no-scrollbar">
         {divisions.map((div) => (
           <button
             key={div}
             onClick={() => setActiveDivision(div)}
-            className={`px-3.5 py-1.5 rounded-xl font-medium whitespace-nowrap transition-all ${
+            className={`px-3.5 py-2 min-h-[38px] rounded-xl font-medium whitespace-nowrap transition-all cursor-pointer ${
               activeDivision === div
                 ? 'bg-[#111215] text-[#F4F1EB] shadow-2xs'
                 : 'bg-white text-[#525660] hover:text-[#111215] border border-[#111215]/8'
