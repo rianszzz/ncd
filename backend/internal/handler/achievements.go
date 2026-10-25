@@ -203,7 +203,7 @@ func SyncAchievementsFromDB(ctx context.Context, pool *pgxpool.Pool) {
 		ORDER BY created_at DESC
 	`)
 	if err == nil {
-		var loaded []AchievementDTO
+		loaded := []AchievementDTO{}
 		for rows.Next() {
 			var a AchievementDTO
 			if err := rows.Scan(&a.ID, &a.Title, &a.EventName, &a.Competition, &a.Organizer, &a.Tier, &a.Rank, &a.Category, &a.Year, &a.Date, &a.AwardDate, &a.TeamName, &a.Members, &a.TeamMembers, &a.ProjectTitle, &a.Description, &a.CertificateURL); err == nil {
@@ -224,7 +224,7 @@ func SyncAchievementsFromDB(ctx context.Context, pool *pgxpool.Pool) {
 		ORDER BY created_at DESC
 	`)
 	if err == nil {
-		var loadedComp []CompetitionDTO
+		loadedComp := []CompetitionDTO{}
 		for compRows.Next() {
 			var c CompetitionDTO
 			if err := compRows.Scan(&c.ID, &c.Name, &c.Organizer, &c.Tier, &c.Category, &c.RegistrationDeadline, &c.EventDate, &c.Status, &c.Description, &c.URL); err == nil {

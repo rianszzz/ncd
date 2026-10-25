@@ -38,7 +38,7 @@ export function Login() {
   return (
     <div className="max-w-md mx-auto px-6 py-12 md:py-20 text-left">
       <div className="text-center mb-8">
-        <div className="w-12 h-12 rounded-xl bg-[#111215] flex items-center justify-center text-white mx-auto mb-4 shadow-2xs">
+        <div className="w-12 h-12 bg-[#111215] border border-black/20 flex items-center justify-center text-white mx-auto mb-4 shadow-2xs">
           <KeyRound className="w-5 h-5 text-white" />
         </div>
         <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#111215]">
@@ -49,9 +49,9 @@ export function Login() {
         </p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-[#111215]/8 p-6 sm:p-8 shadow-2xs">
+      <div className="bg-white border border-[#111215]/20 p-6 sm:p-8 shadow-2xs">
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-red-50 text-[#D83B01] text-xs font-medium border border-red-100">
+          <div className="mb-4 p-3 bg-red-50 text-[#D83B01] text-xs font-medium border border-red-200">
             {error}
           </div>
         )}
@@ -59,7 +59,7 @@ export function Login() {
         <form onSubmit={handleLogin} className="space-y-4 text-xs">
           <div>
             <label className="block font-medium mb-1.5 text-[#111215]">
-              Kunci Akses / Token *
+              Kunci Akses / Token 
             </label>
             <div className="relative">
               <input
@@ -70,10 +70,10 @@ export function Login() {
                 onChange={(e) => setAccessKey(e.target.value)}
                 autoComplete="off"
                 spellCheck="false"
-                className="w-full px-3.5 py-2.5 min-h-[44px] rounded-xl bg-[#F4F1EB] outline-none focus:bg-white focus:border-[#111215]/20 border border-transparent transition-all placeholder:text-[#7E8492] font-mono text-xs uppercase"
+                className="w-full px-3.5 py-2.5 min-h-[44px] bg-[#F4F1EB] outline-none focus:bg-white focus:border-[#111215] border border-[#111215]/20 transition-all placeholder:text-[#525660] font-mono text-xs uppercase"
               />
             </div>
-            <p className="text-[11px] text-[#7E8492] mt-1.5">
+            <p className="text-[11px] text-[#525660] mt-1.5">
               Tidak membutuhkan email dan password. Cukup masukkan token unik role Anda.
             </p>
           </div>
@@ -81,7 +81,7 @@ export function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 min-h-[44px] rounded-xl bg-[#111215] text-[#F4F1EB] font-medium hover:bg-[#252830] transition-all flex items-center justify-center space-x-2 shadow-2xs disabled:opacity-50 mt-2 cursor-pointer disabled:cursor-not-allowed"
+            className="w-full py-3 min-h-[44px] bg-[#111215] text-[#F4F1EB] font-medium hover:bg-[#252830] transition-all flex items-center justify-center space-x-2 shadow-2xs disabled:opacity-50 mt-2 cursor-pointer disabled:cursor-not-allowed border border-black"
           >
             <span>{loading ? 'Memvalidasi Kunci...' : 'Masuk Dasbor'}</span>
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}

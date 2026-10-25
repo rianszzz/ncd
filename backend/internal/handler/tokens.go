@@ -171,24 +171,19 @@ func InitTokensDB(pool *pgxpool.Pool) {
 		return
 	}
 
-	var count int
-	_ = pool.QueryRow(ctx, "SELECT COUNT(*) FROM access_tokens").Scan(&count)
-	if count == 0 {
-		tokenLock.RLock()
-		keysToSeed := make([]AccessKey, len(accessKeys))
-		copy(keysToSeed, accessKeys)
-		tokenLock.RUnlock()
+	tokenLock.RLock()
+	keysToSeed := make([]AccessKey, len(accessKeys))
+	copy(keysToSeed, accessKeys)
+	tokenLock.RUnlock()
 
-		for _, k := range keysToSeed {
-			_, _ = pool.Exec(ctx, `
-				INSERT INTO access_tokens (id, key, role, assignee, position, email, is_active, created_at, last_used_at)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-				ON CONFLICT (id) DO UPDATE SET key = EXCLUDED.key, is_active = EXCLUDED.is_active
-			`, k.ID, k.Key, k.Role, k.Assignee, k.Position, k.Email, k.IsActive, k.CreatedAt, k.LastUsedAt)
-		}
-	} else {
-		SyncTokensFromDB(ctx, pool)
+	for _, k := range keysToSeed {
+		_, _ = pool.Exec(ctx, `
+			INSERT INTO access_tokens (id, key, role, assignee, position, email, is_active, created_at, last_used_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			ON CONFLICT (id) DO NOTHING
+		`, k.ID, k.Key, k.Role, k.Assignee, k.Position, k.Email, k.IsActive, k.CreatedAt, k.LastUsedAt)
 	}
+	SyncTokensFromDB(ctx, pool)
 }
 
 // SyncTokensFromDB fetches all tokens from PostgreSQL into memory and updates disk cache.

@@ -31,6 +31,34 @@
 
   html {
     scroll-behavior: smooth;
+    scroll-padding-top: 4.5rem;
+  }
+
+  /* Universal high-contrast keyboard focus indicators */
+  :focus-visible {
+    outline: 2px solid #111215;
+    outline-offset: 2px;
+  }
+
+  .dark :focus-visible,
+  .bg-\[\#111215\] :focus-visible,
+  [data-theme='dark'] :focus-visible {
+    outline-color: #F4F1EB;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #111215 transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #111215;
   }
 
   body {
@@ -56,39 +84,11 @@
   }
 }
 
-/* Translucent Glass Header */
-.apple-glass {
-  background: rgba(244, 241, 235, 0.85);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-}
-
-/* Typography Hierarchy */
-.apple-display {
-  letter-spacing: -0.028em;
-  line-height: 1.08;
-}
-
-.apple-headline {
-  letter-spacing: -0.022em;
-  line-height: 1.15;
-}
-
-.apple-body {
-  letter-spacing: -0.006em;
-  line-height: 1.55;
-}
-
-/* Apple Squircle Cards */
-.apple-card {
-  border-radius: 20px;
-}
-
-.apple-card-lg {
-  border-radius: 24px;
-}
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
   button:active,
   a:active,
   [role="button"]:active {

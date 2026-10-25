@@ -254,7 +254,7 @@ export function Team() {
                         decoding="async"
                         className="absolute inset-0 w-full h-full object-cover object-top grayscale contrast-125 brightness-50"
                       />
-                      <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
+                      <div className="absolute inset-0 bg-black/75" />
 
                       <div className="relative z-10 flex flex-col items-start">
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-[#F4F1EB]/80">

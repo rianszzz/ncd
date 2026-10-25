@@ -45,7 +45,7 @@
   inset: 10% 8% -4%;
   border-radius: var(--fc-radius);
   background: color-mix(in srgb, var(--fc-shadow) calc(var(--fc-shadow-o) * 100%), transparent);
-  filter: blur(20px);
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.18);
   pointer-events: none;
 }
 

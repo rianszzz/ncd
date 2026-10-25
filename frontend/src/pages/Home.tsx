@@ -1,4 +1,3 @@
-import { useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion, useReducedMotion } from 'motion/react'
@@ -7,14 +6,10 @@ import {
 } from 'lucide-react'
 import { api, Project } from '../services/api'
 import { ProjectSkeleton } from '../components/Skeletons'
-import { VariableProximity } from '../components/ui/VariableProximity'
-import { Magnet } from '../components/ui/Magnet'
-import { InteractiveHoverButton } from '../components/ui/interactive-hover-button'
 import { GovernanceHorizontalScroll } from '../components/ui/GovernanceHorizontalScroll'
 import FadeContent from '../components/ui/FadeContent'
 
 export function Home() {
-  const heroContainerRef = useRef<HTMLDivElement>(null)
   const shouldReduceMotion = useReducedMotion()
   const { data: projects, isLoading } = useQuery<Project[]>({
     queryKey: ['publicProjects'],
@@ -30,54 +25,36 @@ export function Home() {
     <div className="flex flex-col items-center">
       {/* Hero Section */}
       <motion.section
-        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: shouldReduceMotion ? 0 : 0.5, ease }}
+        initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.25, ease }}
         className="min-h-[calc(100dvh-3.5rem)] w-full max-w-4xl mx-auto px-5 sm:px-6 py-8 md:py-16 text-center flex flex-col items-center justify-center"
       >
-        <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-[-0.035em] text-[#111215] leading-[1.18] sm:leading-[1.14] max-w-2xl mx-auto">
-          <div ref={heroContainerRef} className="relative inline-block">
-            <VariableProximity
-              label={"Komunitas Mahasiswa\nTeknologi &\nRiset Terbuka"}
-              className="cursor-default"
-              fromFontVariationSettings="'wght' 600, 'opsz' 14"
-              toFontVariationSettings="'wght' 950, 'opsz' 40"
-              containerRef={heroContainerRef}
-              radius={100}
-              falloff="linear"
-              smoothing={0.2}
-              scale={1}
-              lift={0}
-              idleWave={false}
-            />
-          </div>
+        <h1 className="text-3xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-[-0.035em] text-[#111215] leading-[1.18] sm:leading-[1.12] max-w-2xl mx-auto">
+          Komunitas Mahasiswa<br />
+          Teknologi dan Riset<br />
+          Terbuka
         </h1>
 
-        <p className="mt-4 sm:mt-5 text-xs sm:text-sm md:text-base text-[#525660] max-w-lg font-normal leading-relaxed text-balance px-2">
+        <p className="mt-3.5 sm:mt-5 text-[12.5px] sm:text-sm md:text-base text-[#525660] max-w-md sm:max-w-lg font-normal leading-relaxed text-balance px-4">
           Wadah kolaborasi independen mahasiswa untuk rekayasa perangkat lunak, riset keamanan siber, dan transparansi organisasi.
         </p>
 
-        <div className="mt-6 sm:mt-8 flex flex-row items-center justify-center gap-2.5 sm:gap-3 w-full max-w-xs sm:max-w-none">
-          <Magnet
-            padding={60}
-            magnetStrength={3}
-            wrapperClassName="flex-1 sm:flex-initial"
-            innerClassName="w-full"
+        <div className="mt-6 sm:mt-8 flex flex-row items-center justify-center gap-2.5 sm:gap-3 w-full max-w-[264px] sm:max-w-none">
+          <Link
+            to="/projects"
+            className="flex-1 sm:flex-initial px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-[#111215] text-[#F4F1EB] font-medium text-xs sm:text-sm hover:bg-[#252830] active:scale-[0.97] transition-all flex items-center justify-center gap-1.5 shadow-2xs min-h-[44px] whitespace-nowrap select-none touch-manipulation"
           >
-            <Link
-              to="/projects"
-              className="w-full sm:w-auto px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-[#111215] text-[#F4F1EB] font-medium text-xs sm:text-sm hover:bg-[#252830] active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-2xs min-h-[44px]"
-            >
-              <span>Daftar Proyek</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#F4F1EB]/80" />
-            </Link>
-          </Magnet>
-          <InteractiveHoverButton
+            <span>Daftar Proyek</span>
+            <ArrowRight className="w-3.5 h-3.5 text-[#F4F1EB]/80 shrink-0" />
+          </Link>
+          <Link
             to="/team"
-            text="Struktur Tim"
-            className="flex-1 sm:flex-initial px-4 sm:px-5 py-2.5 sm:py-3 min-w-[130px]"
-          />
+            className="flex-1 sm:flex-initial px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-transparent border border-[#111215]/20 text-[#111215] font-medium text-xs sm:text-sm hover:bg-[#111215]/5 hover:border-[#111215] active:scale-[0.97] transition-all flex items-center justify-center gap-1.5 min-h-[44px] whitespace-nowrap select-none touch-manipulation"
+          >
+            <span>Struktur Tim</span>
+            <ArrowRight className="w-3.5 h-3.5 text-[#111215]/70 shrink-0" />
+          </Link>
         </div>
       </motion.section>
 
@@ -163,7 +140,7 @@ export function Home() {
 
                   {/* Top Bar: Technical Metadata (Inside Image, Zero Rounded) */}
                   <div className="relative z-10 p-4 sm:p-5 flex items-center justify-between">
-                    <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider bg-[#111215]/90 text-[#F4F1EB] border border-white/20 backdrop-blur-xs">
+                    <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider bg-[#111215] text-[#F4F1EB] border border-white/20">
                       0{idx + 1} // R&amp;D
                     </span>
                     <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider bg-white text-[#111215] border border-[#111215] shadow-xs">
@@ -177,7 +154,7 @@ export function Home() {
                       {p.tech_stack.slice(0, 3).map((tech) => (
                         <span
                           key={tech}
-                          className="px-1.5 py-0.5 rounded-none text-[9px] font-mono font-medium bg-[#111215]/80 text-[#F4F1EB] border border-white/15 uppercase tracking-wide backdrop-blur-xs"
+                          className="px-1.5 py-0.5 rounded-none text-[9px] font-mono font-medium bg-[#111215] text-[#F4F1EB] border border-white/15 uppercase tracking-wide"
                         >
                           {tech}
                         </span>
@@ -235,26 +212,20 @@ export function Home() {
         <p className="text-xs sm:text-sm md:text-base text-[#525660] mt-3 max-w-xl mx-auto leading-relaxed text-balance">
           Pendaftaran terbuka untuk mahasiswa yang berminat berkontribusi pada pengembangan aplikasi, riset terbuka, dan tata kelola komunitas.
         </p>
-        <div className="mt-6 sm:mt-8 flex flex-row items-center justify-center gap-2.5 sm:gap-3 w-full max-w-sm sm:max-w-none mx-auto">
-          <Magnet
-            padding={60}
-            magnetStrength={3}
-            wrapperClassName="flex-1 sm:flex-initial"
-            innerClassName="w-full"
+        <div className="mt-6 sm:mt-8 flex flex-row items-center justify-center gap-2.5 sm:gap-3 w-fit mx-auto">
+          <Link
+            to="/join"
+            className="group px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-[#111215] text-[#F4F1EB] font-medium text-xs sm:text-sm hover:bg-[#252830] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-1.5 shadow-2xs min-h-[44px] whitespace-nowrap select-none touch-manipulation"
           >
-            <Link
-              to="/join"
-              className="w-full sm:w-auto px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-[#111215] text-[#F4F1EB] font-medium text-xs sm:text-sm hover:bg-[#252830] active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-2xs min-h-[44px]"
-            >
-              <span>Formulir Pendaftaran</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#F4F1EB]/80" />
-            </Link>
-          </Magnet>
-          <InteractiveHoverButton
+            <span>Formulir Pendaftaran</span>
+            <ArrowRight className="w-3.5 h-3.5 text-[#F4F1EB]/80 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
+          </Link>
+          <Link
             to="/about"
-            text="Tentang Kami"
-            className="flex-1 sm:flex-initial px-4 sm:px-5 py-2.5 sm:py-3 min-w-[130px]"
-          />
+            className="px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl border border-[#111215]/20 bg-transparent text-[#111215] font-medium text-xs sm:text-sm hover:border-[#111215] hover:bg-[#111215]/5 active:scale-[0.98] transition-all duration-200 flex items-center justify-center min-h-[44px] whitespace-nowrap select-none touch-manipulation"
+          >
+            <span>Tentang Kami</span>
+          </Link>
         </div>
       </motion.section>
     </div>

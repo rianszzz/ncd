@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"sort"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -50,23 +48,6 @@ type HistoryDTO struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 }
-
-type ApplicationRequest struct {
-	FullName    string `json:"full_name"`
-	Email       string `json:"email"`
-	PhoneWA     string `json:"phone_whatsapp"`
-	University  string `json:"university"`
-	Major       string `json:"major"`
-	Generation  string `json:"generation"`
-	Interest    string `json:"skills_interest"`
-	Motivation  string `json:"motivation"`
-	Portfolio   string `json:"portfolio_links"`
-}
-
-var (
-	appsLock     sync.Mutex
-	applications = make([]ApplicationRequest, 0)
-)
 
 func GetPublicStats(w http.ResponseWriter, r *http.Request) {
 	stats := map[string]interface{}{
@@ -350,32 +331,4 @@ func GetPublicHistory(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(history)
-}
-
-func SubmitApplication(w http.ResponseWriter, r *http.Request) {
-	var req ApplicationRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	if req.FullName == "" || req.Email == "" || req.PhoneWA == "" {
-		http.Error(w, "Nama, email, dan WhatsApp wajib diisi", http.StatusBadRequest)
-		return
-	}
-
-	appsLock.Lock()
-	applications = append(applications, req)
-	appsLock.Unlock()
-
-	resp := map[string]interface{}{
-		"status":     "success",
-		"message":    "Formulir pendaftaran berhasil terkirim. Tim Sekretaris NCD akan meninjau berkas Anda.",
-		"request_id": uuid.New().String(),
-		"timestamp":  time.Now(),
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(resp)
 }

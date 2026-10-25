@@ -20,4 +20,5 @@ func SetDB(pool *pgxpool.Pool, r *repository.Queries) {
 	InitTokensDB(pool)
 	InitAchievementsDB(pool)
 	InitNewsDB(pool)
+	InitApplicationsDB(pool)
 }

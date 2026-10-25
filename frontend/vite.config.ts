@@ -13,6 +13,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    allowedHosts: true,
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
@@ -22,6 +23,7 @@ export default defineConfig({
   },
   preview: {
     port: 4173,
+    allowedHosts: true,
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
@@ -37,20 +39,23 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('gsap')) {
-              return 'vendor-gsap'
+            if (id.includes('lucide-react')) {
+              return 'vendor-icons'
             }
             if (id.includes('motion') || id.includes('framer-motion')) {
               return 'vendor-motion'
             }
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+            if (
+              id.includes('/react/') ||
+              id.includes('/react-dom/') ||
+              id.includes('/react-router/') ||
+              id.includes('/react-router-dom/') ||
+              id.includes('scheduler')
+            ) {
               return 'vendor-react'
             }
             if (id.includes('@tanstack')) {
               return 'vendor-query'
-            }
-            if (id.includes('lucide-react')) {
-              return 'vendor-icons'
             }
             if (id.includes('axios')) {
               return 'vendor-axios'

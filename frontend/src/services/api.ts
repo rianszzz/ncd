@@ -139,6 +139,54 @@ export interface DashboardUser {
   position: string
 }
 
+export interface ApplicationVote {
+  id: string
+  user_id: string
+  user_name: string
+  user_role: string
+  decision: 'ACC' | 'TIDAK_ACC'
+  note?: string
+  created_at: string
+}
+
+export interface ApplicationItem {
+  id: string
+  full_name: string
+  email: string
+  phone_whatsapp: string
+  university: string
+  major: string
+  generation: string
+  campus_domicile: string
+  referral_source: string
+  skills_interest: string
+  motivation: string
+  portfolio_links?: string
+  status: 'NEW' | 'ACCEPTED' | 'REJECTED'
+  final_decision_by?: string
+  final_decision_at?: string
+  verification_status?: 'LENGKAP' | 'PERLU_REVISI' | 'TIDAK_LENGKAP'
+  verification_note?: string
+  verified_by?: string
+  verified_at?: string
+  votes: ApplicationVote[]
+  created_at: string
+  updated_at: string
+}
+
+export interface OrganizationDocument {
+  id: string
+  title: string
+  date: string
+  category: 'NOTULENSI' | 'SOP' | 'SURAT_KEPUTUSAN' | 'PANDUAN' | 'ARSIP' | string
+  summary: string
+  content_md: string
+  file_link?: string
+  author: string
+  created_at: string
+  updated_at: string
+}
+
 export interface ActivityItem {
   id: string
   title: string
@@ -175,6 +223,62 @@ export interface AccessKey {
   is_active: boolean
   created_at: string
   last_used_at?: string
+}
+
+export interface MemberProfile {
+  user_id?: string
+  email?: string
+  full_name: string
+  major: string
+  cohort_year: string
+  campus_domicile: string
+  interests: string
+  target_skills: string
+  hobbies: string
+  specific_focus: string
+  topics_to_learn: string
+  expectations: string[]
+  expectation_note: string
+  interest_fields: string[]
+  other_interest: string
+  is_onboarded: boolean
+  completed_at?: string
+  updated_at?: string
+}
+
+export interface OnboardingTrackerItem {
+  user_id: string
+  full_name: string
+  email: string
+  role: string
+  position: string
+  token_key?: string
+  is_onboarded: boolean
+  completed_at?: string
+  profile?: MemberProfile
+}
+
+export interface OnboardingTrackerResponse {
+  total_members: number
+  completed_count: number
+  pending_count: number
+  completion_rate: number
+  members: OnboardingTrackerItem[]
+}
+
+export const getMemberProfile = async (): Promise<MemberProfile> => {
+  const res = await api.get('/member/profile')
+  return res.data
+}
+
+export const submitMemberOnboarding = async (data: Partial<MemberProfile>): Promise<MemberProfile> => {
+  const res = await api.post('/member/onboarding', data)
+  return res.data
+}
+
+export const getMemberOnboardingTracker = async (): Promise<OnboardingTrackerResponse> => {
+  const res = await api.get('/portal/member-onboarding')
+  return res.data
 }
 
 api.interceptors.request.use((config) => {

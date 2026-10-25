@@ -23,22 +23,22 @@ export function Footer() {
 
         <div>
           <p className="font-semibold text-[11px] tracking-wider text-[#111215] uppercase mb-3">Navigasi</p>
-          <ul className="space-y-2 text-xs">
-            <li><Link to="/" className="hover:text-[#111215] transition-colors">Beranda</Link></li>
-            <li><Link to="/about" className="hover:text-[#111215] transition-colors">Tentang NCD & Visi</Link></li>
-            <li><Link to="/team" className="hover:text-[#111215] transition-colors">Struktur 8 Pengurus</Link></li>
-            <li><Link to="/projects" className="hover:text-[#111215] transition-colors">Katalog Portofolio</Link></li>
-            <li><Link to="/achievements" className="hover:text-[#111215] transition-colors">Prestasi & Kompetisi</Link></li>
-            <li><Link to="/news" className="hover:text-[#111215] transition-colors">Berita & Pengumuman</Link></li>
+          <ul className="space-y-1 text-xs">
+            <li><Link to="/" className="inline-block py-1.5 hover:text-[#111215] transition-colors">Beranda</Link></li>
+            <li><Link to="/about" className="inline-block py-1.5 hover:text-[#111215] transition-colors">Tentang NCD & Visi</Link></li>
+            <li><Link to="/team" className="inline-block py-1.5 hover:text-[#111215] transition-colors">Struktur 8 Pengurus</Link></li>
+            <li><Link to="/projects" className="inline-block py-1.5 hover:text-[#111215] transition-colors">Katalog Portofolio</Link></li>
+            <li><Link to="/achievements" className="inline-block py-1.5 hover:text-[#111215] transition-colors">Prestasi & Kompetisi</Link></li>
+            <li><Link to="/news" className="inline-block py-1.5 hover:text-[#111215] transition-colors">Berita & Pengumuman</Link></li>
           </ul>
         </div>
 
         <div>
           <p className="font-semibold text-[11px] tracking-wider text-[#111215] uppercase mb-3">Transparansi & Hukum</p>
-          <ul className="space-y-2 text-xs">
-            <li><Link to="/terms" className="hover:text-[#111215] transition-colors">Syarat & Ketentuan (T&C)</Link></li>
-            <li><Link to="/privacy" className="hover:text-[#111215] transition-colors">Kebijakan Privasi (UU PDP)</Link></li>
-            <li><span className="text-[#525660]">Audit Trail & Immutability</span></li>
+          <ul className="space-y-1 text-xs">
+            <li><Link to="/terms" className="inline-block py-1.5 hover:text-[#111215] transition-colors">Syarat & Ketentuan (T&C)</Link></li>
+            <li><Link to="/privacy" className="inline-block py-1.5 hover:text-[#111215] transition-colors">Kebijakan Privasi (UU PDP)</Link></li>
+            <li><span className="inline-block py-1.5 text-[#525660]">Audit Trail & Immutability</span></li>
           </ul>
         </div>
 

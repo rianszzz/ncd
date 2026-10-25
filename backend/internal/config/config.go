@@ -7,11 +7,13 @@ import (
 )
 
 type Config struct {
-	Port         string
-	DatabaseURL  string
-	JWTSecret    string
-	CORSOrigin   string
-	Environment  string
+	Port             string
+	DatabaseURL      string
+	JWTSecret        string
+	CORSOrigin       string
+	Environment      string
+	TelegramBotToken string
+	TelegramChatID   string
 }
 
 func Load() *Config {
@@ -42,11 +44,16 @@ func Load() *Config {
 		env = "development"
 	}
 
+	telegramBotToken := os.Getenv("TELEGRAM_BOT_TOKEN")
+	telegramChatID := os.Getenv("TELEGRAM_CHAT_ID")
+
 	return &Config{
-		Port:        port,
-		DatabaseURL: dbURL,
-		JWTSecret:   jwtSecret,
-		CORSOrigin:  corsOrigin,
-		Environment: env,
+		Port:             port,
+		DatabaseURL:      dbURL,
+		JWTSecret:        jwtSecret,
+		CORSOrigin:       corsOrigin,
+		Environment:      env,
+		TelegramBotToken: telegramBotToken,
+		TelegramChatID:   telegramChatID,
 	}
 }

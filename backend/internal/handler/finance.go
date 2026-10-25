@@ -96,36 +96,6 @@ func init() {
 }
 
 func GetCashSummary(w http.ResponseWriter, r *http.Request) {
-	if Repo != nil {
-		row, err := Repo.GetCashSummary(r.Context())
-		if err == nil {
-			var income, expense, balance float64
-			if row.TotalIncome.Valid {
-				v, _ := row.TotalIncome.Float64Value()
-				income = v.Float64
-			}
-			if row.TotalExpense.Valid {
-				v, _ := row.TotalExpense.Float64Value()
-				expense = v.Float64
-			}
-			if row.CurrentBalance.Valid {
-				v, _ := row.CurrentBalance.Float64Value()
-				balance = v.Float64
-			}
-
-			summary := map[string]interface{}{
-				"current_balance": balance,
-				"total_income":    income,
-				"total_expense":   expense,
-				"pending_drafts":  0,
-				"last_updated":    time.Now().Format("02 Jan 2006, 15:04 WIB"),
-			}
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(summary)
-			return
-		}
-	}
-
 	txLock.RLock()
 	defer txLock.RUnlock()
 
@@ -151,7 +121,7 @@ func GetCashSummary(w http.ResponseWriter, r *http.Request) {
 		"total_income":    totalIncome,
 		"total_expense":   totalExpense,
 		"pending_drafts":  pendingCount,
-		"last_updated":    time.Now(),
+		"last_updated":    time.Now().Format("02 Jan 2006, 15:04 WIB"),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -202,6 +172,8 @@ func ListTransactions(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateTransaction(w http.ResponseWriter, r *http.Request) {
+	claims, _ := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
+
 	var req CreateTransactionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -211,6 +183,18 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	if req.Amount <= 0 || req.Description == "" || req.ReceiptURL == "" {
 		http.Error(w, "Nominal > 0, deskripsi, dan link foto nota wajib diisi", http.StatusBadRequest)
 		return
+	}
+
+	makerName := "Bendahara"
+	makerID := "u-bendahara"
+	if claims != nil {
+		makerName = fmt.Sprintf("%s (%s)", claims.FullName, claims.Role)
+		makerID = claims.UserID
+	}
+
+	txDate := strings.TrimSpace(req.TransactionDate)
+	if txDate == "" {
+		txDate = time.Now().Format("2006-01-02")
 	}
 
 	txLock.Lock()
@@ -226,9 +210,9 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		PersonInCharge:    req.PersonInCharge,
 		ReceiptURL:        req.ReceiptURL,
 		Status:            "DRAFT_PENDING",
-		TransactionDate:   req.TransactionDate,
-		MakerName:         "Muhammad Iqbal Fajri (Bendahara I)",
-		MakerID:           "u-iqbal",
+		TransactionDate:   txDate,
+		MakerName:         makerName,
+		MakerID:           makerID,
 		CreatedAt:         time.Now(),
 	}
 
@@ -238,6 +222,91 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(newTx)
+}
+
+// UpdateTransaction memperbarui draft transaksi kas atau transaksi yang sebelumnya ditolak (VOID)
+func UpdateTransaction(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	claims, _ := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
+
+	var req CreateTransactionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Amount <= 0 || req.Description == "" || req.ReceiptURL == "" {
+		http.Error(w, "Nominal > 0, deskripsi, dan link foto nota wajib diisi", http.StatusBadRequest)
+		return
+	}
+
+	txLock.Lock()
+	defer txLock.Unlock()
+
+	for i, tx := range transactions {
+		if tx.ID == id {
+			if tx.Status == "VERIFIED" {
+				http.Error(w, "Transaksi berstatus VERIFIED (Sah) terkunci dan tidak dapat diubah demi integritas audit", http.StatusBadRequest)
+				return
+			}
+
+			transactions[i].Type = req.Type
+			transactions[i].CategoryName = req.CategoryName
+			transactions[i].Amount = req.Amount
+			transactions[i].Description = req.Description
+			transactions[i].PersonInCharge = req.PersonInCharge
+			transactions[i].ReceiptURL = req.ReceiptURL
+			if strings.TrimSpace(req.TransactionDate) != "" {
+				transactions[i].TransactionDate = strings.TrimSpace(req.TransactionDate)
+			}
+
+			// Jika sebelumnya ditolak (VOID), ajukan ulang ke DRAFT_PENDING
+			if transactions[i].Status == "VOID" {
+				transactions[i].Status = "DRAFT_PENDING"
+				reviser := "Bendahara"
+				if claims != nil {
+					reviser = fmt.Sprintf("%s (%s)", claims.FullName, claims.Role)
+				}
+				transactions[i].VoidReason = fmt.Sprintf("Direvisi & diajukan ulang oleh %s (Catatan penolakan sebelumnya: %s)", reviser, transactions[i].VoidReason)
+			}
+
+			saveTransactionsToDiskLocked()
+
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(transactions[i])
+			return
+		}
+	}
+
+	http.Error(w, "Transaksi tidak ditemukan", http.StatusNotFound)
+}
+
+// DeleteTransaction menghapus draft transaksi kas atau transaksi yang dibatalkan
+func DeleteTransaction(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	txLock.Lock()
+	defer txLock.Unlock()
+
+	for i, tx := range transactions {
+		if tx.ID == id {
+			if tx.Status == "VERIFIED" {
+				http.Error(w, "Transaksi sah (VERIFIED) tidak dapat dihapus", http.StatusBadRequest)
+				return
+			}
+			transactions = append(transactions[:i], transactions[i+1:]...)
+			saveTransactionsToDiskLocked()
+
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]string{
+				"status":  "success",
+				"message": "Draft transaksi berhasil dihapus",
+			})
+			return
+		}
+	}
+
+	http.Error(w, "Transaksi tidak ditemukan", http.StatusNotFound)
 }
 
 func VerifyTransaction(w http.ResponseWriter, r *http.Request) {

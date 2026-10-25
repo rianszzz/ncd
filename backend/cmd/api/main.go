@@ -100,6 +100,11 @@ func main() {
 			// User Session & Verification
 			protected.Get("/auth/me", handler.GetMe)
 
+			// Member Onboarding & Profile
+			protected.Get("/member/profile", handler.GetMemberProfile)
+			protected.Post("/member/onboarding", handler.SubmitMemberOnboarding)
+			protected.Get("/portal/member-onboarding", handler.GetMemberOnboardingTracker)
+
 			// Token Self-Service (Setiap role dapat mengubah kode tokennya dengan awalan NCD-)
 			protected.Put("/portal/tokens/my-token", handler.UpdateToken)
 			protected.Put("/portal/tokens/{id}", handler.UpdateToken)
@@ -107,30 +112,53 @@ func main() {
 			// Portal Dashboard Data (Wajib Login)
 			protected.Get("/portal/dashboard", handler.GetPortalDashboard)
 
+			// Recruitment & Member Admissions (Semua Pengurus kecuali Member Komunitas)
+			protected.Get("/portal/applications", handler.ListApplications)
+			protected.Post("/portal/applications/{id}/vote", handler.VoteApplication)
+			// Verifikasi Berkas (Sekretaris, Super Admin, God Admin)
+			protected.With(ncdMiddleware.RequireRole("SEKRETARIS", "SUPER_ADMIN", "GOD_ADMIN")).
+				Post("/portal/applications/{id}/verify", handler.VerifyApplication)
+			// Keputusan Akhir Mutlak & Penghapusan Berkas (Super Admin)
+			protected.With(ncdMiddleware.RequireRole("SUPER_ADMIN")).Group(func(superAdmin chi.Router) {
+				superAdmin.Post("/portal/applications/{id}/decision", handler.DecideApplication)
+				superAdmin.Delete("/portal/applications/by-date", handler.DeleteApplicationsByDate)
+				superAdmin.Delete("/portal/applications/{id}", handler.DeleteApplication)
+			})
+
 			// Read-Only Finance Summary & Transactions (Wajib Login)
 			protected.Get("/finance/summary", handler.GetCashSummary)
 			protected.Get("/finance/transactions", handler.ListTransactions)
 
-			// Maker: Bendahara I
-			protected.With(ncdMiddleware.RequireRole("BENDAHARA_I", "GOD_ADMIN", "SUPER_ADMIN")).
-				Post("/finance/transactions", handler.CreateTransaction)
+			// Maker / Cash Entry & Edit: Bendahara I, Bendahara II, God Admin, Super Admin
+			protected.With(ncdMiddleware.RequireRole("BENDAHARA_I", "BENDAHARA_II", "GOD_ADMIN", "SUPER_ADMIN")).Group(func(fin chi.Router) {
+				fin.Post("/finance/transactions", handler.CreateTransaction)
+				fin.Put("/finance/transactions/{id}", handler.UpdateTransaction)
+				fin.Delete("/finance/transactions/{id}", handler.DeleteTransaction)
+			})
 
-			// Checker: Bendahara II
+			// Checker / Verification: Bendahara II, God Admin, Super Admin
 			protected.With(ncdMiddleware.RequireRole("BENDAHARA_II", "GOD_ADMIN", "SUPER_ADMIN")).
 				Post("/finance/transactions/{id}/verify", handler.VerifyTransaction)
 
-			// Void Action: Super Admin & God Admin
-			protected.With(ncdMiddleware.RequireRole("GOD_ADMIN", "SUPER_ADMIN")).
+			// Void / Reject Action: Bendahara II, Super Admin, God Admin
+			protected.With(ncdMiddleware.RequireRole("BENDAHARA_II", "GOD_ADMIN", "SUPER_ADMIN")).
 				Post("/finance/transactions/{id}/void", handler.VoidTransaction)
 
-			// Content Governance: Achievements, Competitions, News (Khusus God Admin & Super Admin)
+			// Content Governance: Achievements & Competitions (Khusus God Admin & Super Admin)
 			protected.With(ncdMiddleware.RequireRole("GOD_ADMIN", "SUPER_ADMIN")).Group(func(admin chi.Router) {
 				admin.Post("/portal/achievements", handler.CreateAchievement)
 				admin.Delete("/portal/achievements/{id}", handler.DeleteAchievement)
 				admin.Post("/portal/competitions", handler.CreateCompetition)
 				admin.Delete("/portal/competitions/{id}", handler.DeleteCompetition)
-				admin.Post("/portal/posts", handler.CreatePost)
-				admin.Delete("/portal/posts/{id}", handler.DeletePost)
+			})
+
+			// Public News & Organizational Documentation (Sekretaris, Super Admin, God Admin)
+			protected.With(ncdMiddleware.RequireRole("SEKRETARIS", "SUPER_ADMIN", "GOD_ADMIN")).Group(func(sekr chi.Router) {
+				sekr.Post("/portal/posts", handler.CreatePost)
+				sekr.Delete("/portal/posts/{id}", handler.DeletePost)
+				sekr.Get("/portal/documents", handler.ListDocuments)
+				sekr.Post("/portal/documents", handler.CreateDocument)
+				sekr.Delete("/portal/documents/{id}", handler.DeleteDocument)
 			})
 		})
 

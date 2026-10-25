@@ -3,8 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import { motion, useReducedMotion } from 'motion/react'
 import {
   ExternalLink,
-  CheckCircle2,
-  ArrowUpRight,
   Sparkles,
 } from 'lucide-react'
 import { api, Achievement, Competition } from '../services/api'
@@ -65,17 +63,6 @@ export function Achievements() {
   }, [achievements])
 
   const tiers: TierFilter[] = ['ALL', 'Internasional', 'Nasional', 'Regional / Kampus']
-
-  const getRankBadgeStyle = (rank: string) => {
-    const lower = rank.toLowerCase()
-    if (lower.includes('juara 1') || lower.includes('gold') || lower.includes('champion')) {
-      return 'text-amber-800 bg-amber-500/10'
-    }
-    if (lower.includes('juara 2') || lower.includes('silver') || lower.includes('runner up')) {
-      return 'text-slate-800 bg-slate-500/10'
-    }
-    return 'text-[#111215] bg-[#111215]/6'
-  }
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12 md:py-20 text-left">
@@ -230,105 +217,48 @@ export function Achievements() {
                 return (
                   <div
                     key={item.id}
-                    className="bg-white rounded-none border border-[#111215]/8 p-6 shadow-2xs hover:border-[#111215]/20 hover:shadow-xs transition-all flex flex-col justify-between group"
+                    className="bg-white rounded-none border border-[#111215]/15 p-6 shadow-2xs hover:border-[#111215] transition-all flex flex-col justify-between group"
                   >
                     <div>
-                      {/* Top Metadata & Rank */}
-                      <div className="flex items-center justify-between text-xs pb-3 border-b border-[#111215]/6 gap-2">
-                        <span className="font-semibold uppercase tracking-wider text-[11px] text-[#6456EB] shrink-0">
+                      {/* Top: Tier & Date */}
+                      <div className="flex items-center justify-between text-xs pb-3 border-b border-[#111215]/10">
+                        <span className="font-semibold uppercase tracking-wider text-[11px] text-[#6456EB] font-mono">
                           {item.tier}
                         </span>
-
-                        <span
-                          className={`text-[11px] font-semibold px-2 py-0.5 rounded-none shrink-0 tracking-tight ${getRankBadgeStyle(
-                            item.rank
-                          )}`}
-                        >
-                          {item.rank}
-                        </span>
+                        {dateDisplay && (
+                          <span className="text-[11px] font-mono text-[#525660]">
+                            {dateDisplay}
+                          </span>
+                        )}
                       </div>
 
-                      {/* Title & Event Organizer */}
+                      {/* Title & Event */}
                       <div className="mt-4">
                         <h2 className="text-base font-semibold text-[#111215] leading-snug group-hover:text-[#6456EB] transition-colors">
                           {item.title}
                         </h2>
-                        <div className="text-xs text-[#525660] mt-1.5 space-y-0.5">
-                          <div className="font-medium text-[#111215]">
-                            {eventDisplayName}
-                            {dateDisplay ? ` · ${dateDisplay}` : ''}
-                          </div>
-                          {item.organizer && (
-                            <div className="text-[11px] text-[#525660] leading-snug">
-                              {item.organizer}
-                            </div>
-                          )}
-                        </div>
+                        <p className="text-xs font-medium text-[#525660] mt-1">
+                          {eventDisplayName}
+                        </p>
                       </div>
-
-                      {/* Project Line Callout */}
-                      {item.project_title && (
-                        <div className="mt-3 pl-3 border-l-2 border-[#6456EB]/30 py-0.5">
-                          <div className="text-[10px] uppercase font-semibold tracking-wider text-[#525660]">
-                            Karya / Proyek
-                          </div>
-                          <div className="text-xs font-semibold text-[#111215] mt-0.5 leading-snug">
-                            {item.project_title}
-                          </div>
-                        </div>
-                      )}
 
                       {/* Description */}
-                      <p className="text-xs text-[#525660] leading-relaxed mt-3">
-                        {item.description}
-                      </p>
-                    </div>
-
-                    {/* Team Members & Footer */}
-                    <div className="mt-5 pt-3.5 border-t border-[#111215]/8 space-y-2.5">
-                      {(item.team_name || membersList.length > 0) && (
-                        <div className="space-y-1">
-                          {item.team_name && (
-                            <div className="flex items-baseline gap-1.5 text-xs">
-                              <span className="text-[11px] font-medium text-[#525660]">Tim:</span>
-                              <span className="text-xs font-semibold text-[#111215]">
-                                {item.team_name}
-                              </span>
-                            </div>
-                          )}
-                          {membersList.length > 0 && (
-                            <p className="text-[11px] text-[#525660] leading-relaxed">
-                              {membersList.join(', ')}
-                            </p>
-                          )}
-                        </div>
+                      {item.description && (
+                        <p className="text-xs text-[#525660] leading-relaxed mt-3">
+                          {item.description}
+                        </p>
                       )}
-
-                      <div className="pt-2 border-t border-[#111215]/6 flex items-center justify-between text-xs">
-                        {item.certificate_url ? (
-                          <a
-                            href={item.certificate_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center text-xs font-semibold text-[#6456EB] hover:text-[#4d3ecc] transition-colors gap-1 group/link cursor-pointer"
-                          >
-                            <span>Lihat Sertifikat</span>
-                            <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
-                          </a>
-                        ) : (
-                          <span className="text-[11px] text-[#525660] flex items-center gap-1">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Terverifikasi NCD</span>
-                          </span>
-                        )}
-
-                        {item.category && (
-                          <span className="text-[10px] uppercase font-semibold text-[#525660]/70 tracking-wider">
-                            {item.category}
-                          </span>
-                        )}
-                      </div>
                     </div>
+
+                    {/* Team / Peraih Footer */}
+                    {(item.team_name || membersList.length > 0) && (
+                      <div className="mt-5 pt-3 border-t border-[#111215]/10 flex items-baseline justify-between text-xs gap-2">
+                        <span className="text-[11px] text-[#525660] shrink-0 font-medium">Peraih:</span>
+                        <span className="text-xs font-medium text-[#111215] text-right truncate">
+                          {item.team_name || membersList.join(', ')}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )
               })}

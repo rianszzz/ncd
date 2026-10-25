@@ -22,21 +22,16 @@ const NotFound = lazy(() => import('./pages/NotFound').then((m) => ({ default: m
 
 function PageFallback() {
   return (
-    <div className="max-w-6xl mx-auto px-6 py-20 animate-pulse text-left">
-      <div className="w-56 h-8 rounded-xl bg-[#111215]/10 mb-4" />
-      <div className="w-80 h-4 rounded bg-[#111215]/6 mb-12" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        <div className="h-64 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs" />
-        <div className="h-64 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs" />
-        <div className="h-64 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs" />
-      </div>
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-[#111215]/20 border-t-[#111215] rounded-full animate-spin" />
     </div>
   )
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const isAuth = Boolean(localStorage.getItem('ncd_jwt') || localStorage.getItem('ncd_user'))
-  if (!isAuth) {
+  const token = localStorage.getItem('ncd_jwt')
+  const user = localStorage.getItem('ncd_user')
+  if (!token && !user) {
     return <Navigate to="/login" replace />
   }
   return <>{children}</>

@@ -31,6 +31,16 @@ export function Navbar() {
     setIsLoggedIn(Boolean(localStorage.getItem('ncd_jwt') || localStorage.getItem('ncd_user')))
   }, [location.pathname])
 
+  // Close mobile menu on Escape key press
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen])
+
   const navLinks = [
     { name: 'Beranda', path: '/' },
     { name: 'Tentang', path: '/about' },
@@ -117,8 +127,10 @@ export function Navbar() {
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
+          aria-expanded={isOpen}
+          aria-controls="mobile-nav-menu"
           aria-label={isOpen ? 'Tutup menu navigasi' : 'Buka menu navigasi'}
-          className="lg:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-[#111215] hover:bg-[#111215]/5 transition-colors focus:outline-none cursor-pointer"
+          className="lg:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#111215] hover:bg-[#111215]/5 transition-colors cursor-pointer border border-transparent focus-visible:border-[#111215]"
         >
           {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -126,16 +138,21 @@ export function Navbar() {
 
       {/* Mobile & Tablet Hamburger Dropdown Menu (< 1024px) */}
       {isOpen && (
-        <div className="lg:hidden bg-[#F4F1EB]/98 backdrop-blur-2xl border-b border-[#111215]/8 px-4 sm:px-6 pt-3 pb-6 flex flex-col space-y-1.5 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+        <div
+          id="mobile-nav-menu"
+          role="region"
+          aria-label="Menu navigasi mobile"
+          className="lg:hidden bg-[#F4F1EB]/98 backdrop-blur-2xl border-b border-[#111215]/15 px-4 sm:px-6 pt-3 pb-6 flex flex-col space-y-1.5 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200"
+        >
           {navLinks.map((item) => (
             <Link
               key={item.path}
               to={item.path}
               onClick={() => setIsOpen(false)}
-              className={`px-3.5 py-3 min-h-[44px] rounded-xl text-sm font-medium transition-colors text-left flex items-center justify-between ${
+              className={`px-3.5 py-3 min-h-[44px] text-sm font-medium transition-colors text-left flex items-center justify-between border ${
                 isActive(item.path)
-                  ? 'bg-[#111215] text-[#F4F1EB]'
-                  : 'text-[#111215] hover:bg-[#111215]/5'
+                  ? 'bg-[#111215] text-[#F4F1EB] border-black'
+                  : 'text-[#111215] hover:bg-[#111215]/5 border-transparent'
               }`}
             >
               <span>{item.name}</span>

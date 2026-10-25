@@ -64,7 +64,7 @@ func loadPostsFromDisk() {
 	filePath := getPostsFilePath()
 	bytes, err := os.ReadFile(filePath)
 	if err == nil && len(bytes) > 0 {
-		var loaded []PostDTO
+		loaded := []PostDTO{}
 		if err := json.Unmarshal(bytes, &loaded); err == nil {
 			postsList = loaded
 			return
@@ -131,7 +131,7 @@ func SyncPostsFromDB(ctx context.Context, pool *pgxpool.Pool) {
 	}
 	defer rows.Close()
 
-	var loaded []PostDTO
+	loaded := []PostDTO{}
 	for rows.Next() {
 		var p PostDTO
 		if err := rows.Scan(&p.ID, &p.Title, &p.Slug, &p.Summary, &p.ContentMD, &p.Category, &p.Tags, &p.AuthorName, &p.IsPinned, &p.PublishedAt); err == nil {

@@ -90,7 +90,7 @@ export function Projects() {
 
                 {/* Top Bar: Technical Metadata (Inside Image, Zero Rounded) */}
                 <div className="relative z-10 p-4 sm:p-5 flex items-center justify-between">
-                  <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider bg-[#111215]/90 text-[#F4F1EB] border border-white/20 backdrop-blur-xs">
+                  <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider bg-[#111215] text-[#F4F1EB] border border-white/20">
                     0{idx + 1} // R&amp;D
                   </span>
                   <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider bg-white text-[#111215] border border-[#111215] shadow-xs">
@@ -104,7 +104,7 @@ export function Projects() {
                     {p.tech_stack.slice(0, 4).map((tech) => (
                       <span
                         key={tech}
-                        className="px-1.5 py-0.5 rounded-none text-[9px] font-mono font-medium bg-[#111215]/80 text-[#F4F1EB] border border-white/15 uppercase tracking-wide backdrop-blur-xs"
+                        className="px-1.5 py-0.5 rounded-none text-[9px] font-mono font-medium bg-[#111215] text-[#F4F1EB] border border-white/15 uppercase tracking-wide"
                       >
                         {tech}
                       </span>
