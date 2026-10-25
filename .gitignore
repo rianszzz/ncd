@@ -19,6 +19,7 @@ bin/
 # OS files
 .DS_Store
 Thumbs.db
+backups/
 
 # IDE & Editor
 .idea/

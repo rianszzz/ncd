@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -269,7 +270,7 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 		if applicationsList == nil {
 			applicationsList = []ApplicationDTO{}
 		}
-		_ = json.NewEncoder(w).Encode(applicationsList)
+		paginateApplications(w, r, applicationsList)
 		return
 	}
 
@@ -289,7 +290,44 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 		sanitized[i].Votes = myVotes
 	}
 
-	_ = json.NewEncoder(w).Encode(sanitized)
+	paginateApplications(w, r, sanitized)
+}
+
+func paginateApplications(w http.ResponseWriter, r *http.Request, all []ApplicationDTO) {
+	total := len(all)
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+
+	w.Header().Set("X-Total-Count", strconv.Itoa(total))
+
+	if pageStr != "" || limitStr != "" {
+		page, _ := strconv.Atoi(pageStr)
+		if page < 1 {
+			page = 1
+		}
+		limit, _ := strconv.Atoi(limitStr)
+		if limit < 1 || limit > 100 {
+			limit = 20
+		}
+
+		start := (page - 1) * limit
+		if start > total {
+			start = total
+		}
+		end := start + limit
+		if end > total {
+			end = total
+		}
+
+		w.Header().Set("X-Page", strconv.Itoa(page))
+		w.Header().Set("X-Per-Page", strconv.Itoa(limit))
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(all[start:end])
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(all)
 }
 
 // VoteApplication mencatat voting ACC / TIDAK_ACC beserta diskusi opsional dari pengurus

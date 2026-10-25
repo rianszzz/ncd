@@ -3,14 +3,7 @@ import axios from 'axios'
 export const api = axios.create({
   baseURL: '/api/v1',
   withCredentials: true,
-})
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('ncd_jwt')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
+  timeout: 12000, // 12-second client timeout
 })
 
 export interface Member {
@@ -292,16 +285,39 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // 1. Sesi Login Habis / Token Tidak Sah
     if (error.response?.status === 401) {
       localStorage.removeItem('ncd_jwt')
       localStorage.removeItem('ncd_user')
       if (
         typeof window !== 'undefined' &&
-        (window.location.pathname.startsWith('/app') || window.location.pathname.startsWith('/finance'))
+        (window.location.pathname.startsWith('/app') ||
+          window.location.pathname.startsWith('/finance') ||
+          window.location.pathname.startsWith('/dashboard'))
       ) {
         window.location.replace('/login')
       }
     }
+
+    // 2. Handle Timeout Error
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      error.userFriendlyMessage =
+        'Permintaan ke server memakan waktu terlalu lama (timeout). Silakan periksa koneksi dan coba lagi.'
+    }
+
+    // 3. Handle Rate Limiting (429)
+    if (error.response?.status === 429) {
+      error.userFriendlyMessage =
+        error.response.data?.error ||
+        'Terlalu banyak permintaan (Rate limit tercapai). Silakan tunggu sejenak sebelum mencoba lagi.'
+    }
+
+    // 4. Handle Network / Connection Drop
+    if (!error.response && !error.status) {
+      error.userFriendlyMessage =
+        'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.'
+    }
+
     return Promise.reject(error)
   }
 )

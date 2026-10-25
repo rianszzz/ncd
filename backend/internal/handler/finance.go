@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -158,8 +159,7 @@ func ListTransactions(w http.ResponseWriter, r *http.Request) {
 				}
 				txs = append(txs, dto)
 			}
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(txs)
+			paginateTransactions(w, r, txs)
 			return
 		}
 	}
@@ -167,8 +167,44 @@ func ListTransactions(w http.ResponseWriter, r *http.Request) {
 	txLock.RLock()
 	defer txLock.RUnlock()
 
+	paginateTransactions(w, r, transactions)
+}
+
+func paginateTransactions(w http.ResponseWriter, r *http.Request, all []TransactionDTO) {
+	total := len(all)
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+
+	w.Header().Set("X-Total-Count", strconv.Itoa(total))
+
+	if pageStr != "" || limitStr != "" {
+		page, _ := strconv.Atoi(pageStr)
+		if page < 1 {
+			page = 1
+		}
+		limit, _ := strconv.Atoi(limitStr)
+		if limit < 1 || limit > 100 {
+			limit = 20
+		}
+
+		start := (page - 1) * limit
+		if start > total {
+			start = total
+		}
+		end := start + limit
+		if end > total {
+			end = total
+		}
+
+		w.Header().Set("X-Page", strconv.Itoa(page))
+		w.Header().Set("X-Per-Page", strconv.Itoa(limit))
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(all[start:end])
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(transactions)
+	_ = json.NewEncoder(w).Encode(all)
 }
 
 func CreateTransaction(w http.ResponseWriter, r *http.Request) {

@@ -44,8 +44,12 @@ func main() {
 		}
 	}
 
-	// 2. HTTP Router Setup & Middleware Hook
+	// 2. HTTP Router Setup, Security & Rate Limiters
 	ncdMiddleware.TokenActiveValidator = handler.IsTokenActive
+
+	// Rate Limiters (Native In-Memory Token Bucket per Client IP)
+	apiLimiter := ncdMiddleware.NewRateLimiter(100, time.Minute)
+	authLimiter := ncdMiddleware.NewRateLimiter(15, time.Minute)
 
 	r := chi.NewRouter()
 
@@ -53,7 +57,10 @@ func main() {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(60 * time.Second))
+	r.Use(middleware.Timeout(15 * time.Second))
+	r.Use(middleware.Compress(5))
+	r.Use(ncdMiddleware.BodyLimit(10 << 20)) // Spending Cap / Protection: 10MB body limit
+	r.Use(apiLimiter.Middleware())
 
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{
@@ -72,7 +79,7 @@ func main() {
 		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
+		ExposedHeaders:   []string{"Link", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-Total-Count", "X-Page", "X-Per-Page"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
@@ -83,15 +90,18 @@ func main() {
 	r.Route("/api/v1", func(api chi.Router) {
 		api.Get("/health", handler.HealthCheck)
 
-		// Public Routes
-		api.Get("/public/stats", handler.GetPublicStats)
-		api.Get("/public/members", handler.GetPublicMembers)
-		api.Get("/public/projects", handler.GetPublicProjects)
-		api.Get("/public/history", handler.GetPublicHistory)
-		api.Get("/public/achievements", handler.GetPublicAchievements)
-		api.Get("/public/competitions", handler.GetPublicCompetitions)
-		api.Get("/public/posts", handler.GetPublicPosts)
-		api.Post("/public/apply", handler.SubmitApplication)
+		// Public Routes (Cached with 60s max-age & 120s stale-while-revalidate)
+		api.Group(func(pub chi.Router) {
+			pub.Use(ncdMiddleware.CacheHeaders(60, 120))
+			pub.Get("/public/stats", handler.GetPublicStats)
+			pub.Get("/public/members", handler.GetPublicMembers)
+			pub.Get("/public/projects", handler.GetPublicProjects)
+			pub.Get("/public/history", handler.GetPublicHistory)
+			pub.Get("/public/achievements", handler.GetPublicAchievements)
+			pub.Get("/public/competitions", handler.GetPublicCompetitions)
+			pub.Get("/public/posts", handler.GetPublicPosts)
+		})
+		api.With(authLimiter.Middleware()).Post("/public/apply", handler.SubmitApplication)
 
 		// Sensitive Protected Routes (Hanya Pengguna Terautentikasi)
 		api.Group(func(protected chi.Router) {
@@ -173,8 +183,8 @@ func main() {
 			god.Delete("/portal/tokens/{id}", handler.DeleteToken)
 		})
 
-		// Auth Routes
-		api.Post("/auth/login", handler.Login(cfg.JWTSecret))
+		// Auth Routes (Rate limited to prevent brute force)
+		api.With(authLimiter.Middleware()).Post("/auth/login", handler.Login(cfg.JWTSecret))
 		api.Post("/auth/logout", handler.Logout)
 	})
 
