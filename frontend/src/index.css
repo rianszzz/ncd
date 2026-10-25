@@ -31,10 +31,13 @@
 
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 4.5rem;
+    scroll-padding-top: 5rem;
+    scrollbar-gutter: stable;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
-  /* Universal high-contrast keyboard focus indicators */
+  /* Universal high-contrast keyboard focus indicators (WCAG AA & Brutalist Design) */
   :focus-visible {
     outline: 2px solid #111215;
     outline-offset: 2px;
@@ -43,7 +46,8 @@
   .dark :focus-visible,
   .bg-\[\#111215\] :focus-visible,
   [data-theme='dark'] :focus-visible {
-    outline-color: #F4F1EB;
+    outline: 2px solid #E6FF55;
+    outline-offset: 2px;
   }
 
   * {

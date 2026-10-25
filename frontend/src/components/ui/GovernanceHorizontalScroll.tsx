@@ -211,7 +211,11 @@ export function GovernanceHorizontalScroll() {
             className="flex items-center gap-5 sm:gap-12 lg:gap-20 pl-4 sm:pl-10 lg:pl-20 pr-4 sm:pr-10 lg:pr-20 w-max py-4 sm:py-8"
           >
             {/* Lead Block: PRINSIP ORGANISASI (Black Theme) */}
-            <div className="w-[260px] xs:w-[280px] sm:w-[290px] lg:w-[310px] shrink-0 p-6 sm:p-8 lg:p-9 rounded-none bg-[#111215] text-[#F4F1EB] border border-[#111215] shadow-lg flex flex-col justify-between min-h-[360px] sm:min-h-[400px] lg:min-h-[430px] text-left">
+            <div
+              tabIndex={0}
+              aria-label="Lead: Prinsip Tata Kelola Organisasi NCD"
+              className="w-[260px] xs:w-[280px] sm:w-[290px] lg:w-[310px] shrink-0 p-6 sm:p-8 lg:p-9 rounded-none bg-[#111215] text-[#F4F1EB] border border-[#111215] shadow-lg flex flex-col justify-between min-h-[360px] sm:min-h-[400px] lg:min-h-[430px] text-left focus-visible:ring-2 focus-visible:ring-[#E6FF55] focus-visible:ring-offset-2 outline-none"
+            >
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] lg:text-[11px] font-mono uppercase tracking-widest text-[#A78BFA] font-bold">
@@ -252,7 +256,9 @@ export function GovernanceHorizontalScroll() {
                   }`}
                 >
                   <div
-                    className={`group w-[260px] xs:w-[280px] sm:w-[290px] lg:w-[310px] shrink-0 p-6 sm:p-8 lg:p-9 rounded-none ${item.bg} ${item.text} border ${item.border} shadow-lg hover:shadow-xl flex flex-col justify-between min-h-[360px] sm:min-h-[400px] lg:min-h-[430px] transition-shadow duration-300 text-left`}
+                    tabIndex={0}
+                    aria-label={`Pilar ${item.num}: ${item.titleLine1} ${item.titleLine2}`}
+                    className={`group w-[260px] xs:w-[280px] sm:w-[290px] lg:w-[310px] shrink-0 p-6 sm:p-8 lg:p-9 rounded-none ${item.bg} ${item.text} border ${item.border} shadow-lg hover:shadow-xl flex flex-col justify-between min-h-[360px] sm:min-h-[400px] lg:min-h-[430px] transition-shadow duration-300 text-left focus-visible:ring-2 focus-visible:ring-[#6456EB] focus-visible:ring-offset-2 outline-none`}
                   >
                     <div>
                       {/* Top Tag & Number */}

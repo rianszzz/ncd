@@ -231,7 +231,7 @@ export function News() {
         </p>
 
         {/* Category Toolbar */}
-        <div className="mt-8 flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
+        <div role="group" aria-label="Filter kategori warta" className="mt-8 flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
           {CATEGORIES.map((cat) => {
             const count =
               cat === 'ALL'
@@ -242,6 +242,7 @@ export function News() {
               <button
                 key={cat}
                 type="button"
+                aria-pressed={isActive}
                 onClick={() => setActiveCategory(cat)}
                 className={`px-3 py-2 min-h-[40px] rounded-none text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer ${
                   isActive

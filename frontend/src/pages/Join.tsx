@@ -105,60 +105,64 @@ export function Join() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             <div>
-              <label className="block text-xs font-semibold text-[#111215] mb-1.5">
+              <label htmlFor="input-full-name" className="block text-xs font-semibold text-[#111215] mb-1.5">
                 Nama Lengkap <span className="text-red-500">*</span>
               </label>
               <input
+                id="input-full-name"
                 type="text"
                 name="full_name"
                 required
                 value={formData.full_name}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white outline-none transition-all"
+                className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white focus-visible:ring-2 focus-visible:ring-[#111215] focus-visible:ring-offset-2 outline-none transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#111215] mb-1.5">
+              <label htmlFor="input-email" className="block text-xs font-semibold text-[#111215] mb-1.5">
                 Email Aktif <span className="text-red-500">*</span>
               </label>
               <input
+                id="input-email"
                 type="email"
                 name="email"
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white outline-none transition-all"
+                className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white focus-visible:ring-2 focus-visible:ring-[#111215] focus-visible:ring-offset-2 outline-none transition-all"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             <div>
-              <label className="block text-xs font-semibold text-[#111215] mb-1.5">
+              <label htmlFor="input-phone" className="block text-xs font-semibold text-[#111215] mb-1.5">
                 Nomor WhatsApp <span className="text-red-500">*</span>
               </label>
               <input
+                id="input-phone"
                 type="text"
                 name="phone_whatsapp"
                 required
                 value={formData.phone_whatsapp}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white outline-none transition-all"
+                className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white focus-visible:ring-2 focus-visible:ring-[#111215] focus-visible:ring-offset-2 outline-none transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#111215] mb-1.5">
+              <label htmlFor="input-major" className="block text-xs font-semibold text-[#111215] mb-1.5">
                 Jurusan Kuliah <span className="text-red-500">*</span>
               </label>
               <input
+                id="input-major"
                 type="text"
                 name="major"
                 required
                 value={formData.major}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white outline-none transition-all"
+                className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white focus-visible:ring-2 focus-visible:ring-[#111215] focus-visible:ring-offset-2 outline-none transition-all"
               />
             </div>
           </div>
@@ -166,29 +170,31 @@ export function Join() {
           {/* Angkatan (Input), Domisili Kampus (Choice), Darimana tau NCD? */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
             <div>
-              <label className="block text-xs font-semibold text-[#111215] mb-1.5">
+              <label htmlFor="input-generation" className="block text-xs font-semibold text-[#111215] mb-1.5">
                 Angkatan <span className="text-red-500">*</span>
               </label>
               <input
+                id="input-generation"
                 type="text"
                 name="generation"
                 required
                 value={formData.generation}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white outline-none transition-all"
+                className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white focus-visible:ring-2 focus-visible:ring-[#111215] focus-visible:ring-offset-2 outline-none transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#111215] mb-1.5">
+              <label htmlFor="select-domicile" className="block text-xs font-semibold text-[#111215] mb-1.5">
                 Domisili Kampus <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <select
+                  id="select-domicile"
                   name="campus_domicile"
                   value={formData.campus_domicile}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white outline-none transition-all cursor-pointer font-medium text-[#111215]"
+                  className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white focus-visible:ring-2 focus-visible:ring-[#111215] focus-visible:ring-offset-2 outline-none transition-all cursor-pointer font-medium text-[#111215]"
                 >
                   <option value="Depok">Depok</option>
                   <option value="Bekasi">Bekasi</option>
@@ -200,58 +206,62 @@ export function Join() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#111215] mb-1.5">
+              <label htmlFor="input-referral" className="block text-xs font-semibold text-[#111215] mb-1.5">
                 Darimana tau NCD? <span className="text-red-500">*</span>
               </label>
               <input
+                id="input-referral"
                 type="text"
                 name="referral_source"
                 required
                 value={formData.referral_source}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white outline-none transition-all"
+                className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white focus-visible:ring-2 focus-visible:ring-[#111215] focus-visible:ring-offset-2 outline-none transition-all"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#111215] mb-1.5">
+            <label htmlFor="input-skills" className="block text-xs font-semibold text-[#111215] mb-1.5">
               Minat Divisi & Keahlian Teknis <span className="text-red-500">*</span>
             </label>
             <input
+              id="input-skills"
               type="text"
               name="skills_interest"
               required
               value={formData.skills_interest}
               onChange={handleChange}
-              className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white outline-none transition-all"
+              className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white focus-visible:ring-2 focus-visible:ring-[#111215] focus-visible:ring-offset-2 outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#111215] mb-1.5">
+            <label htmlFor="input-portfolio" className="block text-xs font-semibold text-[#111215] mb-1.5">
               Tautan Portofolio / GitHub / LinkedIn <span className="text-[#525660] font-normal">(Opsional)</span>
             </label>
             <input
+              id="input-portfolio"
               type="text"
               name="portfolio_links"
               value={formData.portfolio_links}
               onChange={handleChange}
-              className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white outline-none transition-all"
+              className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white focus-visible:ring-2 focus-visible:ring-[#111215] focus-visible:ring-offset-2 outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#111215] mb-1.5">
+            <label htmlFor="textarea-motivation" className="block text-xs font-semibold text-[#111215] mb-1.5">
               Motivasi Bergabung dengan NCD <span className="text-red-500">*</span>
             </label>
             <textarea
+              id="textarea-motivation"
               name="motivation"
               required
               rows={4}
               value={formData.motivation}
               onChange={handleChange}
-              className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white outline-none transition-all"
+              className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#F4F1EB]/40 border border-[#111215]/20 focus:border-[#111215] focus:bg-white focus-visible:ring-2 focus-visible:ring-[#111215] focus-visible:ring-offset-2 outline-none transition-all"
             />
           </div>
 

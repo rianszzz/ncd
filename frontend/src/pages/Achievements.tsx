@@ -126,8 +126,16 @@ export function Achievements() {
       {/* Mode Tabs and Tier Filter Controls */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-[#111215]/8 pb-4 mb-8">
         {/* Segmented Control for Mode Switch */}
-        <div className="inline-flex p-1 bg-[#111215]/4 rounded-none border border-[#111215]/6 self-start">
+        <div
+          role="tablist"
+          aria-label="Mode navigasi prestasi"
+          className="inline-flex p-1 bg-[#111215]/4 rounded-none border border-[#111215]/6 self-start"
+        >
           <button
+            id="tab-hall-of-fame"
+            role="tab"
+            aria-selected={activeTab === 'hall-of-fame'}
+            aria-controls="panel-hall-of-fame"
             type="button"
             onClick={() => setActiveTab('hall-of-fame')}
             className={`px-4 py-2 text-xs font-semibold rounded-none transition-all cursor-pointer ${
@@ -139,6 +147,10 @@ export function Achievements() {
             Hall of Fame ({achievements?.length || 0})
           </button>
           <button
+            id="tab-agenda"
+            role="tab"
+            aria-selected={activeTab === 'agenda'}
+            aria-controls="panel-agenda"
             type="button"
             onClick={() => setActiveTab('agenda')}
             className={`px-4 py-2 text-xs font-semibold rounded-none transition-all cursor-pointer ${
@@ -153,13 +165,14 @@ export function Achievements() {
 
         {/* Tier Filters for Hall of Fame */}
         {activeTab === 'hall-of-fame' && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
+          <div role="group" aria-label="Filter tingkat kejuaraan" className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
             {tiers.map((tier) => {
               const isActive = activeTier === tier
               return (
                 <button
                   key={tier}
                   type="button"
+                  aria-pressed={isActive}
                   onClick={() => setActiveTier(tier)}
                   className={`px-3 py-1.5 rounded-none text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
                     isActive
@@ -177,7 +190,7 @@ export function Achievements() {
 
       {/* TAB 1: Hall of Fame */}
       {activeTab === 'hall-of-fame' && (
-        <>
+        <div id="panel-hall-of-fame" role="tabpanel" aria-labelledby="tab-hall-of-fame">
           {/* Cards Grid / Skeletons */}
           {isLoadingAchievements ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -264,12 +277,12 @@ export function Achievements() {
               })}
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* TAB 2: Agenda Kompetisi */}
       {activeTab === 'agenda' && (
-        <div>
+        <div id="panel-agenda" role="tabpanel" aria-labelledby="tab-agenda">
           {isLoadingCompetitions ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {Array.from({ length: 4 }).map((_, i) => (

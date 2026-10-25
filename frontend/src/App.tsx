@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/react'
 import { Navbar } from './components/Navbar'
 import { Footer } from './components/Footer'
 import { RouteMeta } from './components/RouteMeta'
+import { ScrollToTop } from './components/ui/ScrollToTop'
 import { Home } from './pages/Home'
 
 // Route-level dynamic code-splitting: loads non-home modules on-demand
@@ -43,9 +44,18 @@ export default function App() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-[#F4F1EB] text-[#111215] selection:bg-[#6456EB] selection:text-white">
+      {/* Skip to Main Content Link for Keyboard and Screen Reader Accessibility (WCAG 2.4.1) */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-[#111215] focus:text-[#F4F1EB] focus:font-bold focus:border-2 focus:border-[#6456EB] focus:shadow-[4px_4px_0px_#6456EB] outline-none text-xs"
+      >
+        Lewati ke konten utama (Skip to Content)
+      </a>
+
       <RouteMeta />
       <Navbar />
-      <main className="flex-1">
+      <ScrollToTop />
+      <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
         <Suspense fallback={<PageFallback />}>
           <motion.div
             key={location.pathname}

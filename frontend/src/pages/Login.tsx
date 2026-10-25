@@ -58,11 +58,12 @@ export function Login() {
 
         <form onSubmit={handleLogin} className="space-y-4 text-xs">
           <div>
-            <label className="block font-medium mb-1.5 text-[#111215]">
+            <label htmlFor="token-input" className="block font-medium mb-1.5 text-[#111215]">
               Kunci Akses / Token 
             </label>
             <div className="relative">
               <input
+                id="token-input"
                 type="text"
                 required
                 placeholder="Masukkan Token Akses..."
@@ -70,7 +71,7 @@ export function Login() {
                 onChange={(e) => setAccessKey(e.target.value)}
                 autoComplete="off"
                 spellCheck="false"
-                className="w-full px-3.5 py-2.5 min-h-[44px] bg-[#F4F1EB] outline-none focus:bg-white focus:border-[#111215] border border-[#111215]/20 transition-all placeholder:text-[#525660] font-mono text-xs uppercase"
+                className="w-full px-3.5 py-2.5 min-h-[44px] bg-[#F4F1EB] outline-none focus:bg-white focus:border-[#111215] focus-visible:ring-2 focus-visible:ring-[#111215] focus-visible:ring-offset-2 border border-[#111215]/20 transition-all placeholder:text-[#525660] font-mono text-xs uppercase"
               />
             </div>
             <p className="text-[11px] text-[#525660] mt-1.5">
