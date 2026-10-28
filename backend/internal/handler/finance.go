@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ncd/backend/internal/middleware"
 )
 
@@ -51,9 +53,99 @@ type VoidRequest struct {
 }
 
 var (
-	txLock       sync.RWMutex
-	transactions = []TransactionDTO{}
+	txLock        sync.RWMutex
+	transactions  = []TransactionDTO{}
+	financeDBPool *pgxpool.Pool
 )
+
+// InitFinanceDB sets up PostgreSQL persistence for finance transactions and syncs initial state.
+func InitFinanceDB(pool *pgxpool.Pool) {
+	if pool == nil {
+		return
+	}
+	financeDBPool = pool
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	createTableQuery := `
+	CREATE TABLE IF NOT EXISTS portal_finance_transactions (
+		id VARCHAR(100) PRIMARY KEY,
+		transaction_number VARCHAR(100) NOT NULL UNIQUE,
+		type VARCHAR(50) NOT NULL,
+		category_name VARCHAR(150) NOT NULL,
+		amount NUMERIC(14, 2) NOT NULL,
+		description TEXT NOT NULL,
+		person_in_charge VARCHAR(150) NOT NULL,
+		receipt_url TEXT NOT NULL,
+		status VARCHAR(50) NOT NULL DEFAULT 'DRAFT_PENDING',
+		transaction_date VARCHAR(50) NOT NULL,
+		maker_name VARCHAR(150) NOT NULL,
+		maker_id VARCHAR(100) NOT NULL,
+		verifier_name VARCHAR(150) DEFAULT '',
+		verifier_id VARCHAR(100) DEFAULT '',
+		verified_at VARCHAR(100) DEFAULT '',
+		void_reason TEXT DEFAULT '',
+		void_by_name VARCHAR(150) DEFAULT '',
+		created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+	);
+	CREATE INDEX IF NOT EXISTS idx_portal_finance_status_date ON portal_finance_transactions(status, transaction_date DESC);
+	`
+	if _, err := pool.Exec(ctx, createTableQuery); err != nil {
+		return
+	}
+
+	SyncFinanceFromDB(ctx, pool)
+}
+
+// SyncFinanceFromDB loads transactions from PostgreSQL into memory and updates disk cache.
+func SyncFinanceFromDB(ctx context.Context, pool *pgxpool.Pool) {
+	if pool == nil {
+		return
+	}
+
+	rows, err := pool.Query(ctx, `
+		SELECT id, transaction_number, type, category_name, amount, description, person_in_charge, receipt_url, status, transaction_date, maker_name, maker_id, verifier_name, verifier_id, verified_at, void_reason, void_by_name, created_at
+		FROM portal_finance_transactions
+		ORDER BY transaction_date DESC, created_at DESC
+	`)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	loaded := []TransactionDTO{}
+	for rows.Next() {
+		var t TransactionDTO
+		if err := rows.Scan(
+			&t.ID,
+			&t.TransactionNumber,
+			&t.Type,
+			&t.CategoryName,
+			&t.Amount,
+			&t.Description,
+			&t.PersonInCharge,
+			&t.ReceiptURL,
+			&t.Status,
+			&t.TransactionDate,
+			&t.MakerName,
+			&t.MakerID,
+			&t.VerifierName,
+			&t.VerifierID,
+			&t.VerifiedAt,
+			&t.VoidReason,
+			&t.VoidByName,
+			&t.CreatedAt,
+		); err == nil {
+			loaded = append(loaded, t)
+		}
+	}
+
+	txLock.Lock()
+	transactions = loaded
+	saveTransactionsToDiskLocked()
+	txLock.Unlock()
+}
 
 func getTransactionsFilePath() string {
 	if _, err := os.Stat("backend/data"); err == nil {
@@ -83,7 +175,7 @@ func loadTransactionsFromDisk() {
 	filePath := getTransactionsFilePath()
 	bytes, err := os.ReadFile(filePath)
 	if err == nil && len(bytes) > 0 {
-		var loaded []TransactionDTO
+		loaded := []TransactionDTO{}
 		if err := json.Unmarshal(bytes, &loaded); err == nil {
 			transactions = loaded
 			return
@@ -97,6 +189,10 @@ func init() {
 }
 
 func GetCashSummary(w http.ResponseWriter, r *http.Request) {
+	if financeDBPool != nil {
+		SyncFinanceFromDB(r.Context(), financeDBPool)
+	}
+
 	txLock.RLock()
 	defer txLock.RUnlock()
 
@@ -130,8 +226,10 @@ func GetCashSummary(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListTransactions(w http.ResponseWriter, r *http.Request) {
-	// ponytail: single source of truth — always read from in-memory slice
-	// (all writes go here + JSON file; DB path was never written to, causing split-brain)
+	if financeDBPool != nil {
+		SyncFinanceFromDB(r.Context(), financeDBPool)
+	}
+
 	txLock.RLock()
 	defer txLock.RUnlock()
 
@@ -201,9 +299,6 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		txDate = time.Now().Format("2006-01-02")
 	}
 
-	txLock.Lock()
-	defer txLock.Unlock()
-
 	newTx := TransactionDTO{
 		ID:                uuid.New().String(),
 		TransactionNumber: fmt.Sprintf("NCD-TRX-%s-%04d", time.Now().Format("200601"), len(transactions)+1),
@@ -220,8 +315,20 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:         time.Now(),
 	}
 
+	if financeDBPool != nil {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+		_, _ = financeDBPool.Exec(ctx, `
+			INSERT INTO portal_finance_transactions (
+				id, transaction_number, type, category_name, amount, description, person_in_charge, receipt_url, status, transaction_date, maker_name, maker_id, created_at
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		`, newTx.ID, newTx.TransactionNumber, newTx.Type, newTx.CategoryName, newTx.Amount, newTx.Description, newTx.PersonInCharge, newTx.ReceiptURL, newTx.Status, newTx.TransactionDate, newTx.MakerName, newTx.MakerID, newTx.CreatedAt)
+	}
+
+	txLock.Lock()
 	transactions = append([]TransactionDTO{newTx}, transactions...)
 	saveTransactionsToDiskLocked()
+	txLock.Unlock()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -274,6 +381,16 @@ func UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 				transactions[i].VoidReason = fmt.Sprintf("Direvisi & diajukan ulang oleh %s (Catatan penolakan sebelumnya: %s)", reviser, transactions[i].VoidReason)
 			}
 
+			if financeDBPool != nil {
+				ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+				defer cancel()
+				_, _ = financeDBPool.Exec(ctx, `
+					UPDATE portal_finance_transactions
+					SET type = $1, category_name = $2, amount = $3, description = $4, person_in_charge = $5, receipt_url = $6, transaction_date = $7, status = $8, void_reason = $9
+					WHERE id = $10
+				`, transactions[i].Type, transactions[i].CategoryName, transactions[i].Amount, transactions[i].Description, transactions[i].PersonInCharge, transactions[i].ReceiptURL, transactions[i].TransactionDate, transactions[i].Status, transactions[i].VoidReason, id)
+			}
+
 			saveTransactionsToDiskLocked()
 
 			w.Header().Set("Content-Type", "application/json")
@@ -298,6 +415,13 @@ func DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Transaksi sah (VERIFIED) tidak dapat dihapus", http.StatusBadRequest)
 				return
 			}
+
+			if financeDBPool != nil {
+				ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+				defer cancel()
+				_, _ = financeDBPool.Exec(ctx, `DELETE FROM portal_finance_transactions WHERE id = $1`, id)
+			}
+
 			transactions = append(transactions[:i], transactions[i+1:]...)
 			saveTransactionsToDiskLocked()
 
@@ -339,6 +463,17 @@ func VerifyTransaction(w http.ResponseWriter, r *http.Request) {
 				transactions[i].VerifierID = "u-sri"
 			}
 			transactions[i].VerifiedAt = time.Now().Format("2006-01-02 15:04 WIB")
+
+			if financeDBPool != nil {
+				ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+				defer cancel()
+				_, _ = financeDBPool.Exec(ctx, `
+					UPDATE portal_finance_transactions
+					SET status = 'VERIFIED', verifier_name = $1, verifier_id = $2, verified_at = $3
+					WHERE id = $4
+				`, transactions[i].VerifierName, transactions[i].VerifierID, transactions[i].VerifiedAt, id)
+			}
+
 			saveTransactionsToDiskLocked()
 
 			w.Header().Set("Content-Type", "application/json")
@@ -372,6 +507,17 @@ func VoidTransaction(w http.ResponseWriter, r *http.Request) {
 			} else {
 				transactions[i].VoidByName = "Mirza Danisywar (Chairman)"
 			}
+
+			if financeDBPool != nil {
+				ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+				defer cancel()
+				_, _ = financeDBPool.Exec(ctx, `
+					UPDATE portal_finance_transactions
+					SET status = 'VOID', void_reason = $1, void_by_name = $2
+					WHERE id = $3
+				`, transactions[i].VoidReason, transactions[i].VoidByName, id)
+			}
+
 			saveTransactionsToDiskLocked()
 
 			w.Header().Set("Content-Type", "application/json")
