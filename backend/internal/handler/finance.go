@@ -130,40 +130,8 @@ func GetCashSummary(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListTransactions(w http.ResponseWriter, r *http.Request) {
-	if Repo != nil {
-		rows, err := Repo.ListTransactions(r.Context())
-		if err == nil && len(rows) > 0 {
-			txs := make([]TransactionDTO, 0, len(rows))
-			for _, t := range rows {
-				var amount float64
-				if t.Amount.Valid {
-					v, _ := t.Amount.Float64Value()
-					amount = v.Float64
-				}
-				dto := TransactionDTO{
-					ID:                uuid.UUID(t.ID.Bytes).String(),
-					TransactionNumber: t.TransactionNumber,
-					Type:              string(t.Type),
-					CategoryName:      t.CategoryName,
-					Amount:            amount,
-					Description:       t.Description,
-					PersonInCharge:    t.PersonInCharge,
-					ReceiptURL:        t.ReceiptUrl,
-					Status:            string(t.Status),
-					TransactionDate:   t.TransactionDate.Time.Format("2006-01-02"),
-					MakerName:         "Maker",
-					CreatedAt:         t.CreatedAt.Time,
-				}
-				if t.VoidReason.Valid {
-					dto.VoidReason = t.VoidReason.String
-				}
-				txs = append(txs, dto)
-			}
-			paginateTransactions(w, r, txs)
-			return
-		}
-	}
-
+	// ponytail: single source of truth — always read from in-memory slice
+	// (all writes go here + JSON file; DB path was never written to, causing split-brain)
 	txLock.RLock()
 	defer txLock.RUnlock()
 
