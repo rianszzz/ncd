@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -122,20 +123,66 @@ func CacheHeaders(maxAgeSec int, staleSec int) func(http.Handler) http.Handler {
 	}
 }
 
+func isTrustedProxy(remoteAddr string) bool {
+	host, _, err := net.SplitHostPort(remoteAddr)
+	if err != nil {
+		host = remoteAddr
+	}
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return false
+	}
+	// Always trust loopback addresses (127.0.0.1, ::1)
+	if ip.IsLoopback() {
+		return true
+	}
+	// Trust private RFC 1918 / RFC 4193 addresses used by reverse proxies / internal load balancers
+	if ip.IsPrivate() {
+		return true
+	}
+	// Trust custom configured proxies from environment (comma-separated IPs/CIDRs)
+	if custom := os.Getenv("TRUSTED_PROXIES"); custom != "" {
+		for _, part := range strings.Split(custom, ",") {
+			part = strings.TrimSpace(part)
+			if part == "" {
+				continue
+			}
+			if _, cidrNet, err := net.ParseCIDR(part); err == nil {
+				if cidrNet.Contains(ip) {
+					return true
+				}
+			} else if part == host {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func getClientIP(r *http.Request) string {
-	// 1. Cek Header X-Forwarded-For (proxy/load balancer/cloudflare)
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		parts := strings.Split(xff, ",")
-		return strings.TrimSpace(parts[0])
+	remoteHost, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		remoteHost = r.RemoteAddr
 	}
-	// 2. Cek X-Real-IP
-	if xrip := r.Header.Get("X-Real-IP"); xrip != "" {
-		return strings.TrimSpace(xrip)
+
+	// Only inspect proxy headers if the direct network peer is verified as a trusted proxy
+	if isTrustedProxy(r.RemoteAddr) {
+		// 1. Cek Header X-Forwarded-For
+		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+			parts := strings.Split(xff, ",")
+			clientIP := strings.TrimSpace(parts[0])
+			if net.ParseIP(clientIP) != nil {
+				return clientIP
+			}
+		}
+		// 2. Cek X-Real-IP
+		if xrip := strings.TrimSpace(r.Header.Get("X-Real-IP")); xrip != "" {
+			if net.ParseIP(xrip) != nil {
+				return xrip
+			}
+		}
 	}
-	// 3. Fallback RemoteAddr
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err == nil {
-		return host
-	}
-	return r.RemoteAddr
+
+	// Direct client connection fallback
+	return remoteHost
 }

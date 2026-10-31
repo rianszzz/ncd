@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -71,10 +73,18 @@ func SendTelegramAlert(text string) {
 		data := url.Values{}
 		data.Set("chat_id", chatID)
 		data.Set("text", text)
-		data.Set("parse_mode", "Markdown")
+		data.Set("parse_mode", "HTML")
 
 		client := &http.Client{Timeout: 5 * time.Second}
-		_, _ = client.PostForm(apiURL, data)
+		resp, err := client.PostForm(apiURL, data)
+		if err != nil {
+			log.Printf("[TELEGRAM] Gagal mengirim alert: %v", err)
+			return
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			log.Printf("[TELEGRAM] Alert API response status: %d", resp.StatusCode)
+		}
 	}()
 }
 
@@ -223,15 +233,21 @@ func SubmitApplication(w http.ResponseWriter, r *http.Request) {
 
 	// Kirim notifikasi Telegram ke Pengurus
 	notifText := fmt.Sprintf(
-		"📥 *Pendaftaran Anggota Baru NCD!*\n\n"+
-			"👤 *Nama:* %s\n"+
-			"🎓 *Jurusan & Angkatan:* %s (%s)\n"+
-			"📍 *Domisili Kampus:* %s\n"+
-			"🔍 *Mengetahui NCD:* %s\n"+
-			"💡 *Minat:* %s\n"+
-			"📱 *WhatsApp:* %s\n\n"+
-			"👉 *Status:* Menunggu Voting Pengurus di Dasbor Portal.",
-		app.FullName, app.Major, app.Generation, app.CampusDomicile, app.ReferralSource, app.SkillsInterest, app.PhoneWA,
+		"📥 <b>Pendaftaran Anggota Baru NCD!</b>\n\n"+
+			"👤 <b>Nama:</b> %s\n"+
+			"🎓 <b>Jurusan & Angkatan:</b> %s (%s)\n"+
+			"📍 <b>Domisili Kampus:</b> %s\n"+
+			"🔍 <b>Mengetahui NCD:</b> %s\n"+
+			"💡 <b>Minat:</b> %s\n"+
+			"📱 <b>WhatsApp:</b> %s\n\n"+
+			"👉 <b>Status:</b> Menunggu Voting Pengurus di Dasbor Portal.",
+		html.EscapeString(app.FullName),
+		html.EscapeString(app.Major),
+		html.EscapeString(app.Generation),
+		html.EscapeString(app.CampusDomicile),
+		html.EscapeString(app.ReferralSource),
+		html.EscapeString(app.SkillsInterest),
+		html.EscapeString(app.PhoneWA),
 	)
 	SendTelegramAlert(notifText)
 
@@ -524,13 +540,18 @@ func DecideApplication(w http.ResponseWriter, r *http.Request) {
 		statusLabel = "DITOLAK"
 	}
 	SendTelegramAlert(fmt.Sprintf(
-		"Keputusan Akhir Rekrutmen NCD\n\n"+
-			"*Nama:* %s\n"+
-			"*Angkatan/Domisili:* %s - %s\n"+
-			"*Keputusan:* %s\n"+
-			"*Otoritas:* %s\n"+
-			"*Total Vote Pengurus:* %d suara",
-		target.FullName, target.Generation, target.CampusDomicile, statusLabel, target.FinalDecisionBy, len(target.Votes),
+		"<b>Keputusan Akhir Rekrutmen NCD</b>\n\n"+
+			"<b>Nama:</b> %s\n"+
+			"<b>Angkatan/Domisili:</b> %s - %s\n"+
+			"<b>Keputusan:</b> %s\n"+
+			"<b>Otoritas:</b> %s\n"+
+			"<b>Total Vote Pengurus:</b> %d suara",
+		html.EscapeString(target.FullName),
+		html.EscapeString(target.Generation),
+		html.EscapeString(target.CampusDomicile),
+		html.EscapeString(statusLabel),
+		html.EscapeString(target.FinalDecisionBy),
+		len(target.Votes),
 	))
 
 	w.Header().Set("Content-Type", "application/json")
@@ -588,14 +609,19 @@ func DeleteApplication(w http.ResponseWriter, r *http.Request) {
 
 	// Telegram audit notification
 	SendTelegramAlert(fmt.Sprintf(
-		"PENGHAPUSAN BERKAS PENDAFTARAN\n\n"+
-			"*Nama Calon:* %s\n"+
-			"*Angkatan/Domisili:* %s - %s\n"+
-			"*Status Terakhir:* %s\n"+
-			"*Dihapus Oleh:* %s (%s)\n"+
-			"*Waktu:* %s WIB",
-		deletedItem.FullName, deletedItem.Generation, deletedItem.CampusDomicile, deletedItem.Status,
-		claims.FullName, claims.Role, time.Now().Format("02 Jan 2006 15:04"),
+		"<b>PENGHAPUSAN BERKAS PENDAFTARAN</b>\n\n"+
+			"<b>Nama Calon:</b> %s\n"+
+			"<b>Angkatan/Domisili:</b> %s - %s\n"+
+			"<b>Status Terakhir:</b> %s\n"+
+			"<b>Dihapus Oleh:</b> %s (%s)\n"+
+			"<b>Waktu:</b> %s WIB",
+		html.EscapeString(deletedItem.FullName),
+		html.EscapeString(deletedItem.Generation),
+		html.EscapeString(deletedItem.CampusDomicile),
+		html.EscapeString(deletedItem.Status),
+		html.EscapeString(claims.FullName),
+		html.EscapeString(claims.Role),
+		time.Now().Format("02 Jan 2006 15:04"),
 	))
 
 	w.Header().Set("Content-Type", "application/json")
@@ -686,18 +712,18 @@ func DeleteApplicationsByDate(w http.ResponseWriter, r *http.Request) {
 			namesPreview += fmt.Sprintf("\n- ...dan %d calon lainnya", len(deletedNames)-5)
 			break
 		}
-		namesPreview += fmt.Sprintf("\n- %s", name)
+		namesPreview += fmt.Sprintf("\n- %s", html.EscapeString(name))
 	}
 
 	SendTelegramAlert(fmt.Sprintf(
-		"PENGHAPUSAN MASSAL BERKAS PENDAFTARAN\n\n"+
-			"*Tanggal/Kriteria:* %s\n"+
-			"*Total Dihapus:* %d berkas\n"+
-			"*Daftar Calon:*%s\n"+
-			"*Dihapus Oleh:* %s (%s)\n"+
-			"*Waktu:* %s WIB",
-		dateParam, deletedCount, namesPreview,
-		claims.FullName, claims.Role, time.Now().Format("02 Jan 2006 15:04"),
+		"<b>PENGHAPUSAN MASSAL BERKAS PENDAFTARAN</b>\n\n"+
+			"<b>Tanggal/Kriteria:</b> %s\n"+
+			"<b>Total Dihapus:</b> %d berkas\n"+
+			"<b>Daftar Calon:</b>%s\n"+
+			"<b>Dihapus Oleh:</b> %s (%s)\n"+
+			"<b>Waktu:</b> %s WIB",
+		html.EscapeString(dateParam), deletedCount, namesPreview,
+		html.EscapeString(claims.FullName), html.EscapeString(claims.Role), time.Now().Format("02 Jan 2006 15:04"),
 	))
 
 	w.Header().Set("Content-Type", "application/json")

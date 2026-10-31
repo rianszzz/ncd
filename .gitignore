@@ -39,6 +39,7 @@ file.md
 .claude/
 .playwright-mcp/
 agent/
+graphify-out/
 skills-lock.json
 SKILL.md
 screenshot*.png

@@ -285,8 +285,8 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // 1. Sesi Login Habis / Token Tidak Sah
-    if (error.response?.status === 401) {
+    // 1. Sesi Login Habis / Token Tidak Sah / Akses Terlarang (401/403)
+    if (error.response?.status === 401 || error.response?.status === 403) {
       localStorage.removeItem('ncd_jwt')
       localStorage.removeItem('ncd_user')
       if (

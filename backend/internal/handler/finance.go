@@ -361,6 +361,14 @@ func UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			// Validasi kepemilikan draft: Hanya pembuat draft atau SUPER_ADMIN / GOD_ADMIN yang boleh mengubah
+			isOwner := claims != nil && tx.MakerID != "" && tx.MakerID == claims.UserID
+			isAdmin := claims != nil && (claims.Role == "SUPER_ADMIN" || claims.Role == "GOD_ADMIN")
+			if !isOwner && !isAdmin {
+				http.Error(w, "Forbidden: Anda tidak berhak mengubah draft transaksi milik pembuat lain", http.StatusForbidden)
+				return
+			}
+
 			transactions[i].Type = req.Type
 			transactions[i].CategoryName = req.CategoryName
 			transactions[i].Amount = req.Amount
@@ -405,6 +413,7 @@ func UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 // DeleteTransaction menghapus draft transaksi kas atau transaksi yang dibatalkan
 func DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	claims, _ := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
 
 	txLock.Lock()
 	defer txLock.Unlock()
@@ -413,6 +422,14 @@ func DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 		if tx.ID == id {
 			if tx.Status == "VERIFIED" {
 				http.Error(w, "Transaksi sah (VERIFIED) tidak dapat dihapus", http.StatusBadRequest)
+				return
+			}
+
+			// Validasi kepemilikan draft: Hanya pembuat draft atau SUPER_ADMIN / GOD_ADMIN yang boleh menghapus
+			isOwner := claims != nil && tx.MakerID != "" && tx.MakerID == claims.UserID
+			isAdmin := claims != nil && (claims.Role == "SUPER_ADMIN" || claims.Role == "GOD_ADMIN")
+			if !isOwner && !isAdmin {
+				http.Error(w, "Forbidden: Anda tidak berhak menghapus draft transaksi milik pembuat lain", http.StatusForbidden)
 				return
 			}
 
@@ -451,6 +468,12 @@ func VerifyTransaction(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			// Invariant Maker-Checker: Pembuat dilarang memverifikasi transaksinya sendiri
+			if claims != nil && tx.MakerID != "" && tx.MakerID == claims.UserID {
+				http.Error(w, "Maker-checker violation: Pembuat dilarang memverifikasi transaksinya sendiri demi integritas audit", http.StatusForbidden)
+				return
+			}
+
 			transactions[i].Status = "VERIFIED"
 			if claims != nil && (claims.Role == "SUPER_ADMIN" || strings.Contains(strings.ToLower(claims.Role), "chair")) {
 				transactions[i].VerifierName = fmt.Sprintf("%s (Persetujuan Chairman)", claims.FullName)
@@ -470,7 +493,7 @@ func VerifyTransaction(w http.ResponseWriter, r *http.Request) {
 				_, _ = financeDBPool.Exec(ctx, `
 					UPDATE portal_finance_transactions
 					SET status = 'VERIFIED', verifier_name = $1, verifier_id = $2, verified_at = $3
-					WHERE id = $4
+					WHERE id = $4 AND status = 'DRAFT_PENDING' AND maker_id != $2
 				`, transactions[i].VerifierName, transactions[i].VerifierID, transactions[i].VerifiedAt, id)
 			}
 

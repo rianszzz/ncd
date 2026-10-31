@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   LayoutDashboard,
@@ -67,6 +68,7 @@ const AVAILABLE_ROLES = [
 ]
 
 export function Dashboard() {
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   // Local user resolution
@@ -87,13 +89,21 @@ export function Dashboard() {
     }
   })
 
+  // Fail-closed security redirect: must possess both JWT token and stored user object
+  useEffect(() => {
+    const token = localStorage.getItem('ncd_jwt')
+    if (!token || !localUser) {
+      navigate('/login', { replace: true })
+    }
+  }, [localUser, navigate])
+
   const currentUser = {
-    id: localUser?.id || 'u-superadmin',
-    name: localUser?.full_name || localUser?.name || 'Mirza Danisywar Noor Wahyu',
-    email: localUser?.email || 'chairman@ncd.dev',
-    role: localUser?.role || 'SUPER_ADMIN',
-    position: localUser?.position || 'Chairman',
-    key: localUser?.key || 'NCD-CHAIRMAN-2026',
+    id: localUser?.id || '',
+    name: localUser?.full_name || localUser?.name || 'Member NCD',
+    email: localUser?.email || '',
+    role: localUser?.role || 'MEMBER',
+    position: localUser?.position || 'Anggota',
+    key: localUser?.key || '',
   }
 
   const isGodAdmin = currentUser.role === 'GOD_ADMIN'

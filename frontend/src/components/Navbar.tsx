@@ -28,7 +28,7 @@ export function Navbar() {
   // Close mobile menu & update auth state on route change
   useEffect(() => {
     setIsOpen(false)
-    setIsLoggedIn(Boolean(localStorage.getItem('ncd_jwt') || localStorage.getItem('ncd_user')))
+    setIsLoggedIn(Boolean(localStorage.getItem('ncd_jwt') && localStorage.getItem('ncd_user')))
   }, [location.pathname])
 
   // Close mobile menu on Escape key press

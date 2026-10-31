@@ -32,7 +32,7 @@ function PageFallback() {
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('ncd_jwt')
   const user = localStorage.getItem('ncd_user')
-  if (!token && !user) {
+  if (!token || !user) {
     return <Navigate to="/login" replace />
   }
   return <>{children}</>
