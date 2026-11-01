@@ -1,0 +1,28 @@
+[
+  {
+    "id": "ls-5ff71ca1",
+    "user_id": "tok-ec5b6008",
+    "class_slug": "fauzan-team101",
+    "class_name": "TEAM FORMATION 101: From Strangers to One Team",
+    "speaker_name": "Muhamad Fauzan Al Farikhi",
+    "full_name": "Fauzan Al Farikhi",
+    "email": "fauzan.al.farikhi@ncd.dev",
+    "phone_wa": "085811211505",
+    "university": "Gunadarma",
+    "major": "Informatika",
+    "created_at": "2026-11-01T14:45:07.437373+07:00"
+  },
+  {
+    "id": "ls-659ae1bf",
+    "user_id": "tok-ec5b6008",
+    "class_slug": "fawwaz-webdev",
+    "class_name": "WEB DEVELOPMENT FUNDAMENTALS: From Internet to Website",
+    "speaker_name": "Muhammad Fawwaz Rayyan Khalish",
+    "full_name": "Fauzan Al Farikhi",
+    "email": "fauzan.al.farikhi@ncd.dev",
+    "phone_wa": "085811211505",
+    "university": "gundar",
+    "major": "infor",
+    "created_at": "2026-11-01T15:00:31.018456+07:00"
+  }
+]

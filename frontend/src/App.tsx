@@ -1,6 +1,5 @@
 import React, { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { motion, useReducedMotion } from 'motion/react'
 import { Analytics } from '@vercel/analytics/react'
 import { Navbar } from './components/Navbar'
 import { Footer } from './components/Footer'
@@ -14,6 +13,7 @@ const Team = lazy(() => import('./pages/Team').then((m) => ({ default: m.Team })
 const Projects = lazy(() => import('./pages/Projects').then((m) => ({ default: m.Projects })))
 const Achievements = lazy(() => import('./pages/Achievements').then((m) => ({ default: m.Achievements })))
 const News = lazy(() => import('./pages/News').then((m) => ({ default: m.News })))
+const LearningSession = lazy(() => import('./pages/LearningSession').then((m) => ({ default: m.LearningSession })))
 const Join = lazy(() => import('./pages/Join').then((m) => ({ default: m.Join })))
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })))
 const Login = lazy(() => import('./pages/Login').then((m) => ({ default: m.Login })))
@@ -40,7 +40,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const location = useLocation()
-  const shouldReduceMotion = useReducedMotion()
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-[#F4F1EB] text-[#111215] selection:bg-[#6456EB] selection:text-white">
@@ -57,12 +56,7 @@ export default function App() {
       <ScrollToTop />
       <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
         <Suspense fallback={<PageFallback />}>
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: shouldReduceMotion ? 1 : 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: shouldReduceMotion ? 0 : 0.2, ease: 'easeOut' }}
-          >
+          <div key={location.pathname} className="animate-fade-in">
             <Routes location={location}>
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
@@ -70,6 +64,7 @@ export default function App() {
               <Route path="/projects" element={<Projects />} />
               <Route path="/achievements" element={<Achievements />} />
               <Route path="/news" element={<News />} />
+              <Route path="/learning-session" element={<LearningSession />} />
               <Route path="/join" element={<Join />} />
               <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/dashboard" element={<Navigate to="/app" replace />} />
@@ -80,7 +75,7 @@ export default function App() {
               <Route path="/privacy" element={<Privacy />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </motion.div>
+          </div>
         </Suspense>
       </main>
       <Footer />

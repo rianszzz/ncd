@@ -274,6 +274,102 @@ export const getMemberOnboardingTracker = async (): Promise<OnboardingTrackerRes
   return res.data
 }
 
+export interface LearningSessionRegistration {
+  id: string
+  user_id: string
+  class_slug: string
+  class_name: string
+  speaker_name: string
+  full_name: string
+  email: string
+  phone_wa: string
+  university: string
+  major: string
+  created_at: string
+}
+
+export interface LearningSessionStats {
+  total_count: number
+  fawwaz_count: number
+  fauzan_count: number
+  participants: LearningSessionRegistration[]
+}
+
+export interface MyRegistrationsResponse {
+  registered_slugs: string[]
+  registrations: LearningSessionRegistration[]
+}
+
+export const registerLearningSession = async (data: {
+  class_slug: string
+  full_name: string
+  email: string
+  phone_wa: string
+  university: string
+  major: string
+}) => {
+  const res = await api.post('/portal/learning-sessions/register', data)
+  return res.data
+}
+
+export const getMyLearningSessionRegistrations = async (): Promise<MyRegistrationsResponse> => {
+  const res = await api.get('/portal/learning-sessions/my-registrations')
+  return res.data
+}
+
+export const getAdminLearningSessionRegistrations = async (classFilter?: string): Promise<LearningSessionStats> => {
+  const url =
+    classFilter && classFilter !== 'ALL'
+      ? `/portal/learning-sessions/admin/registrations?class=${encodeURIComponent(classFilter)}`
+      : '/portal/learning-sessions/admin/registrations'
+  const res = await api.get(url)
+  return res.data
+}
+
+export interface LearningSessionClass {
+  id: string
+  slug: string
+  class_number: string
+  speaker_name: string
+  title: string
+  description: string
+  date_label: string
+  time_label: string
+  platform: string
+  mode: string
+  poster_url: string
+  accent_color: string
+  discord_url: string
+  created_at: string
+}
+
+export const getLearningSessionClasses = async (): Promise<LearningSessionClass[]> => {
+  const res = await api.get('/portal/learning-sessions/classes')
+  return res.data
+}
+
+export const createLearningSessionClass = async (data: {
+  class_number: string
+  speaker_name: string
+  title: string
+  description: string
+  date_label: string
+  time_label: string
+  platform: string
+  mode: string
+  poster_url: string
+  accent_color?: string
+  discord_url: string
+}): Promise<{ message: string; class: LearningSessionClass }> => {
+  const res = await api.post('/portal/learning-sessions/classes', data)
+  return res.data
+}
+
+export const deleteLearningSessionClass = async (id: string): Promise<{ message: string }> => {
+  const res = await api.delete(`/portal/learning-sessions/classes/${id}`)
+  return res.data
+}
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('ncd_jwt')
   if (token && config.headers) {

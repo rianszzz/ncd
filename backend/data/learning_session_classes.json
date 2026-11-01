@@ -1,0 +1,34 @@
+[
+  {
+    "id": "class-fawwaz-01",
+    "slug": "fawwaz-webdev",
+    "class_number": "CLASS 01",
+    "speaker_name": "Muhammad Fawwaz Rayyan Khalish",
+    "title": "WEB DEVELOPMENT FUNDAMENTALS: From Internet to Website",
+    "description": "Pelajari dasar cara kerja internet, HTTP/HTTPS, domain, hosting, DNS, serta bagaimana browser dan server bekerja dalam menampilkan sebuah website.",
+    "date_label": "Sabtu, 07 November 2026",
+    "time_label": "20.00–21.00 WIB",
+    "platform": "Discord",
+    "mode": "Online Live Session",
+    "poster_url": "fawwaz-poster",
+    "accent_color": "#3B82F6",
+    "discord_url": "https://discord.com/events/1566134369398034514/1566142733561634877",
+    "created_at": "2026-11-01T03:00:00+07:00"
+  },
+  {
+    "id": "class-fauzan-02",
+    "slug": "fauzan-team101",
+    "class_number": "CLASS 02",
+    "speaker_name": "Muhamad Fauzan Al Farikhi",
+    "title": "TEAM FORMATION 101: From Strangers to One Team",
+    "description": "Pelajari cara membangun chemistry, mengenali potensi anggota, membagi tanggung jawab, dan menciptakan kolaborasi tim lintas jurusan yang efektif.",
+    "date_label": "Senin, 16 November 2026",
+    "time_label": "20.00–21.00 WIB",
+    "platform": "Discord",
+    "mode": "Online Live Session",
+    "poster_url": "fauzan-poster",
+    "accent_color": "#6366F1",
+    "discord_url": "https://discord.com/events/1566134369398034514/1566143302619767078",
+    "created_at": "2026-11-01T03:00:00+07:00"
+  }
+]

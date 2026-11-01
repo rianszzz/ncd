@@ -119,6 +119,16 @@ func main() {
 			protected.Put("/portal/tokens/my-token", handler.UpdateToken)
 			protected.Put("/portal/tokens/{id}", handler.UpdateToken)
 
+			// Learning Session Registration & Classes Governance (Wajib Login)
+			protected.Get("/portal/learning-sessions/classes", handler.ListLearningSessionClasses)
+			protected.Post("/portal/learning-sessions/register", handler.RegisterLearningSession)
+			protected.Get("/portal/learning-sessions/my-registrations", handler.GetMyLearningSessionRegistrations)
+			protected.With(ncdMiddleware.RequireRole("GOD_ADMIN", "SUPER_ADMIN")).Group(func(admin chi.Router) {
+				admin.Get("/portal/learning-sessions/admin/registrations", handler.ListLearningSessionRegistrations)
+				admin.Post("/portal/learning-sessions/classes", handler.CreateLearningSessionClass)
+				admin.Delete("/portal/learning-sessions/classes/{id}", handler.DeleteLearningSessionClass)
+			})
+
 			// Portal Dashboard Data (Wajib Login)
 			protected.Get("/portal/dashboard", handler.GetPortalDashboard)
 

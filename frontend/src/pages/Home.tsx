@@ -24,11 +24,8 @@ export function Home() {
   return (
     <div className="flex flex-col items-center">
       {/* Hero Section */}
-      <motion.section
-        initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.25, ease }}
-        className="min-h-[calc(100dvh-3.5rem)] w-full max-w-4xl mx-auto px-5 sm:px-6 py-8 md:py-16 text-center flex flex-col items-center justify-center"
+      <section
+        className="animate-fade-in min-h-[calc(100dvh-3.5rem)] w-full max-w-4xl mx-auto px-5 sm:px-6 py-8 md:py-16 text-center flex flex-col items-center justify-center"
       >
         <h1 className="text-3xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-[-0.035em] text-[#111215] leading-[1.18] sm:leading-[1.12] max-w-2xl mx-auto">
           Komunitas Mahasiswa<br />
@@ -56,7 +53,7 @@ export function Home() {
             <ArrowRight className="w-3.5 h-3.5 text-[#111215]/70 shrink-0" />
           </Link>
         </div>
-      </motion.section>
+      </section>
 
       {/* Pillars / Governance Horizontal Scroll Section (Webflow Product Cards Flow) */}
       <GovernanceHorizontalScroll />

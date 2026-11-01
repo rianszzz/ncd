@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   LayoutDashboard,
@@ -38,6 +38,8 @@ import {
   Search,
   Download,
   CheckSquare,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react'
 import {
   api,
@@ -54,8 +56,10 @@ import {
   getMemberProfile,
   submitMemberOnboarding,
   getMemberOnboardingTracker,
+  getAdminLearningSessionRegistrations,
 } from '../services/api'
 import { DashboardRowSkeleton, TokenRowSkeleton } from '../components/Skeletons'
+import { LearningSessionSection } from '../components/LearningSessionSection'
 import { AnimatePresence, motion } from 'motion/react'
 
 const AVAILABLE_ROLES = [
@@ -121,7 +125,11 @@ export function Dashboard() {
   const canManageDocs = isGodAdmin || isSuperAdmin || isSekretaris
   const canVerifyApplications = isGodAdmin || isSuperAdmin || isSekretaris
 
-  // Active Tab: 'overview' | 'tokens' | 'approvals' | 'achievements' | 'news' | 'documents' | 'finance' | 'profile' | 'recruitment' | 'member-onboarding' | 'onboarding'
+  const [searchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const initialClass = searchParams.get('class')
+
+  // Active Tab: 'overview' | 'tokens' | 'approvals' | 'achievements' | 'news' | 'documents' | 'finance' | 'profile' | 'recruitment' | 'member-onboarding' | 'onboarding' | 'learning-session'
   const [activeTab, setActiveTab] = useState<
     | 'overview'
     | 'tokens'
@@ -134,7 +142,15 @@ export function Dashboard() {
     | 'recruitment'
     | 'member-onboarding'
     | 'onboarding'
-  >('overview')
+    | 'learning-session'
+  >(tabParam === 'learning-session' ? 'learning-session' : 'overview')
+
+  useEffect(() => {
+    const currentTab = searchParams.get('tab')
+    if (currentTab === 'learning-session') {
+      setActiveTab('learning-session')
+    }
+  }, [searchParams])
 
   // Member Onboarding State (Role: MEMBER)
   const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4>(1)
@@ -598,6 +614,74 @@ export function Dashboard() {
   })
 
   const pendingOnboardingCount = onboardingTracker?.pending_count || 0
+
+  // Learning Session Registrations State & Query (Pengurus only)
+  const [lsClassFilter, setLsClassFilter] = useState<string>('ALL')
+  const [lsSearchQuery, setLsSearchQuery] = useState<string>('')
+
+  const { data: lsStats, isLoading: loadingLsStats, refetch: refetchLsStats } = useQuery({
+    queryKey: ['adminLearningSessionRegistrations', lsClassFilter],
+    queryFn: () =>
+      getAdminLearningSessionRegistrations(
+        lsClassFilter === 'ALL' ? undefined : lsClassFilter
+      ),
+    enabled: (isGodAdmin || isSuperAdmin) && activeTab === 'learning-session',
+    staleTime: 30 * 1000,
+  })
+
+  const handleExportLSCsv = () => {
+    if (!lsStats?.participants || lsStats.participants.length === 0) return
+    const headers = [
+      'No',
+      'Nama Lengkap',
+      'Email',
+      'No WhatsApp',
+      'Universitas',
+      'Jurusan',
+      'Kelas',
+      'Pemateri',
+      'Waktu Daftar',
+    ]
+    const rows = lsStats.participants.map((p, idx) => [
+      idx + 1,
+      `"${p.full_name.replace(/"/g, '""')}"`,
+      `"${p.email.replace(/"/g, '""')}"`,
+      `"${p.phone_wa.replace(/"/g, '""')}"`,
+      `"${p.university.replace(/"/g, '""')}"`,
+      `"${p.major.replace(/"/g, '""')}"`,
+      `"${p.class_name.replace(/"/g, '""')}"`,
+      `"${p.speaker_name.replace(/"/g, '""')}"`,
+      `"${new Date(p.created_at).toLocaleString('id-ID')}"`,
+    ])
+
+    const csvContent =
+      'data:text/csv;charset=utf-8,\uFEFF' +
+      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n')
+
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute(
+      'download',
+      `peserta-ncd-learning-session-${new Date().toISOString().slice(0, 10)}.csv`
+    )
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const filteredLsParticipants = (lsStats?.participants || []).filter((p) => {
+    if (!lsSearchQuery.trim()) return true
+    const q = lsSearchQuery.toLowerCase()
+    return (
+      p.full_name?.toLowerCase().includes(q) ||
+      p.email?.toLowerCase().includes(q) ||
+      p.phone_wa?.toLowerCase().includes(q) ||
+      p.university?.toLowerCase().includes(q) ||
+      p.major?.toLowerCase().includes(q) ||
+      p.user_id?.toLowerCase().includes(q)
+    )
+  })
 
   useEffect(() => {
     if (memberProfile) {
@@ -1191,6 +1275,13 @@ export function Dashboard() {
             icon: Users,
             badge: pendingOnboardingCount,
           },
+          {
+            id: 'learning-session' as const,
+            shortLabel: 'Learning Session',
+            label: 'Data Pendaftaran NCD Learning Session',
+            icon: GraduationCap,
+            badge: 0,
+          },
         ]
       : [
           {
@@ -1199,6 +1290,13 @@ export function Dashboard() {
             label: 'Alur Formulir Onboarding Anggota Komunitas',
             icon: Sparkles,
             badge: memberProfile?.is_onboarded ? 0 : 1,
+          },
+          {
+            id: 'learning-session' as const,
+            shortLabel: 'Learning Session',
+            label: 'NCD Learning Session 2026',
+            icon: GraduationCap,
+            badge: 0,
           },
         ]),
     ...(isGodAdmin
@@ -1440,7 +1538,7 @@ export function Dashboard() {
           <nav
             role="tablist"
             aria-label="Navigasi Menu Dasbor"
-            className="relative flex items-stretch w-full bg-[#F4F1EB] border border-[#111215]/20 p-1 select-none"
+            className="relative flex items-stretch w-full bg-[#F4F1EB] border border-[#111215]/20 p-1 select-none overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden rounded-none"
           >
             {navTabs.map((tab, idx) => {
               const Icon = tab.icon
@@ -1456,21 +1554,21 @@ export function Dashboard() {
                   aria-label={tab.label}
                   onClick={() => setActiveTab(tab.id as typeof activeTab)}
                   onKeyDown={(e) => handleTabKeyDown(e, idx, false)}
-                  className={`relative flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs font-semibold tracking-wide transition-colors duration-150 outline-none focus-visible:ring-1 focus-visible:ring-[#111215] ${
+                  className={`relative flex-1 min-w-max shrink-0 flex items-center justify-center gap-1.5 py-2 px-1.5 sm:px-2 2xl:px-3 text-[10px] sm:text-[10.5px] 2xl:text-[11px] font-semibold tracking-wide transition-colors duration-150 outline-none focus-visible:ring-1 focus-visible:ring-[#111215] rounded-none ${
                     isActive ? 'text-[#F4F1EB]' : 'text-[#525660] hover:text-[#111215]'
                   }`}
                 >
                   {isActive && (
                     <motion.div
                       layoutId="dashboardActiveTabThumbDesktop"
-                      className="absolute inset-0 bg-[#111215] z-0"
+                      className="absolute inset-0 bg-[#111215] z-0 rounded-none"
                       transition={{ type: 'spring', stiffness: 500, damping: 38 }}
                     />
                   )}
                   <span className="relative z-10 flex items-center justify-center">
-                    <Icon className="w-4 h-4 shrink-0" />
+                    <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                   </span>
-                  <span className="relative z-10 truncate text-[11px] uppercase tracking-wider font-bold">
+                  <span className="relative z-10 truncate uppercase tracking-wider font-bold">
                     {tab.shortLabel}
                   </span>
                   {tab.badge > 0 && (
@@ -1487,7 +1585,7 @@ export function Dashboard() {
 
       {/* CHAIRMAN ACTION BANNER: PENDING COMPETITION APPROVALS */}
       {isChairman && pendingCompetitionCount > 0 && activeTab === 'overview' && (
-        <div className="mb-5 sm:mb-6 p-4 sm:p-5 rounded-2xl bg-amber-50/90 border border-amber-200 text-[#111215] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+        <div className="mb-5 sm:mb-6 p-4 sm:p-5 rounded-none bg-amber-50/90 border border-amber-200 text-[#111215] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
           <div className="flex items-start space-x-3">
             <Clock className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
             <div>
@@ -1501,7 +1599,7 @@ export function Dashboard() {
           </div>
           <button
             onClick={() => setActiveTab('approvals')}
-            className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 min-h-[40px] rounded-xl bg-amber-900 text-white hover:bg-amber-950 text-xs font-medium transition-colors shrink-0 cursor-pointer"
+            className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 min-h-[40px] rounded-none bg-amber-900 text-white hover:bg-amber-950 text-xs font-medium transition-colors shrink-0 cursor-pointer"
           >
             <span>Tinjau Sekarang</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -2143,6 +2241,32 @@ export function Dashboard() {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* NCD Learning Session 2026 Featured Callout Banner */}
+              <div className="bg-[#111215] text-[#F4F1EB] border border-[#111215] p-5 sm:p-6 rounded-none flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5 text-amber-400" />
+                    <span className="text-xs font-mono uppercase tracking-wider text-amber-400 font-bold">
+                      Learning Session Terbuka
+                    </span>
+                  </div>
+                  <h4 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                    NCD Learning Session 2026: Pendaftaran Dibuka
+                  </h4>
+                  <p className="text-xs text-[#A0A5B2] max-w-2xl leading-relaxed">
+                    Tersedia dua sesi kelas: Web Development Fundamentals bersama Fawwaz dan Team Formation 101 bersama Fauzan. Akses materi, jadwal, dan link Discord kelas melalui dasbor anggota.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('learning-session')}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#F4F1EB] text-[#111215] hover:bg-white text-xs font-bold uppercase tracking-wider transition-colors shrink-0 rounded-none cursor-pointer"
+                >
+                  <span>Daftar / Buka Kelas</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
 
               {/* Panduan Adaptasi & Langkah Awal Anggota NCD */}
@@ -3368,6 +3492,281 @@ export function Dashboard() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* TAB: LEARNING SESSION (MEMBER VIEW) */}
+      {!isPengurus && activeTab === 'learning-session' && (
+        <div className="space-y-6 mb-8">
+          <div className="bg-white border border-[#111215]/15 p-6 sm:p-8 shadow-2xs rounded-none">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#111215]/10">
+              <div>
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="w-5 h-5 text-[#111215]" />
+                  <span className="text-xs font-mono uppercase tracking-wider text-[#7E8492] font-semibold">
+                    Portal Pendaftaran & Jadwal Sesi
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#111215] mt-1">
+                  NCD Learning Session 2026
+                </h2>
+                <p className="text-xs sm:text-sm text-[#525660] mt-1 max-w-2xl leading-relaxed">
+                  Pilih kelas yang ingin Anda ikuti, lengkapi formulir pendaftaran, dan dapatkan akses tautan Discord resmi sesi belajar.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <LearningSessionSection showFullHeader={false} initialOpenClass={initialClass} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: LEARNING SESSION PARTICIPANT MANAGEMENT (PENGURUS ONLY) */}
+      {isPengurus && activeTab === 'learning-session' && (
+        <div className="space-y-6 mb-8">
+          {/* Card Informasi Kelas Resmi (Preview Sesi Belajar) */}
+          <div className="bg-white border border-[#111215]/15 p-6 sm:p-8 shadow-2xs rounded-none">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#111215]/10">
+              <div>
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="w-5 h-5 text-[#111215]" />
+                  <span className="text-xs font-mono uppercase tracking-wider text-[#7E8492] font-semibold">
+                    Informasi Sesi Belajar
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#111215] mt-1">
+                  NCD Learning Session 2026
+                </h2>
+                <p className="text-xs sm:text-sm text-[#525660] mt-1 max-w-2xl leading-relaxed">
+                  Informasi resmi kedua kelas, jadwal pelaksanaan di Discord, serta akses pendaftaran dan tautan room siaran.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <LearningSessionSection
+                showFullHeader={false}
+                initialOpenClass={initialClass}
+                canManageClasses={isGodAdmin || isSuperAdmin}
+              />
+            </div>
+          </div>
+
+          {/* Panel Administrasi Data Pendaftar (Khusus God Admin & Super Admin) */}
+          {(isGodAdmin || isSuperAdmin) && (
+            <div className="bg-white border border-[#111215]/15 p-5 sm:p-7 shadow-2xs rounded-none">
+              {/* Header & CSV Export */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#111215]/10">
+              <div>
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="w-5 h-5 text-[#111215]" />
+                  <span className="text-xs font-mono uppercase tracking-wider text-[#7E8492] font-semibold">
+                    Administrasi Sesi Belajar
+                  </span>
+                </div>
+                <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[#111215] mt-1">
+                  Data Pendaftaran NCD Learning Session 2026
+                </h2>
+                <p className="text-xs text-[#525660] mt-0.5">
+                  Rekapitulasi resmi pendaftar sesi belajar daring NCD. Terintegrasi langsung dengan database PostgreSQL.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => refetchLsStats()}
+                  disabled={loadingLsStats}
+                  title="Segarkan Data"
+                  className="inline-flex items-center gap-1.5 px-3 py-2.5 bg-[#F4F1EB] text-[#111215] hover:bg-[#E5E0D8] border border-[#111215]/20 text-xs font-semibold rounded-none transition-colors cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loadingLsStats ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">Segarkan</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportLSCsv}
+                  disabled={!lsStats?.participants || lsStats.participants.length === 0}
+                  className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-[#111215] text-[#F4F1EB] hover:bg-black text-xs font-semibold rounded-none transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Ekspor CSV Peserta</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Metrics Overview Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 my-6">
+              <div className="p-4 bg-[#F4F1EB] border border-[#111215]/10 rounded-none">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[#7E8492] font-semibold block">
+                  Total Registrasi
+                </span>
+                <div className="text-2xl font-bold text-[#111215] mt-1">
+                  {loadingLsStats ? '...' : lsStats?.total_count || 0}
+                </div>
+                <span className="text-[11px] text-[#525660] mt-0.5 block">
+                  Peserta terdaftar unik di database
+                </span>
+              </div>
+
+              <div className="p-4 bg-blue-50/60 border border-blue-200/80 rounded-none">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-blue-700 font-semibold block">
+                  Class 01: Fawwaz
+                </span>
+                <div className="text-2xl font-bold text-blue-950 mt-1">
+                  {loadingLsStats ? '...' : lsStats?.fawwaz_count || 0}
+                </div>
+                <span className="text-[11px] text-blue-800 mt-0.5 block">
+                  Web Development Fundamentals
+                </span>
+              </div>
+
+              <div className="p-4 bg-indigo-50/60 border border-indigo-200/80 rounded-none">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-indigo-700 font-semibold block">
+                  Class 02: Fauzan
+                </span>
+                <div className="text-2xl font-bold text-indigo-950 mt-1">
+                  {loadingLsStats ? '...' : lsStats?.fauzan_count || 0}
+                </div>
+                <span className="text-[11px] text-indigo-800 mt-0.5 block">
+                  Team Formation 101
+                </span>
+              </div>
+            </div>
+
+            {/* Filter and Search Controls */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pt-2">
+              <div className="flex items-center gap-1.5 overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                <button
+                  type="button"
+                  onClick={() => setLsClassFilter('ALL')}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-none transition-colors shrink-0 cursor-pointer ${
+                    lsClassFilter === 'ALL'
+                      ? 'bg-[#111215] text-[#F4F1EB]'
+                      : 'bg-[#F4F1EB] text-[#525660] hover:text-[#111215] border border-[#111215]/10'
+                  }`}
+                >
+                  Semua Kelas ({lsStats?.total_count || 0})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLsClassFilter('fawwaz-webdev')}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-none transition-colors shrink-0 cursor-pointer ${
+                    lsClassFilter === 'fawwaz-webdev'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-[#F4F1EB] text-[#525660] hover:text-[#111215] border border-[#111215]/10'
+                  }`}
+                >
+                  Kelas Fawwaz ({lsStats?.fawwaz_count || 0})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLsClassFilter('fauzan-team101')}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-none transition-colors shrink-0 cursor-pointer ${
+                    lsClassFilter === 'fauzan-team101'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-[#F4F1EB] text-[#525660] hover:text-[#111215] border border-[#111215]/10'
+                  }`}
+                >
+                  Kelas Fauzan ({lsStats?.fauzan_count || 0})
+                </button>
+              </div>
+
+              <div className="relative w-full sm:w-72">
+                <Search className="w-4 h-4 text-[#7E8492] absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={lsSearchQuery}
+                  onChange={(e) => setLsSearchQuery(e.target.value)}
+                  aria-label="Pencarian pendaftar sesi belajar"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-[#F4F1EB]/50 border border-[#111215]/20 rounded-none focus:bg-white focus:border-[#111215] outline-none transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Participants Table */}
+            {loadingLsStats ? (
+              <div className="py-12 flex flex-col items-center justify-center space-y-2 text-[#7E8492]">
+                <Loader2 className="w-6 h-6 animate-spin text-[#111215]" />
+                <span className="text-xs font-medium">Memuat data pendaftar...</span>
+              </div>
+            ) : filteredLsParticipants.length === 0 ? (
+              <div className="p-8 border border-dashed border-[#111215]/20 text-center bg-[#F4F1EB]/30 rounded-none">
+                <GraduationCap className="w-8 h-8 text-[#7E8492] mx-auto mb-2 opacity-50" />
+                <p className="text-xs font-semibold text-[#111215]">
+                  {lsSearchQuery.trim()
+                    ? 'Tidak ada peserta yang cocok dengan kata kunci pencarian.'
+                    : 'Belum ada peserta yang mendaftar pada filter kelas ini.'}
+                </p>
+                <p className="text-[11px] text-[#7E8492] mt-0.5">
+                  Data pendaftar dari formulir member akan langsung muncul secara realtime di sini.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto border border-[#111215]/15 rounded-none">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-[#111215] text-[#F4F1EB] font-bold text-[11px] uppercase tracking-wider">
+                      <th className="py-3 px-3.5 text-center w-12 border-b border-[#111215]">No</th>
+                      <th className="py-3 px-3.5 border-b border-[#111215]">Identitas Peserta</th>
+                      <th className="py-3 px-3.5 border-b border-[#111215]">Instansi &amp; Jurusan</th>
+                      <th className="py-3 px-3.5 border-b border-[#111215]">Kelas Terdaftar</th>
+                      <th className="py-3 px-3.5 border-b border-[#111215]">Waktu Daftar</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#111215]/10 bg-white">
+                    {filteredLsParticipants.map((p, idx) => (
+                      <tr key={p.id} className="hover:bg-[#F4F1EB]/60 transition-colors">
+                        <td className="py-3 px-3.5 text-center font-mono text-[#7E8492] text-[11px]">
+                          {idx + 1}
+                        </td>
+                        <td className="py-3 px-3.5">
+                          <div className="font-bold text-[#111215] flex items-center gap-1.5">
+                            <span>{p.full_name}</span>
+                            <span className="font-mono text-[10px] px-1.5 py-0.2 bg-[#F4F1EB] border border-[#111215]/20 text-[#525660]">
+                              {p.user_id}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-[#525660] font-mono mt-0.5 flex flex-col sm:flex-row sm:gap-2">
+                            <span>{p.email}</span>
+                            <span className="hidden sm:inline">•</span>
+                            <span>WA: {p.phone_wa}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-3.5">
+                          <div className="font-semibold text-[#111215]">{p.university}</div>
+                          <div className="text-[11px] text-[#525660] mt-0.5">{p.major}</div>
+                        </td>
+                        <td className="py-3 px-3.5">
+                          <span
+                            className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase rounded-none border ${
+                              p.class_slug === 'fawwaz-webdev'
+                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                            }`}
+                          >
+                            {p.class_slug === 'fawwaz-webdev' ? 'Class 01: Fawwaz' : 'Class 02: Fauzan'}
+                          </span>
+                          <div className="text-[11px] font-medium text-[#111215] mt-1 max-w-xs truncate">
+                            {p.class_name}
+                          </div>
+                        </td>
+                        <td className="py-3 px-3.5 font-mono text-[11px] text-[#525660] whitespace-nowrap">
+                          {new Date(p.created_at).toLocaleString('id-ID', {
+                            dateStyle: 'medium',
+                            timeStyle: 'short',
+                          })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+          )}
         </div>
       )}
 
@@ -6299,7 +6698,7 @@ export function Dashboard() {
         <nav
           role="tablist"
           aria-label="Tab Menu Dasbor"
-          className="relative flex items-center justify-between w-full bg-white border border-[#111215]/20 p-1 shadow-lg select-none"
+          className="relative flex items-center w-full bg-white border border-[#111215]/20 p-1 shadow-lg select-none overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden rounded-none"
         >
           {navTabs.map((tab, idx) => {
             const Icon = tab.icon
@@ -6315,14 +6714,14 @@ export function Dashboard() {
                 aria-label={tab.label}
                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
                 onKeyDown={(e) => handleTabKeyDown(e, idx, true)}
-                className={`relative flex-1 flex items-center justify-center py-2.5 min-h-[44px] transition-colors duration-150 outline-none focus-visible:ring-1 focus-visible:ring-[#111215] ${
+                className={`relative flex-1 min-w-[46px] shrink-0 flex items-center justify-center py-2.5 min-h-[44px] transition-colors duration-150 outline-none focus-visible:ring-1 focus-visible:ring-[#111215] rounded-none ${
                   isActive ? 'text-[#F4F1EB]' : 'text-[#525660] hover:text-[#111215]'
                 }`}
               >
                 {isActive && (
                   <motion.div
                     layoutId="dashboardActiveTabThumbMobile"
-                    className="absolute inset-0 bg-[#111215] z-0"
+                    className="absolute inset-0 bg-[#111215] z-0 rounded-none"
                     transition={{ type: 'spring', stiffness: 500, damping: 38 }}
                   />
                 )}

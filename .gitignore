@@ -38,8 +38,11 @@ file.md
 .agents/
 .claude/
 .playwright-mcp/
+*lighthouse*.json
 agent/
 graphify-out/
 skills-lock.json
 SKILL.md
 screenshot*.png
+learning-session-*.png
+dashboard-*.png

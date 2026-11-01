@@ -38,6 +38,10 @@ const metaByPath: Record<string, { title: string; description: string }> = {
     title: 'Warta & Berita Komunitas • NCD',
     description: 'Kumpulan warta pengumuman resmi, rilis produk, dan riset teknologi terkini dari NCD.',
   },
+  '/learning-session': {
+    title: 'NCD Learning Session 2026 • Kelas & Registrasi Member',
+    description: 'Sesi pembelajaran eksklusif untuk member NCD: Web Development Fundamentals bersama Fawwaz dan Team Formation 101 bersama Fauzan.',
+  },
   '/app': {
     title: 'Dashboard Portal Pengurus • NCD',
     description: 'Workspace manajemen internal NCD untuk pengawasan kas, proyek, dan koordinasi divisi.',

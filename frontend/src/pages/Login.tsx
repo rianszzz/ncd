@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../services/api'
 import { KeyRound, ArrowRight, Loader2 } from 'lucide-react'
 
 export function Login() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [accessKey, setAccessKey] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -27,7 +28,15 @@ export function Login() {
       if (res.data?.user) {
         localStorage.setItem('ncd_user', JSON.stringify(res.data.user))
       }
-      navigate('/app')
+
+      const redirectPath = searchParams.get('redirect')
+      const targetClass = searchParams.get('class')
+      if (redirectPath) {
+        const dest = targetClass ? `${redirectPath}?class=${encodeURIComponent(targetClass)}` : redirectPath
+        navigate(dest)
+      } else {
+        navigate('/app')
+      }
     } catch {
       setError('Kunci akses tidak valid atau telah dicabut oleh God Admin.')
     } finally {
@@ -66,12 +75,11 @@ export function Login() {
                 id="token-input"
                 type="text"
                 required
-                placeholder="Masukkan Token Akses..."
                 value={accessKey}
                 onChange={(e) => setAccessKey(e.target.value)}
                 autoComplete="off"
                 spellCheck="false"
-                className="w-full px-3.5 py-2.5 min-h-[44px] bg-[#F4F1EB] outline-none focus:bg-white focus:border-[#111215] focus-visible:ring-2 focus-visible:ring-[#111215] focus-visible:ring-offset-2 border border-[#111215]/20 transition-all placeholder:text-[#525660] font-mono text-xs uppercase"
+                className="w-full px-3.5 py-2.5 min-h-[44px] bg-[#F4F1EB] outline-none focus:bg-white focus:border-[#111215] focus-visible:ring-2 focus-visible:ring-[#111215] focus-visible:ring-offset-2 border border-[#111215]/20 transition-all font-mono text-xs uppercase"
               />
             </div>
             <p className="text-[11px] text-[#525660] mt-1.5">
