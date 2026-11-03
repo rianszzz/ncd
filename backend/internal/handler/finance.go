@@ -58,6 +58,19 @@ var (
 	financeDBPool *pgxpool.Pool
 )
 
+// getFinancePool mengembalikan pool PostgreSQL untuk modul finance.
+// Jika financeDBPool nil (misal cold-start), fungsi ini akan mencoba mengambil pool dari GetDBPool()
+func getFinancePool() *pgxpool.Pool {
+	if financeDBPool != nil {
+		return financeDBPool
+	}
+	pool := GetDBPool()
+	if pool != nil {
+		financeDBPool = pool
+	}
+	return financeDBPool
+}
+
 // InitFinanceDB sets up PostgreSQL persistence for finance transactions and syncs initial state.
 func InitFinanceDB(pool *pgxpool.Pool) {
 	if pool == nil {
@@ -93,6 +106,24 @@ func InitFinanceDB(pool *pgxpool.Pool) {
 	`
 	if _, err := pool.Exec(ctx, createTableQuery); err != nil {
 		return
+	}
+
+	// Dual-Sync Auto-Seed: Amankan seluruh transaksi lokal yang ada di transactions.json ke Supabase PostgreSQL
+	txLock.RLock()
+	txToSeed := make([]TransactionDTO, len(transactions))
+	copy(txToSeed, transactions)
+	txLock.RUnlock()
+
+	for _, t := range txToSeed {
+		if t.ID == "" {
+			continue
+		}
+		_, _ = pool.Exec(ctx, `
+			INSERT INTO portal_finance_transactions (
+				id, transaction_number, type, category_name, amount, description, person_in_charge, receipt_url, status, transaction_date, maker_name, maker_id, verifier_name, verifier_id, verified_at, void_reason, void_by_name, created_at
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+			ON CONFLICT (id) DO NOTHING
+		`, t.ID, t.TransactionNumber, t.Type, t.CategoryName, t.Amount, t.Description, t.PersonInCharge, t.ReceiptURL, t.Status, t.TransactionDate, t.MakerName, t.MakerID, t.VerifierName, t.VerifierID, t.VerifiedAt, t.VoidReason, t.VoidByName, t.CreatedAt)
 	}
 
 	SyncFinanceFromDB(ctx, pool)
@@ -142,22 +173,34 @@ func SyncFinanceFromDB(ctx context.Context, pool *pgxpool.Pool) {
 	}
 
 	txLock.Lock()
-	transactions = loaded
-	saveTransactionsToDiskLocked()
+	// Keamanan Data: Hanya perbarui memori & disk jika row berhasil dimuat dari database
+	if len(loaded) > 0 || len(transactions) == 0 {
+		transactions = loaded
+		saveTransactionsToDiskLocked()
+	}
 	txLock.Unlock()
 }
 
 func getTransactionsFilePath() string {
+	paths := []string{
+		"backend/data/transactions.json",
+		"data/transactions.json",
+		"../../data/transactions.json",
+		"../data/transactions.json",
+		"/tmp/transactions.json",
+	}
+	for _, p := range paths {
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+	}
 	if _, err := os.Stat("backend/data"); err == nil {
 		return "backend/data/transactions.json"
 	}
 	if _, err := os.Stat("data"); err == nil {
 		return "data/transactions.json"
 	}
-	if _, err := os.Stat("../../data"); err == nil {
-		return "../../data/transactions.json"
-	}
-	return "data/transactions.json"
+	return "backend/data/transactions.json"
 }
 
 func saveTransactionsToDiskLocked() {
@@ -165,6 +208,8 @@ func saveTransactionsToDiskLocked() {
 	bytes, err := json.MarshalIndent(transactions, "", "  ")
 	if err == nil {
 		_ = os.WriteFile(filePath, bytes, 0644)
+		// Simpan salinan cadangan di /tmp untuk lingkungan serverless
+		_ = os.WriteFile("/tmp/ncd_transactions_backup.json", bytes, 0644)
 	}
 }
 
@@ -174,6 +219,11 @@ func loadTransactionsFromDisk() {
 
 	filePath := getTransactionsFilePath()
 	bytes, err := os.ReadFile(filePath)
+	if err != nil || len(bytes) == 0 {
+		// Coba baca dari salinan /tmp jika path utama tidak tersedia
+		bytes, err = os.ReadFile("/tmp/ncd_transactions_backup.json")
+	}
+
 	if err == nil && len(bytes) > 0 {
 		loaded := []TransactionDTO{}
 		if err := json.Unmarshal(bytes, &loaded); err == nil {
@@ -189,8 +239,9 @@ func init() {
 }
 
 func GetCashSummary(w http.ResponseWriter, r *http.Request) {
-	if financeDBPool != nil {
-		SyncFinanceFromDB(r.Context(), financeDBPool)
+	pool := getFinancePool()
+	if pool != nil {
+		SyncFinanceFromDB(r.Context(), pool)
 	}
 
 	txLock.RLock()
@@ -226,8 +277,9 @@ func GetCashSummary(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListTransactions(w http.ResponseWriter, r *http.Request) {
-	if financeDBPool != nil {
-		SyncFinanceFromDB(r.Context(), financeDBPool)
+	pool := getFinancePool()
+	if pool != nil {
+		SyncFinanceFromDB(r.Context(), pool)
 	}
 
 	txLock.RLock()
@@ -315,10 +367,11 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:         time.Now(),
 	}
 
-	if financeDBPool != nil {
+	pool := getFinancePool()
+	if pool != nil {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
-		_, _ = financeDBPool.Exec(ctx, `
+		_, _ = pool.Exec(ctx, `
 			INSERT INTO portal_finance_transactions (
 				id, transaction_number, type, category_name, amount, description, person_in_charge, receipt_url, status, transaction_date, maker_name, maker_id, created_at
 			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
@@ -389,10 +442,11 @@ func UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 				transactions[i].VoidReason = fmt.Sprintf("Direvisi & diajukan ulang oleh %s (Catatan penolakan sebelumnya: %s)", reviser, transactions[i].VoidReason)
 			}
 
-			if financeDBPool != nil {
+			pool := getFinancePool()
+			if pool != nil {
 				ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 				defer cancel()
-				_, _ = financeDBPool.Exec(ctx, `
+				_, _ = pool.Exec(ctx, `
 					UPDATE portal_finance_transactions
 					SET type = $1, category_name = $2, amount = $3, description = $4, person_in_charge = $5, receipt_url = $6, transaction_date = $7, status = $8, void_reason = $9
 					WHERE id = $10
@@ -433,10 +487,11 @@ func DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			if financeDBPool != nil {
+			pool := getFinancePool()
+			if pool != nil {
 				ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 				defer cancel()
-				_, _ = financeDBPool.Exec(ctx, `DELETE FROM portal_finance_transactions WHERE id = $1`, id)
+				_, _ = pool.Exec(ctx, `DELETE FROM portal_finance_transactions WHERE id = $1`, id)
 			}
 
 			transactions = append(transactions[:i], transactions[i+1:]...)
@@ -484,10 +539,11 @@ func VerifyTransaction(w http.ResponseWriter, r *http.Request) {
 			transactions[i].VerifierID = claims.UserID
 			transactions[i].VerifiedAt = time.Now().Format("2006-01-02 15:04 WIB")
 
-			if financeDBPool != nil {
+			pool := getFinancePool()
+			if pool != nil {
 				ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 				defer cancel()
-				_, _ = financeDBPool.Exec(ctx, `
+				_, _ = pool.Exec(ctx, `
 					UPDATE portal_finance_transactions
 					SET status = 'VERIFIED', verifier_name = $1, verifier_id = $2, verified_at = $3
 					WHERE id = $4 AND status = 'DRAFT_PENDING' AND maker_id != $2
@@ -529,10 +585,11 @@ func VoidTransaction(w http.ResponseWriter, r *http.Request) {
 			transactions[i].VoidReason = req.Reason
 			transactions[i].VoidByName = fmt.Sprintf("%s (Bendahara II)", claims.FullName)
 
-			if financeDBPool != nil {
+			pool := getFinancePool()
+			if pool != nil {
 				ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 				defer cancel()
-				_, _ = financeDBPool.Exec(ctx, `
+				_, _ = pool.Exec(ctx, `
 					UPDATE portal_finance_transactions
 					SET status = 'VOID', void_reason = $1, void_by_name = $2
 					WHERE id = $3

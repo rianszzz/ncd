@@ -2,6 +2,9 @@ package handler
 
 import (
 	"context"
+	"log"
+	"os"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -9,8 +12,9 @@ import (
 )
 
 var (
-	Repo   *repository.Queries
-	DBPool *pgxpool.Pool
+	Repo         *repository.Queries
+	DBPool       *pgxpool.Pool
+	dbPoolMutex  sync.Mutex
 )
 
 func SetRepository(r *repository.Queries) {
@@ -27,6 +31,46 @@ func SetDB(pool *pgxpool.Pool, r *repository.Queries) {
 	InitFinanceDB(pool)
 	InitLearningSessionsDB(pool)
 	InitPerformanceIndexes(pool)
+}
+
+// GetDBPool mengembalikan DBPool yang aktif. Jika nil (misal cold-start Vercel atau delay koneksi),
+// fungsi ini akan mencoba menghubungkan kembali secara lazy dan aman thread.
+func GetDBPool() *pgxpool.Pool {
+	if DBPool != nil {
+		return DBPool
+	}
+
+	dbPoolMutex.Lock()
+	defer dbPoolMutex.Unlock()
+
+	if DBPool != nil {
+		return DBPool
+	}
+
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+
+	pool, err := pgxpool.New(ctx, dbURL)
+	if err != nil {
+		log.Printf("[NCD Database Lazy] Gagal inisialisasi pool PostgreSQL: %v\n", err)
+		return nil
+	}
+
+	if err := pool.Ping(ctx); err != nil {
+		log.Printf("[NCD Database Lazy] Ping PostgreSQL timeout/gagal: %v\n", err)
+		pool.Close()
+		return nil
+	}
+
+	log.Printf("[NCD Database Lazy] Berhasil terhubung ke PostgreSQL via Lazy Connect\n")
+	repo := repository.New(pool)
+	SetDB(pool, repo)
+	return DBPool
 }
 
 func InitPerformanceIndexes(pool *pgxpool.Pool) {

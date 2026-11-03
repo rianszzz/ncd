@@ -115,5 +115,31 @@
     "university": "Gundar",
     "major": "Akuntansi",
     "created_at": "2026-11-02T03:56:14.749809+07:00"
+  },
+  {
+    "id": "ls-8e0f33de",
+    "user_id": "tok-33cee621",
+    "class_slug": "fawwaz-webdev",
+    "class_name": "WEB DEVELOPMENT FUNDAMENTALS: From Internet to Website",
+    "speaker_name": "Muhammad Fawwaz Rayyan Khalish",
+    "full_name": "Satria Pratama Irawan",
+    "email": "ssatriapratama629@gmail.com",
+    "phone_wa": "08992517700",
+    "university": "Universitas Gunadarma",
+    "major": "Teknik Informatika",
+    "created_at": "2026-11-03T22:51:49.218717+07:00"
+  },
+  {
+    "id": "ls-75c471a9",
+    "user_id": "tok-bend2-1",
+    "class_slug": "sheva-putera-firdaus-pengenalan-networki",
+    "class_name": "PENGENALAN NETWORKING: Understanding the Fundamentals of Computer Networks",
+    "speaker_name": "Sheva Putera Firdaus",
+    "full_name": "Sri Gunarti Wijiastuti",
+    "email": "bendahara2@ncd.dev",
+    "phone_wa": "-",
+    "university": "Universitas Gunadarma",
+    "major": "Informatika",
+    "created_at": "2026-11-03T20:09:22.027077+07:00"
   }
 ]

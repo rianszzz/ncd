@@ -299,25 +299,37 @@ export function Dashboard() {
   })
 
   // Query: Cash Summary
-  const { data: cashSummary } = useQuery<CashSummary>({
+  const {
+    data: cashSummary,
+    isLoading: loadingSummary,
+    isError: isSummaryError,
+    refetch: refetchSummary,
+  } = useQuery<CashSummary>({
     queryKey: ['cashSummary'],
     queryFn: async () => {
       const res = await api.get('/finance/summary')
       return res.data
     },
-    retry: 1,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    refetchOnWindowFocus: true,
   })
 
   // Query: Transactions (Pemasukan & Pengeluaran)
-  const { data: transactions = [], isLoading: loadingTx } = useQuery<
-    Transaction[]
-  >({
+  const {
+    data: transactions = [],
+    isLoading: loadingTx,
+    isError: isTxError,
+    refetch: refetchTx,
+  } = useQuery<Transaction[]>({
     queryKey: ['financeTransactions'],
     queryFn: async () => {
       const res = await api.get('/finance/transactions')
       return res.data
     },
-    retry: 1,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    refetchOnWindowFocus: true,
   })
 
   // Mutation: Approve (Verify) Transaction
@@ -2309,50 +2321,62 @@ export function Dashboard() {
           {/* Metrics Row: 2-Cols on Mobile, 4-Cols on Desktop */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
             {/* Saldo Bersih */}
-            <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl bg-white border border-[#111215]/8 shadow-2xs flex flex-col justify-between">
+            <div className="p-3.5 sm:p-5 rounded-none bg-white border border-[#111215]/8 shadow-2xs flex flex-col justify-between">
               <div className="flex items-center justify-between text-[11px] sm:text-xs text-[#7E8492] font-medium mb-1.5">
                 <span className="truncate pr-1">Saldo Kas</span>
                 <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#111215] shrink-0" />
               </div>
               <div className="text-base sm:text-2xl font-semibold text-[#111215] tracking-tight truncate">
-                {formatRupiah(currentBalance)}
+                {loadingSummary || loadingTx ? (
+                  <div className="h-7 w-28 bg-[#111215]/10 animate-pulse my-0.5" />
+                ) : (
+                  formatRupiah(currentBalance)
+                )}
               </div>
               <div className="mt-2 pt-2 border-t border-[#111215]/6 text-[10px] sm:text-[11px] text-[#7E8492] truncate">
-                Kas aktif terverifikasi
+                {loadingSummary || loadingTx ? 'Menghubungkan basis data...' : 'Kas aktif terverifikasi'}
               </div>
             </div>
 
             {/* Total Pemasukan */}
-            <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl bg-white border border-[#111215]/8 shadow-2xs flex flex-col justify-between">
+            <div className="p-3.5 sm:p-5 rounded-none bg-white border border-[#111215]/8 shadow-2xs flex flex-col justify-between">
               <div className="flex items-center justify-between text-[11px] sm:text-xs text-[#7E8492] font-medium mb-1.5">
                 <span className="truncate pr-1">Pemasukan</span>
                 <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 shrink-0" />
               </div>
               <div className="text-base sm:text-2xl font-semibold text-emerald-700 tracking-tight truncate">
-                +{formatRupiah(totalIncome)}
+                {loadingSummary || loadingTx ? (
+                  <div className="h-7 w-28 bg-[#111215]/10 animate-pulse my-0.5" />
+                ) : (
+                  `+${formatRupiah(totalIncome)}`
+                )}
               </div>
               <div className="mt-2 pt-2 border-t border-[#111215]/6 text-[10px] sm:text-[11px] text-[#7E8492] truncate">
-                Hadiah, hibah & saldo kas
+                {loadingSummary || loadingTx ? 'Menghubungkan...' : 'Hadiah, hibah & saldo kas'}
               </div>
             </div>
 
             {/* Total Pengeluaran */}
-            <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl bg-white border border-[#111215]/8 shadow-2xs flex flex-col justify-between">
+            <div className="p-3.5 sm:p-5 rounded-none bg-white border border-[#111215]/8 shadow-2xs flex flex-col justify-between">
               <div className="flex items-center justify-between text-[11px] sm:text-xs text-[#7E8492] font-medium mb-1.5">
                 <span className="truncate pr-1">Pengeluaran</span>
                 <TrendingDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-600 shrink-0" />
               </div>
               <div className="text-base sm:text-2xl font-semibold text-rose-700 tracking-tight truncate">
-                -{formatRupiah(totalExpense)}
+                {loadingSummary || loadingTx ? (
+                  <div className="h-7 w-28 bg-[#111215]/10 animate-pulse my-0.5" />
+                ) : (
+                  `-${formatRupiah(totalExpense)}`
+                )}
               </div>
               <div className="mt-2 pt-2 border-t border-[#111215]/6 text-[10px] sm:text-[11px] text-[#7E8492] truncate">
-                Operasional & delegasi lomba
+                {loadingSummary || loadingTx ? 'Menghubungkan...' : 'Operasional & delegasi lomba'}
               </div>
             </div>
 
             {/* Metric 4: Role-dependent */}
             {isGodAdmin ? (
-              <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl bg-white border border-[#111215]/8 shadow-2xs flex flex-col justify-between">
+              <div className="p-3.5 sm:p-5 rounded-none bg-white border border-[#111215]/8 shadow-2xs flex flex-col justify-between">
                 <div className="flex items-center justify-between text-[11px] sm:text-xs text-[#7E8492] font-medium mb-1.5">
                   <span className="truncate pr-1">Token Akses</span>
                   <KeyRound className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#6456EB] shrink-0" />
@@ -2368,7 +2392,7 @@ export function Dashboard() {
                 </div>
               </div>
             ) : isSekretaris ? (
-              <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl bg-white border border-[#111215]/8 shadow-2xs flex flex-col justify-between">
+              <div className="p-3.5 sm:p-5 rounded-none bg-white border border-[#111215]/8 shadow-2xs flex flex-col justify-between">
                 <div className="flex items-center justify-between text-[11px] sm:text-xs text-[#7E8492] font-medium mb-1.5">
                   <span className="truncate pr-1">Arsip Dokumen</span>
                   <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#6456EB] shrink-0" />
@@ -2384,19 +2408,27 @@ export function Dashboard() {
                 </div>
               </div>
             ) : isBendahara ? (
-              <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl bg-white border border-[#111215]/8 shadow-2xs flex flex-col justify-between">
+              <div className="p-3.5 sm:p-5 rounded-none bg-white border border-[#111215]/8 shadow-2xs flex flex-col justify-between">
                 <div className="flex items-center justify-between text-[11px] sm:text-xs text-[#7E8492] font-medium mb-1.5">
                   <span className="truncate pr-1">Draft & Antrean Kas</span>
                   <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#6456EB] shrink-0" />
                 </div>
                 <div className="text-base sm:text-2xl font-semibold text-[#111215] tracking-tight truncate">
-                  {pendingTransactions.length}{' '}
-                  <span className="text-xs font-normal text-[#7E8492]">
-                    Draft Menunggu
-                  </span>
+                  {loadingTx ? (
+                    <div className="h-7 w-28 bg-[#111215]/10 animate-pulse my-0.5" />
+                  ) : (
+                    <>
+                      {pendingTransactions.length}{' '}
+                      <span className="text-xs font-normal text-[#7E8492]">
+                        Draft Menunggu
+                      </span>
+                    </>
+                  )}
                 </div>
                 <div className="mt-2 pt-2 border-t border-[#111215]/6 text-[10px] sm:text-[11px] text-[#7E8492] truncate">
-                  {voidTransactions.length > 0 ? (
+                  {loadingTx ? (
+                    'Menghubungkan...'
+                  ) : voidTransactions.length > 0 ? (
                     <span className="text-rose-700 font-semibold">{voidTransactions.length} Ditolak (Perlu Revisi)</span>
                   ) : (
                     'Semua mutasi terpantau'
@@ -2404,7 +2436,7 @@ export function Dashboard() {
                 </div>
               </div>
             ) : (
-              <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl bg-white border border-[#111215]/8 shadow-2xs flex flex-col justify-between">
+              <div className="p-3.5 sm:p-5 rounded-none bg-white border border-[#111215]/8 shadow-2xs flex flex-col justify-between">
                 <div className="flex items-center justify-between text-[11px] sm:text-xs text-[#7E8492] font-medium mb-1.5">
                   <span className="truncate pr-1">Persetujuan Lomba</span>
                   <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 shrink-0" />
@@ -4992,7 +5024,7 @@ export function Dashboard() {
             </div>
 
             {/* Transaction Ledger Table */}
-            <div className="border border-[#111215]/8 rounded-xl overflow-hidden">
+            <div className="border border-[#111215]/8 rounded-none overflow-hidden">
               <div className="hidden sm:grid grid-cols-12 bg-[#F4F1EB] px-4 py-2.5 text-[11px] font-semibold text-[#525660] border-b border-[#111215]/8">
                 <div className="col-span-3">NO. TRANSAKSI & TANGGAL</div>
                 <div className="col-span-3">DESKRIPSI & KATEGORI</div>
@@ -5006,6 +5038,22 @@ export function Dashboard() {
                   {Array.from({ length: 5 }).map((_, i) => (
                     <DashboardRowSkeleton key={i} />
                   ))}
+                </div>
+              ) : (isTxError || isSummaryError) ? (
+                <div className="p-8 text-center text-xs space-y-2">
+                  <p className="text-rose-700 font-semibold">
+                    Koneksi basis data sedang sinkronisasi ulang. Data kas Anda tetap aman di Supabase PostgreSQL.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      refetchTx()
+                      refetchSummary()
+                    }}
+                    className="mt-2 px-3.5 py-1.5 bg-[#111215] text-[#F4F1EB] rounded-none text-xs font-semibold hover:bg-black cursor-pointer inline-flex items-center gap-1.5"
+                  >
+                    <span>Muat Ulang Mutasi Kas</span>
+                  </button>
                 </div>
               ) : filteredTransactions.length === 0 ? (
                 <div className="p-8 text-center text-xs text-[#7E8492]">
