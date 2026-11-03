@@ -4,9 +4,11 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ncd/backend/internal/repository"
 )
@@ -52,10 +54,26 @@ func GetDBPool() *pgxpool.Pool {
 		return nil
 	}
 
+	if strings.Contains(dbURL, "pooler.supabase.com:5432") {
+		dbURL = strings.Replace(dbURL, "pooler.supabase.com:5432", "pooler.supabase.com:6543", 1)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
 
-	pool, err := pgxpool.New(ctx, dbURL)
+	poolCfg, err := pgxpool.ParseConfig(dbURL)
+	if err != nil {
+		log.Printf("[NCD Database Lazy] Gagal parse database URL: %v\n", err)
+		return nil
+	}
+
+	poolCfg.MaxConns = 4
+	poolCfg.MinConns = 0
+	poolCfg.MaxConnIdleTime = 15 * time.Second
+	poolCfg.MaxConnLifetime = 5 * time.Minute
+	poolCfg.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+
+	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
 		log.Printf("[NCD Database Lazy] Gagal inisialisasi pool PostgreSQL: %v\n", err)
 		return nil

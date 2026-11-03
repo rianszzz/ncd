@@ -7,12 +7,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ncd/backend/internal/config"
 	"github.com/ncd/backend/internal/handler"
@@ -26,14 +28,33 @@ func main() {
 
 	// 1. Database Connection Pool & Auto-Seed
 	ctx := context.Background()
-	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	dbURL := cfg.DatabaseURL
+	if strings.Contains(dbURL, "pooler.supabase.com:5432") {
+		dbURL = strings.Replace(dbURL, "pooler.supabase.com:5432", "pooler.supabase.com:6543", 1)
+	}
+
+	var pool *pgxpool.Pool
+	poolCfg, err := pgxpool.ParseConfig(dbURL)
 	if err != nil {
+		log.Printf("[NCD Database] Parse database URL error: %v (running fallback)\n", err)
+	} else {
+		// Serverless & PgBouncer Transaction Mode Optimization
+		poolCfg.MaxConns = 4
+		poolCfg.MinConns = 0
+		poolCfg.MaxConnIdleTime = 15 * time.Second
+		poolCfg.MaxConnLifetime = 5 * time.Minute
+		poolCfg.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+
+		pool, err = pgxpool.NewWithConfig(ctx, poolCfg)
+	}
+
+	if err != nil || pool == nil {
 		log.Printf("[NCD Database] Init pool PostgreSQL error: %v (running fallback)\n", err)
 	} else if err := pool.Ping(ctx); err != nil {
 		log.Printf("[NCD Database] Ping PostgreSQL error: %v (running fallback)\n", err)
 		pool.Close()
 	} else {
-		log.Printf("[NCD Database] Berhasil terhubung ke PostgreSQL: %s\n", cfg.DatabaseURL)
+		log.Printf("[NCD Database] Berhasil terhubung ke PostgreSQL: %s\n", dbURL)
 		defer pool.Close()
 
 		repo := repository.New(pool)
