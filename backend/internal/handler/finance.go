@@ -458,6 +458,11 @@ func VerifyTransaction(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	claims, _ := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
 
+	if claims == nil || claims.Role != "BENDAHARA_II" {
+		http.Error(w, "Akses ditolak: Hanya Bendahara II (Checker) yang memiliki wewenang untuk mengesahkan transaksi kas", http.StatusForbidden)
+		return
+	}
+
 	txLock.Lock()
 	defer txLock.Unlock()
 
@@ -475,16 +480,8 @@ func VerifyTransaction(w http.ResponseWriter, r *http.Request) {
 			}
 
 			transactions[i].Status = "VERIFIED"
-			if claims != nil && (claims.Role == "SUPER_ADMIN" || strings.Contains(strings.ToLower(claims.Role), "chair")) {
-				transactions[i].VerifierName = fmt.Sprintf("%s (Persetujuan Chairman)", claims.FullName)
-				transactions[i].VerifierID = claims.UserID
-			} else if claims != nil {
-				transactions[i].VerifierName = fmt.Sprintf("%s (%s)", claims.FullName, claims.Role)
-				transactions[i].VerifierID = claims.UserID
-			} else {
-				transactions[i].VerifierName = "Sri Gunarti Wijiastuti (Bendahara II)"
-				transactions[i].VerifierID = "u-sri"
-			}
+			transactions[i].VerifierName = fmt.Sprintf("%s (Bendahara II)", claims.FullName)
+			transactions[i].VerifierID = claims.UserID
 			transactions[i].VerifiedAt = time.Now().Format("2006-01-02 15:04 WIB")
 
 			if financeDBPool != nil {
@@ -512,6 +509,11 @@ func VoidTransaction(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	claims, _ := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
 
+	if claims == nil || claims.Role != "BENDAHARA_II" {
+		http.Error(w, "Akses ditolak: Hanya Bendahara II (Checker) yang memiliki wewenang untuk menolak transaksi kas", http.StatusForbidden)
+		return
+	}
+
 	var req VoidRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Reason == "" {
 		http.Error(w, "Alasan penolakan / void wajib disertakan", http.StatusBadRequest)
@@ -525,11 +527,7 @@ func VoidTransaction(w http.ResponseWriter, r *http.Request) {
 		if tx.ID == id {
 			transactions[i].Status = "VOID"
 			transactions[i].VoidReason = req.Reason
-			if claims != nil {
-				transactions[i].VoidByName = fmt.Sprintf("%s (%s)", claims.FullName, claims.Role)
-			} else {
-				transactions[i].VoidByName = "Mirza Danisywar (Chairman)"
-			}
+			transactions[i].VoidByName = fmt.Sprintf("%s (Bendahara II)", claims.FullName)
 
 			if financeDBPool != nil {
 				ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)

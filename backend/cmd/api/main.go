@@ -156,12 +156,12 @@ func main() {
 				fin.Delete("/finance/transactions/{id}", handler.DeleteTransaction)
 			})
 
-			// Checker / Verification: Bendahara II, God Admin, Super Admin
-			protected.With(ncdMiddleware.RequireRole("BENDAHARA_II", "GOD_ADMIN", "SUPER_ADMIN")).
+			// Checker / Verification: MURNI HANYA Bendahara II (Checker)
+			protected.With(ncdMiddleware.RequireRole("BENDAHARA_II")).
 				Post("/finance/transactions/{id}/verify", handler.VerifyTransaction)
 
-			// Void / Reject Action: Bendahara II, Super Admin, God Admin
-			protected.With(ncdMiddleware.RequireRole("BENDAHARA_II", "GOD_ADMIN", "SUPER_ADMIN")).
+			// Void / Reject Action: MURNI HANYA Bendahara II (Checker)
+			protected.With(ncdMiddleware.RequireRole("BENDAHARA_II")).
 				Post("/finance/transactions/{id}/void", handler.VoidTransaction)
 
 			// Content Governance: Achievements & Competitions (Khusus God Admin & Super Admin)

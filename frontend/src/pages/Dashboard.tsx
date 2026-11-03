@@ -5078,7 +5078,7 @@ export function Dashboard() {
                               <button
                                 type="button"
                                 onClick={() => openEditTransaction(tx)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-[#111215]/20 hover:border-[#111215] text-[#111215] text-xs font-semibold cursor-pointer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-none bg-white border border-[#111215]/20 hover:border-[#111215] text-[#111215] text-xs font-semibold cursor-pointer"
                               >
                                 <Pencil className="w-3.5 h-3.5 text-[#6456EB]" />
                                 <span>{tx.status === 'VOID' ? 'Perbaiki' : 'Edit'}</span>
@@ -5086,7 +5086,7 @@ export function Dashboard() {
                             )}
                             <button
                               onClick={() => setActiveReceipt(tx)}
-                              className="inline-flex items-center space-x-1 px-2.5 py-1.5 min-h-[38px] rounded-lg bg-[#F4F1EB] hover:bg-[#111215] text-[#111215] hover:text-[#F4F1EB] border border-[#111215]/8 transition-colors text-xs font-medium cursor-pointer shrink-0"
+                              className="inline-flex items-center space-x-1 px-2.5 py-1.5 min-h-[38px] rounded-none bg-[#F4F1EB] hover:bg-[#111215] text-[#111215] hover:text-[#F4F1EB] border border-[#111215]/8 transition-colors text-xs font-medium cursor-pointer shrink-0"
                             >
                               <Receipt className="w-3.5 h-3.5" />
                               <span>Bukti Nota</span>
@@ -5099,7 +5099,7 @@ export function Dashboard() {
                                     deleteTransactionMutation.mutate(tx.id)
                                   }
                                 }}
-                                className="p-2 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 cursor-pointer"
+                                className="p-2 rounded-none text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 cursor-pointer"
                                 title="Hapus draft"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -5107,6 +5107,31 @@ export function Dashboard() {
                             )}
                           </div>
                         </div>
+
+                        {/* Dedicated Checker Action Row on Mobile: Bendahara II Only */}
+                        {isBendahara2 && tx.status === 'DRAFT_PENDING' && (
+                          <div className="pt-2 border-t border-dashed border-[#111215]/10 grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => approveTxMutation.mutate(tx.id)}
+                              disabled={approveTxMutation.isPending}
+                              className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer select-none rounded-none disabled:opacity-50"
+                              title="Verifikasi & Sahkan Transaksi Kas Ini"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span>Sahkan Transaksi</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setRejectModalTx(tx)}
+                              className="w-full py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer select-none rounded-none"
+                              title="Tolak Transaksi Kas Ini & Beri Alasan"
+                            >
+                              <XCircle className="w-4 h-4 text-rose-600" />
+                              <span>Tolak Transaksi</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       {/* Desktop View (>= sm) */}
@@ -5153,7 +5178,7 @@ export function Dashboard() {
                         {/* Status */}
                         <div className="col-span-1">
                           <span
-                            className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+                            className={`inline-block px-1.5 py-0.5 rounded-none text-[10px] font-medium border ${
                               tx.status === 'VERIFIED'
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                 : tx.status === 'DRAFT_PENDING'
@@ -5175,7 +5200,7 @@ export function Dashboard() {
                             <button
                               type="button"
                               onClick={() => openEditTransaction(tx)}
-                              className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-[#111215] text-[#111215] hover:text-[#F4F1EB] border border-[#111215]/15 transition-colors text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                              className="px-2.5 py-1.5 rounded-none bg-white hover:bg-[#111215] text-[#111215] hover:text-[#F4F1EB] border border-[#111215]/15 transition-colors text-xs font-semibold flex items-center gap-1 cursor-pointer"
                               title="Edit draft / perbaiki transaksi"
                             >
                               <Pencil className="w-3 h-3 text-[#6456EB]" />
@@ -5183,31 +5208,33 @@ export function Dashboard() {
                             </button>
                           )}
 
-                          {(isBendahara2 || isSuperAdmin || isGodAdmin) && tx.status === 'DRAFT_PENDING' && (
+                          {isBendahara2 && tx.status === 'DRAFT_PENDING' && (
                             <>
                               <button
                                 type="button"
                                 onClick={() => approveTxMutation.mutate(tx.id)}
                                 disabled={approveTxMutation.isPending}
-                                className="px-2 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 text-xs font-bold transition-colors cursor-pointer"
+                                className="px-2.5 py-1.5 rounded-none bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
                                 title="Verifikasi & Sahkan Transaksi"
                               >
-                                Sah
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                                <span>Sah</span>
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setRejectModalTx(tx)}
-                                className="px-2 py-1.5 rounded-lg bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-300 text-xs font-bold transition-colors cursor-pointer"
+                                className="px-2.5 py-1.5 rounded-none bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-300 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
                                 title="Tolak & Beri Alasan"
                               >
-                                Tolak
+                                <XCircle className="w-3.5 h-3.5 text-rose-700" />
+                                <span>Tolak</span>
                               </button>
                             </>
                           )}
 
                           <button
                             onClick={() => setActiveReceipt(tx)}
-                            className="inline-flex items-center space-x-1.5 px-3 py-1.5 min-h-[36px] rounded-lg bg-[#F4F1EB] hover:bg-[#111215] text-[#111215] hover:text-[#F4F1EB] border border-[#111215]/8 transition-colors text-xs font-medium cursor-pointer"
+                            className="inline-flex items-center space-x-1.5 px-3 py-1.5 min-h-[36px] rounded-none bg-[#F4F1EB] hover:bg-[#111215] text-[#111215] hover:text-[#F4F1EB] border border-[#111215]/8 transition-colors text-xs font-medium cursor-pointer"
                           >
                             <Receipt className="w-3.5 h-3.5" />
                             <span>Nota</span>
@@ -5221,7 +5248,7 @@ export function Dashboard() {
                                   deleteTransactionMutation.mutate(tx.id)
                                 }
                               }}
-                              className="p-1.5 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 cursor-pointer"
+                              className="p-1.5 rounded-none text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 cursor-pointer"
                               title="Hapus draft"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -5483,7 +5510,7 @@ export function Dashboard() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 8 }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="bg-white rounded-2xl border border-[#111215]/10 max-w-lg w-full max-h-[90vh] flex flex-col shadow-xl overflow-hidden"
+              className="bg-white rounded-none border border-[#111215]/20 max-w-lg w-full max-h-[90vh] flex flex-col shadow-xl overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
             {/* Header */}
@@ -5502,7 +5529,7 @@ export function Dashboard() {
 
               <button
                 onClick={() => setActiveReceipt(null)}
-                className="w-8 h-8 rounded-lg hover:bg-[#F4F1EB] text-[#7E8492] hover:text-[#111215] flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-none hover:bg-[#F4F1EB] text-[#7E8492] hover:text-[#111215] flex items-center justify-center transition-colors cursor-pointer"
                 title="Tutup dialog"
               >
                 <X className="w-4 h-4" />
@@ -5512,7 +5539,7 @@ export function Dashboard() {
             {/* Content: Photo + Details */}
             <div className="p-4 sm:p-6 overflow-y-auto space-y-4 text-xs">
               {/* Receipt Image */}
-              <div className="rounded-xl border border-[#111215]/8 overflow-hidden bg-[#F4F1EB] relative">
+              <div className="rounded-none border border-[#111215]/15 overflow-hidden bg-[#F4F1EB] relative">
                 {activeReceipt.receipt_url ? (
                   <img
                     src={activeReceipt.receipt_url}
@@ -5529,7 +5556,7 @@ export function Dashboard() {
               </div>
 
               {/* Transaction Metadata */}
-              <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-[#F4F1EB] text-xs">
+              <div className="grid grid-cols-2 gap-3 p-3.5 rounded-none bg-[#F4F1EB] text-xs border border-[#111215]/10">
                 <div>
                   <span className="text-[10px] text-[#7E8492] uppercase block">
                     Nominal Kas
@@ -5585,13 +5612,13 @@ export function Dashboard() {
                 <span className="text-[11px] font-medium text-[#7E8492] uppercase tracking-wider block mb-1">
                   Keterangan Nota
                 </span>
-                <p className="p-3 rounded-xl bg-[#F4F1EB] text-[#111215] leading-relaxed">
+                <p className="p-3 rounded-none bg-[#F4F1EB] text-[#111215] leading-relaxed border border-[#111215]/10">
                   {activeReceipt.description}
                 </p>
               </div>
 
               {/* Maker / Checker Audit Info */}
-              <div className="p-3 rounded-xl border border-[#111215]/8 space-y-1 text-[11px] text-[#525660]">
+              <div className="p-3 rounded-none border border-[#111215]/15 space-y-1 text-[11px] text-[#525660] bg-white">
                 <div>
                   <strong>Maker (Pencatat):</strong>{' '}
                   {activeReceipt.maker_name || 'Bendahara I'}
@@ -5632,7 +5659,7 @@ export function Dashboard() {
               )}
               <button
                 onClick={() => setActiveReceipt(null)}
-                className="px-4 py-2 min-h-[38px] rounded-xl bg-[#111215] text-[#F4F1EB] text-xs font-medium cursor-pointer hover:bg-[#252830] transition-colors ml-auto"
+                className="px-4 py-2 min-h-[38px] rounded-none bg-[#111215] text-[#F4F1EB] text-xs font-medium cursor-pointer hover:bg-[#252830] transition-colors ml-auto"
               >
                 Tutup
               </button>
@@ -5664,17 +5691,17 @@ export function Dashboard() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 8 }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="bg-white rounded-2xl border border-[#111215]/10 max-w-md w-full p-5 sm:p-6 shadow-xl space-y-4"
+              className="bg-white rounded-none border border-[#111215]/20 max-w-md w-full p-5 sm:p-6 shadow-xl space-y-4"
               onClick={(e) => e.stopPropagation()}
             >
             <div className="flex items-center justify-between pb-3 border-b border-[#111215]/8">
               <div>
                 <h3 className="font-semibold text-sm text-rose-800 flex items-center space-x-1.5">
                   <XCircle className="w-4 h-4 text-rose-700" />
-                  <span>Tolak Pengajuan Dana Lomba</span>
+                  <span>{rejectModalTx.type === 'INCOME' ? 'Tolak Transaksi Kas Masuk' : 'Tolak Transaksi Kas'}</span>
                 </h3>
                 <p className="text-xs text-[#7E8492] mt-0.5">
-                  {rejectModalTx.transaction_number} • -{formatRupiah(rejectModalTx.amount)}
+                  {rejectModalTx.transaction_number} • {rejectModalTx.type === 'INCOME' ? '+' : '-'}{formatRupiah(rejectModalTx.amount)}
                 </p>
               </div>
               <button
@@ -5683,7 +5710,7 @@ export function Dashboard() {
                   setRejectReason('')
                   setRejectError('')
                 }}
-                className="w-8 h-8 rounded-lg hover:bg-[#F4F1EB] text-[#7E8492] hover:text-[#111215] flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-none hover:bg-[#F4F1EB] text-[#7E8492] hover:text-[#111215] flex items-center justify-center transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -5691,7 +5718,7 @@ export function Dashboard() {
 
             <div className="text-xs text-[#525660] space-y-2">
               <p>
-                Anda akan menolak pengeluaran untuk <strong>{rejectModalTx.description}</strong> (PIC: {rejectModalTx.person_in_charge}).
+                Anda akan menolak transaksi untuk <strong>{rejectModalTx.description}</strong> (PIC: {rejectModalTx.person_in_charge}).
               </p>
               <div>
                 <label className="text-[11px] font-medium text-[#111215] block mb-1.5">
@@ -5702,13 +5729,12 @@ export function Dashboard() {
                   rows={3}
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  placeholder="Contoh: Proposal delegasi belum lengkap atau melebihi alokasi kas lomba periode ini..."
-                  className="w-full p-2.5 rounded-xl bg-[#F4F1EB] border border-[#111215]/10 text-xs text-[#111215] focus:outline-none focus:border-[#111215]"
+                  className="w-full p-2.5 rounded-none bg-[#F4F1EB] border border-[#111215]/10 text-xs text-[#111215] focus:outline-none focus:border-[#111215]"
                 />
               </div>
 
               {rejectError && (
-                <div className="p-2.5 rounded-lg bg-rose-50 text-rose-800 border border-rose-200 text-xs">
+                <div className="p-2.5 rounded-none bg-rose-50 text-rose-800 border border-rose-200 text-xs">
                   {rejectError}
                 </div>
               )}
@@ -5722,7 +5748,7 @@ export function Dashboard() {
                   setRejectReason('')
                   setRejectError('')
                 }}
-                className="px-4 py-2 min-h-[38px] rounded-xl border border-[#111215]/10 text-xs text-[#525660] hover:bg-[#F4F1EB] cursor-pointer"
+                className="px-4 py-2 min-h-[38px] rounded-none border border-[#111215]/20 text-xs text-[#525660] hover:bg-[#F4F1EB] cursor-pointer"
               >
                 Batal
               </button>
@@ -5736,7 +5762,7 @@ export function Dashboard() {
                     reason: rejectReason.trim(),
                   })
                 }}
-                className="px-4 py-2 min-h-[38px] rounded-xl bg-rose-700 text-white text-xs font-medium hover:bg-rose-800 transition-colors cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 min-h-[38px] rounded-none bg-rose-700 text-white text-xs font-medium hover:bg-rose-800 transition-colors cursor-pointer disabled:opacity-50"
               >
                 {voidTxMutation.isPending ? 'Memproses...' : 'Konfirmasi Tolak'}
               </button>
