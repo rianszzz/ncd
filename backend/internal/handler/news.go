@@ -107,6 +107,7 @@ func InitNewsDB(pool *pgxpool.Pool) {
 		published_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 		created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 	);
+	CREATE INDEX IF NOT EXISTS idx_portal_posts_pinned_pub ON portal_posts(is_pinned DESC, published_at DESC);
 	`
 	if _, err := pool.Exec(ctx, createTableQuery); err != nil {
 		return

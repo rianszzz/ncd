@@ -182,6 +182,8 @@ func InitAchievementsDB(pool *pgxpool.Pool) {
 		url TEXT DEFAULT '',
 		created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 	);
+	CREATE INDEX IF NOT EXISTS idx_portal_achievements_year ON portal_achievements(year DESC);
+	CREATE INDEX IF NOT EXISTS idx_portal_competitions_deadline ON portal_competitions(registration_deadline ASC);
 	`
 	if _, err := pool.Exec(ctx, createTablesQuery); err != nil {
 		return

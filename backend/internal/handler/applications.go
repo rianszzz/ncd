@@ -154,7 +154,8 @@ func InitApplicationsDB(pool *pgxpool.Pool) {
 		votes JSONB DEFAULT '[]'::jsonb,
 		created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 		updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-	);`
+	);
+	CREATE INDEX IF NOT EXISTS idx_portal_applications_status_created ON portal_applications(status, created_at DESC);`
 	_, _ = pool.Exec(ctx, createTableQuery)
 }
 

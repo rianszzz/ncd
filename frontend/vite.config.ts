@@ -32,8 +32,10 @@ export default defineConfig({
     },
   },
   build: {
-    target: 'es2020',
+    target: 'es2022',
+    cssMinify: true,
     cssCodeSplit: true,
+    modulePreload: { polyfill: false },
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {

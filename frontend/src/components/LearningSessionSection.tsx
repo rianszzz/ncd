@@ -26,8 +26,8 @@ import {
   createLearningSessionClass,
   deleteLearningSessionClass,
 } from '../services/api'
-import fawwazPoster from '../assets/learning-session/fawwaz-poster.png'
-import fauzanPoster from '../assets/learning-session/fauzan-poster.png'
+import fawwazPoster from '../assets/learning-session/fawwaz-poster.webp'
+import fauzanPoster from '../assets/learning-session/fauzan-poster.webp'
 
 export interface ClassSession {
   id?: string

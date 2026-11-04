@@ -150,9 +150,6 @@ func main() {
 				admin.Delete("/portal/learning-sessions/classes/{id}", handler.DeleteLearningSessionClass)
 			})
 
-			// Portal Dashboard Data (Wajib Login)
-			protected.Get("/portal/dashboard", handler.GetPortalDashboard)
-
 			// Recruitment & Member Admissions (Semua Pengurus kecuali Member Komunitas)
 			protected.Get("/portal/applications", handler.ListApplications)
 			protected.Post("/portal/applications/{id}/vote", handler.VoteApplication)

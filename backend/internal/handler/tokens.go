@@ -166,6 +166,7 @@ func InitTokensDB(pool *pgxpool.Pool) {
 		created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 		last_used_at TIMESTAMPTZ
 	);
+	CREATE INDEX IF NOT EXISTS idx_access_tokens_active ON access_tokens(is_active);
 	`
 	if _, err := pool.Exec(ctx, createTableQuery); err != nil {
 		return
