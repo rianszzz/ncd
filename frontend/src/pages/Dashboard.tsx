@@ -40,6 +40,7 @@ import {
   CheckSquare,
   Loader2,
   RefreshCw,
+  Ban,
 } from 'lucide-react'
 import {
   api,
@@ -267,7 +268,7 @@ export function Dashboard() {
   const [txDescription, setTxDescription] = useState('')
   const [txReceiptUrl, setTxReceiptUrl] = useState('')
   const [txFormError, setTxFormError] = useState('')
-  const [txStatusFilter, setTxStatusFilter] = useState<'ALL' | 'VERIFIED' | 'DRAFT_PENDING' | 'VOID'>('ALL')
+  const [txStatusFilter, setTxStatusFilter] = useState<'ALL' | 'VERIFIED' | 'DRAFT_PENDING' | 'PENDING_VOID' | 'VOID'>('ALL')
 
   // Finance Ledger Filter
   const [txFilter, setTxFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL')
@@ -344,25 +345,238 @@ export function Dashboard() {
     },
   })
 
-  // Mutation: Reject / Void Transaction
+  // Mutation: Reject / Void Transaction with Dual Optimistic Update
   const voidTxMutation = useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
       const res = await api.post(`/finance/transactions/${id}/void`, { reason })
       return res.data
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['financeTransactions'] })
-      queryClient.invalidateQueries({ queryKey: ['cashSummary'] })
+    onMutate: async ({ id, reason }) => {
+      // 1. Cancel ongoing refetches so server response does not overwrite optimistic state
+      await queryClient.cancelQueries({ queryKey: ['financeTransactions'] })
+      await queryClient.cancelQueries({ queryKey: ['cashSummary'] })
+
+      // 2. Snapshot previous cache data for rollback if network fails
+      const previousTransactions = queryClient.getQueryData<Transaction[]>(['financeTransactions'])
+      const previousSummary = queryClient.getQueryData<CashSummary>(['cashSummary'])
+
+      // 3. Optimistically update transactions list
+      if (previousTransactions) {
+        const targetTx = previousTransactions.find((tx) => tx.id === id)
+        queryClient.setQueryData<Transaction[]>(
+          ['financeTransactions'],
+          previousTransactions.map((tx) =>
+            tx.id === id
+              ? {
+                  ...tx,
+                  status: 'VOID',
+                  void_reason: reason,
+                  void_by_name: `${currentUser.name} (Bendahara II)`,
+                }
+              : tx
+          )
+        )
+
+        // 4. Optimistically update cashSummary if target transaction was VERIFIED
+        if (previousSummary && targetTx && targetTx.status === 'VERIFIED') {
+          const amt = targetTx.amount
+          queryClient.setQueryData<CashSummary>(['cashSummary'], {
+            ...previousSummary,
+            current_balance:
+              targetTx.type === 'INCOME'
+                ? previousSummary.current_balance - amt
+                : previousSummary.current_balance + amt,
+            total_income:
+              targetTx.type === 'INCOME'
+                ? previousSummary.total_income - amt
+                : previousSummary.total_income,
+            total_expense:
+              targetTx.type === 'EXPENSE'
+                ? previousSummary.total_expense - amt
+                : previousSummary.total_expense,
+          })
+        }
+      }
+
+      // 5. Close modal instantly for smooth, anti-lag responsive UI
       setRejectModalTx(null)
       setRejectReason('')
       setRejectError('')
+
+      return { previousTransactions, previousSummary }
     },
-    onError: (err: any) => {
-      setRejectError(
+    onError: (err: any, _vars, context) => {
+      // Rollback cache to previous state on failure
+      if (context?.previousTransactions) {
+        queryClient.setQueryData(['financeTransactions'], context.previousTransactions)
+      }
+      if (context?.previousSummary) {
+        queryClient.setQueryData(['cashSummary'], context.previousSummary)
+      }
+      alert(
         err?.response?.data?.error ||
           err?.response?.data?.message ||
-          'Gagal menolak transaksi.'
+          'Gagal membatalkan transaksi. Perubahan dikembalikan.'
       )
+    },
+    onSettled: () => {
+      // Background sync with server
+      queryClient.invalidateQueries({ queryKey: ['financeTransactions'] })
+      queryClient.invalidateQueries({ queryKey: ['cashSummary'] })
+    },
+  })
+
+  // Mutation: Request Void for Verified Transaction (Maker)
+  const requestVoidTxMutation = useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      const res = await api.post(`/finance/transactions/${id}/request-void`, { reason })
+      return res.data
+    },
+    onMutate: async ({ id, reason }) => {
+      await queryClient.cancelQueries({ queryKey: ['financeTransactions'] })
+      const previousTransactions = queryClient.getQueryData<Transaction[]>(['financeTransactions'])
+      if (previousTransactions) {
+        queryClient.setQueryData<Transaction[]>(
+          ['financeTransactions'],
+          previousTransactions.map((tx) =>
+            tx.id === id
+              ? {
+                  ...tx,
+                  status: 'PENDING_VOID',
+                  void_reason: reason,
+                  void_requester_name: `${currentUser.name} (${currentUser.role})`,
+                  void_requester_id: currentUser.id,
+                }
+              : tx
+          )
+        )
+      }
+      setRejectModalTx(null)
+      setRejectReason('')
+      setRejectError('')
+      return { previousTransactions }
+    },
+    onError: (err: any, _vars, context) => {
+      if (context?.previousTransactions) {
+        queryClient.setQueryData(['financeTransactions'], context.previousTransactions)
+      }
+      alert(
+        err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          'Gagal mengajukan pembatalan transaksi.'
+      )
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['financeTransactions'] })
+    },
+  })
+
+  // Mutation: Approve Void Transaction (Checker - Peer Bendahara)
+  const approveVoidTxMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.post(`/finance/transactions/${id}/approve-void`)
+      return res.data
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['financeTransactions'] })
+      await queryClient.cancelQueries({ queryKey: ['cashSummary'] })
+      const previousTransactions = queryClient.getQueryData<Transaction[]>(['financeTransactions'])
+      const previousSummary = queryClient.getQueryData<CashSummary>(['cashSummary'])
+
+      if (previousTransactions) {
+        const targetTx = previousTransactions.find((tx) => tx.id === id)
+        queryClient.setQueryData<Transaction[]>(
+          ['financeTransactions'],
+          previousTransactions.map((tx) =>
+            tx.id === id
+              ? {
+                  ...tx,
+                  status: 'VOID',
+                  void_by_name: `${currentUser.name} (${currentUser.role})`,
+                }
+              : tx
+          )
+        )
+
+        if (previousSummary && targetTx) {
+          const amt = targetTx.amount
+          queryClient.setQueryData<CashSummary>(['cashSummary'], {
+            ...previousSummary,
+            current_balance:
+              targetTx.type === 'INCOME'
+                ? previousSummary.current_balance - amt
+                : previousSummary.current_balance + amt,
+            total_income:
+              targetTx.type === 'INCOME'
+                ? previousSummary.total_income - amt
+                : previousSummary.total_income,
+            total_expense:
+              targetTx.type === 'EXPENSE'
+                ? previousSummary.total_expense - amt
+                : previousSummary.total_expense,
+          })
+        }
+      }
+      return { previousTransactions, previousSummary }
+    },
+    onError: (err: any, _vars, context) => {
+      if (context?.previousTransactions) {
+        queryClient.setQueryData(['financeTransactions'], context.previousTransactions)
+      }
+      if (context?.previousSummary) {
+        queryClient.setQueryData(['cashSummary'], context.previousSummary)
+      }
+      alert(
+        err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          'Gagal menyetujui pembatalan transaksi.'
+      )
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['financeTransactions'] })
+      queryClient.invalidateQueries({ queryKey: ['cashSummary'] })
+    },
+  })
+
+  // Mutation: Reject Void Transaction (Checker - Peer Bendahara reverts to VERIFIED)
+  const rejectVoidTxMutation = useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
+      const res = await api.post(`/finance/transactions/${id}/reject-void`, { reason })
+      return res.data
+    },
+    onMutate: async ({ id, reason }) => {
+      await queryClient.cancelQueries({ queryKey: ['financeTransactions'] })
+      const previousTransactions = queryClient.getQueryData<Transaction[]>(['financeTransactions'])
+      if (previousTransactions) {
+        queryClient.setQueryData<Transaction[]>(
+          ['financeTransactions'],
+          previousTransactions.map((tx) =>
+            tx.id === id
+              ? {
+                  ...tx,
+                  status: 'VERIFIED',
+                  void_reason: reason
+                    ? `${tx.void_reason || ''} [Pengajuan Batal Ditolak: ${reason}]`.trim()
+                    : tx.void_reason,
+                }
+              : tx
+          )
+        )
+      }
+      return { previousTransactions }
+    },
+    onError: (err: any, _vars, context) => {
+      if (context?.previousTransactions) {
+        queryClient.setQueryData(['financeTransactions'], context.previousTransactions)
+      }
+      alert(
+        err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          'Gagal menolak permohonan pembatalan.'
+      )
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['financeTransactions'] })
     },
   })
 
@@ -1205,26 +1419,31 @@ export function Dashboard() {
   }
 
   const pendingTransactions = transactions.filter((tx) => tx.status === 'DRAFT_PENDING')
+  const pendingVoidTransactions = transactions.filter((tx) => tx.status === 'PENDING_VOID')
   const voidTransactions = transactions.filter((tx) => tx.status === 'VOID')
   const verifiedTransactions = transactions.filter((tx) => tx.status === 'VERIFIED')
 
   const filteredTransactions = transactions.filter((tx) => {
     if (txFilter === 'INCOME' && tx.type !== 'INCOME') return false
     if (txFilter === 'EXPENSE' && tx.type !== 'EXPENSE') return false
-    if (txStatusFilter !== 'ALL' && tx.status !== txStatusFilter) return false
+    if (txStatusFilter === 'DRAFT_PENDING') {
+      if (tx.status !== 'DRAFT_PENDING' && tx.status !== 'PENDING_VOID') return false
+    } else if (txStatusFilter !== 'ALL' && tx.status !== txStatusFilter) {
+      return false
+    }
     return true
   })
 
   const totalIncome =
     cashSummary?.total_income ??
     transactions
-      .filter((t) => t.type === 'INCOME' && t.status === 'VERIFIED')
+      .filter((t) => t.type === 'INCOME' && (t.status === 'VERIFIED' || t.status === 'PENDING_VOID'))
       .reduce((acc, curr) => acc + curr.amount, 0)
 
   const totalExpense =
     cashSummary?.total_expense ??
     transactions
-      .filter((t) => t.type === 'EXPENSE' && t.status === 'VERIFIED')
+      .filter((t) => t.type === 'EXPENSE' && (t.status === 'VERIFIED' || t.status === 'PENDING_VOID'))
       .reduce((acc, curr) => acc + curr.amount, 0)
 
   const currentBalance =
@@ -5004,8 +5223,8 @@ export function Dashboard() {
                 {[
                   { key: 'ALL', label: `Semua (${transactions.length})` },
                   { key: 'VERIFIED', label: `Sah (${verifiedTransactions.length})` },
-                  { key: 'DRAFT_PENDING', label: `Menunggu (${pendingTransactions.length})` },
-                  { key: 'VOID', label: `Ditolak (${voidTransactions.length})` },
+                  { key: 'DRAFT_PENDING', label: `Menunggu (${pendingTransactions.length + pendingVoidTransactions.length})` },
+                  { key: 'VOID', label: `Batal / Void (${voidTransactions.length})` },
                 ].map((f) => (
                   <button
                     key={f.key}
@@ -5094,6 +5313,8 @@ export function Dashboard() {
                                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                   : tx.status === 'DRAFT_PENDING'
                                   ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                  : tx.status === 'PENDING_VOID'
+                                  ? 'bg-orange-50 text-orange-700 border-orange-300'
                                   : 'bg-red-50 text-red-700 border-red-200'
                               }`}
                             >
@@ -5101,6 +5322,8 @@ export function Dashboard() {
                                 ? 'Sah'
                                 : tx.status === 'DRAFT_PENDING'
                                 ? 'Draft'
+                                : tx.status === 'PENDING_VOID'
+                                ? 'Menunggu Batal'
                                 : 'Void'}
                             </span>
                           </div>
@@ -5110,9 +5333,18 @@ export function Dashboard() {
                           {tx.description}
                         </div>
 
+                        {tx.status === 'PENDING_VOID' && (
+                          <div className="p-2 bg-orange-50 border-l-2 border-orange-500 text-[11px] text-orange-950 leading-snug">
+                            <strong>Pengajuan Batal:</strong> {tx.void_reason || 'Menunggu verifikasi'}{' '}
+                            {tx.void_requester_name && (
+                              <span className="text-[10px] text-orange-800">({tx.void_requester_name})</span>
+                            )}
+                          </div>
+                        )}
+
                         {tx.status === 'VOID' && tx.void_reason && (
                           <div className="p-2 bg-rose-50 border-l-2 border-rose-600 text-[11px] text-rose-900 leading-snug">
-                            <strong>Alasan Ditolak:</strong> {tx.void_reason}{' '}
+                            <strong>Alasan Ditolak/Batal:</strong> {tx.void_reason}{' '}
                             {tx.void_by_name && <span className="text-[10px] opacity-75">({tx.void_by_name})</span>}
                           </div>
                         )}
@@ -5180,6 +5412,63 @@ export function Dashboard() {
                             </button>
                           </div>
                         )}
+
+                        {/* Dedicated Void Request Action on Mobile: Any Bendahara */}
+                        {isBendahara && tx.status === 'VERIFIED' && (
+                          <div className="pt-2 border-t border-dashed border-[#111215]/10">
+                            <button
+                              type="button"
+                              onClick={() => setRejectModalTx(tx)}
+                              className="w-full py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer select-none rounded-none"
+                              title="Ajukan Pembatalan / Void Transaksi Sah Ini"
+                            >
+                              <Ban className="w-3.5 h-3.5 text-rose-700" />
+                              <span>Ajukan Pembatalan (Void)</span>
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Dedicated Void Approval Action on Mobile: Peer Bendahara */}
+                        {isBendahara && tx.status === 'PENDING_VOID' && (
+                          <div className="pt-2 border-t border-dashed border-[#111215]/10">
+                            {currentUser.id === tx.void_requester_id ||
+                            (tx.void_requester_name && currentUser.name && tx.void_requester_name.toLowerCase().includes(currentUser.name.toLowerCase())) ? (
+                              <div className="p-2 bg-amber-50 border border-amber-200 text-amber-900 text-xs text-center font-medium">
+                                Menunggu Verifikasi & Pengesahan Batal oleh Bendahara Lain
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-2 gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (window.confirm(`Sahkan pembatalan transaksi ${tx.transaction_number}? Status akan menjadi VOID dan saldo kas akan disesuaikan.`)) {
+                                      approveVoidTxMutation.mutate(tx.id)
+                                    }
+                                  }}
+                                  disabled={approveVoidTxMutation.isPending}
+                                  className="w-full py-2 px-3 bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer select-none rounded-none disabled:opacity-50"
+                                >
+                                  <CheckCircle2 className="w-4 h-4" />
+                                  <span>Setujui Batal</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const reason = window.prompt('Alasan menolak pembatalan (opsional):')
+                                    if (reason !== null) {
+                                      rejectVoidTxMutation.mutate({ id: tx.id, reason: reason.trim() })
+                                    }
+                                  }}
+                                  disabled={rejectVoidTxMutation.isPending}
+                                  className="w-full py-2 px-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-300 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer select-none rounded-none disabled:opacity-50"
+                                >
+                                  <XCircle className="w-4 h-4 text-zinc-600" />
+                                  <span>Tolak Batal</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Desktop View (>= sm) */}
@@ -5202,9 +5491,14 @@ export function Dashboard() {
                           <div className="text-[11px] text-[#7E8492] truncate">
                             {tx.category_name} • PIC: {tx.person_in_charge}
                           </div>
+                          {tx.status === 'PENDING_VOID' && (
+                            <div className="mt-1 text-[10px] text-orange-800 italic truncate" title={tx.void_reason}>
+                              Pengajuan Batal: {tx.void_reason || 'Menunggu verifikasi'}
+                            </div>
+                          )}
                           {tx.status === 'VOID' && tx.void_reason && (
                             <div className="mt-1 text-[10px] text-rose-800 italic truncate" title={tx.void_reason}>
-                              Ditolak: {tx.void_reason}
+                              Ditolak/Batal: {tx.void_reason}
                             </div>
                           )}
                         </div>
@@ -5231,6 +5525,8 @@ export function Dashboard() {
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                 : tx.status === 'DRAFT_PENDING'
                                 ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                : tx.status === 'PENDING_VOID'
+                                ? 'bg-orange-50 text-orange-700 border-orange-300'
                                 : 'bg-red-50 text-red-700 border-red-200'
                             }`}
                           >
@@ -5238,6 +5534,8 @@ export function Dashboard() {
                               ? 'Sah'
                               : tx.status === 'DRAFT_PENDING'
                               ? 'Draft'
+                              : tx.status === 'PENDING_VOID'
+                              ? 'Menunggu Batal'
                               : 'Void'}
                           </span>
                         </div>
@@ -5278,6 +5576,62 @@ export function Dashboard() {
                                 <span>Tolak</span>
                               </button>
                             </>
+                          )}
+
+                          {isBendahara && tx.status === 'VERIFIED' && (
+                            <button
+                              type="button"
+                              onClick={() => setRejectModalTx(tx)}
+                              className="px-2.5 py-1.5 rounded-none bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-300 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
+                              title="Ajukan Pembatalan (Void) Transaksi Sah Ini"
+                            >
+                              <Ban className="w-3.5 h-3.5 text-rose-700" />
+                              <span>Ajukan Batal</span>
+                            </button>
+                          )}
+
+                          {isBendahara && tx.status === 'PENDING_VOID' && (
+                            currentUser.id === tx.void_requester_id ||
+                            (tx.void_requester_name && currentUser.name && tx.void_requester_name.toLowerCase().includes(currentUser.name.toLowerCase())) ? (
+                              <span
+                                className="px-2 py-1 text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200"
+                                title="Menunggu verifikasi dan persetujuan pembatalan dari bendahara lain"
+                              >
+                                Menunggu Pengesahan Batal
+                              </span>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (window.confirm(`Sahkan pembatalan transaksi ${tx.transaction_number}? Status akan menjadi VOID dan saldo kas akan disesuaikan.`)) {
+                                      approveVoidTxMutation.mutate(tx.id)
+                                    }
+                                  }}
+                                  disabled={approveVoidTxMutation.isPending}
+                                  className="px-2.5 py-1.5 rounded-none bg-rose-700 text-white hover:bg-rose-800 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                                  title="Setujui Pembatalan Transaksi Ini"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Setujui Batal</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const reason = window.prompt('Alasan menolak pembatalan (opsional):')
+                                    if (reason !== null) {
+                                      rejectVoidTxMutation.mutate({ id: tx.id, reason: reason.trim() })
+                                    }
+                                  }}
+                                  disabled={rejectVoidTxMutation.isPending}
+                                  className="px-2.5 py-1.5 rounded-none bg-zinc-100 text-zinc-800 hover:bg-zinc-200 border border-zinc-300 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                                  title="Tolak Permohonan Pembatalan Ini"
+                                >
+                                  <XCircle className="w-3.5 h-3.5 text-zinc-600" />
+                                  <span>Tolak Batal</span>
+                                </button>
+                              </>
+                            )
                           )}
 
                           <button
@@ -5745,8 +6099,18 @@ export function Dashboard() {
             <div className="flex items-center justify-between pb-3 border-b border-[#111215]/8">
               <div>
                 <h3 className="font-semibold text-sm text-rose-800 flex items-center space-x-1.5">
-                  <XCircle className="w-4 h-4 text-rose-700" />
-                  <span>{rejectModalTx.type === 'INCOME' ? 'Tolak Transaksi Kas Masuk' : 'Tolak Transaksi Kas'}</span>
+                  {rejectModalTx.status === 'VERIFIED' ? (
+                    <Ban className="w-4 h-4 text-rose-700" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-rose-700" />
+                  )}
+                  <span>
+                    {rejectModalTx.status === 'VERIFIED'
+                      ? 'Pengajuan Pembatalan (Void) Transaksi Sah'
+                      : rejectModalTx.type === 'INCOME'
+                      ? 'Tolak Transaksi Kas Masuk'
+                      : 'Tolak Transaksi Kas'}
+                  </span>
                 </h3>
                 <p className="text-xs text-[#7E8492] mt-0.5">
                   {rejectModalTx.transaction_number} • {rejectModalTx.type === 'INCOME' ? '+' : '-'}{formatRupiah(rejectModalTx.amount)}
@@ -5766,11 +6130,21 @@ export function Dashboard() {
 
             <div className="text-xs text-[#525660] space-y-2">
               <p>
-                Anda akan menolak transaksi untuk <strong>{rejectModalTx.description}</strong> (PIC: {rejectModalTx.person_in_charge}).
+                {rejectModalTx.status === 'VERIFIED'
+                  ? 'Anda mengajukan pembatalan (soft delete) untuk transaksi yang telah disahkan: '
+                  : 'Anda akan menolak transaksi untuk '}
+                <strong>{rejectModalTx.description}</strong> (PIC: {rejectModalTx.person_in_charge}).
               </p>
+              {rejectModalTx.status === 'VERIFIED' && (
+                <p className="p-2 bg-amber-50 border-l-2 border-amber-500 text-amber-900 text-[11px] leading-snug">
+                  <strong>Prinsip Maker-Checker:</strong> Pengajuan ini memerlukan verifikasi dan persetujuan dari bendahara lain sebelum transaksi resmi dibatalkan dan saldo kas disesuaikan.
+                </p>
+              )}
               <div>
                 <label className="text-[11px] font-medium text-[#111215] block mb-1.5">
-                  Alasan Penolakan (Wajib disertakan untuk akuntabilitas):
+                  {rejectModalTx.status === 'VERIFIED'
+                    ? 'Alasan Pembatalan / Void (Wajib dicatat untuk audit trail):'
+                    : 'Alasan Penolakan (Wajib disertakan untuk akuntabilitas):'}
                 </label>
                 <textarea
                   required
@@ -5802,17 +6176,32 @@ export function Dashboard() {
               </button>
               <button
                 type="button"
-                disabled={!rejectReason.trim() || voidTxMutation.isPending}
+                disabled={
+                  !rejectReason.trim() ||
+                  voidTxMutation.isPending ||
+                  requestVoidTxMutation.isPending
+                }
                 onClick={() => {
                   if (!rejectReason.trim()) return
-                  voidTxMutation.mutate({
-                    id: rejectModalTx.id,
-                    reason: rejectReason.trim(),
-                  })
+                  if (rejectModalTx.status === 'VERIFIED') {
+                    requestVoidTxMutation.mutate({
+                      id: rejectModalTx.id,
+                      reason: rejectReason.trim(),
+                    })
+                  } else {
+                    voidTxMutation.mutate({
+                      id: rejectModalTx.id,
+                      reason: rejectReason.trim(),
+                    })
+                  }
                 }}
                 className="px-4 py-2 min-h-[38px] rounded-none bg-rose-700 text-white text-xs font-medium hover:bg-rose-800 transition-colors cursor-pointer disabled:opacity-50"
               >
-                {voidTxMutation.isPending ? 'Memproses...' : 'Konfirmasi Tolak'}
+                {voidTxMutation.isPending || requestVoidTxMutation.isPending
+                  ? 'Memproses...'
+                  : rejectModalTx.status === 'VERIFIED'
+                  ? 'Ajukan Pembatalan'
+                  : 'Konfirmasi Tolak'}
               </button>
             </div>
           </motion.div>

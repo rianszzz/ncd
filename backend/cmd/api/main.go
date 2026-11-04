@@ -182,6 +182,13 @@ func main() {
 			protected.With(ncdMiddleware.RequireRole("BENDAHARA_II")).
 				Post("/finance/transactions/{id}/void", handler.VoidTransaction)
 
+			// Dual-Control Void Maker-Checker (Transaksi Sah): Bendahara I & Bendahara II
+			protected.With(ncdMiddleware.RequireRole("BENDAHARA_I", "BENDAHARA_II")).Group(func(finDual chi.Router) {
+				finDual.Post("/finance/transactions/{id}/request-void", handler.RequestVoidTransaction)
+				finDual.Post("/finance/transactions/{id}/approve-void", handler.ApproveVoidTransaction)
+				finDual.Post("/finance/transactions/{id}/reject-void", handler.RejectVoidTransaction)
+			})
+
 			// Content Governance: Achievements & Competitions (Khusus God Admin & Super Admin)
 			protected.With(ncdMiddleware.RequireRole("GOD_ADMIN", "SUPER_ADMIN")).Group(func(admin chi.Router) {
 				admin.Post("/portal/achievements", handler.CreateAchievement)

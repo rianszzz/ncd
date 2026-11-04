@@ -63,7 +63,7 @@ export interface Transaction {
   description: string
   person_in_charge: string
   receipt_url: string
-  status: 'DRAFT_PENDING' | 'VERIFIED' | 'VOID'
+  status: 'DRAFT_PENDING' | 'VERIFIED' | 'PENDING_VOID' | 'VOID'
   transaction_date: string
   maker_name: string
   maker_id: string
@@ -72,6 +72,8 @@ export interface Transaction {
   verified_at?: string
   void_reason?: string
   void_by_name?: string
+  void_requester_name?: string
+  void_requester_id?: string
   created_at: string
 }
 

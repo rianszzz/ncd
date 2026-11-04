@@ -35,6 +35,8 @@ type TransactionDTO struct {
 	VerifiedAt        string    `json:"verified_at,omitempty"`
 	VoidReason        string    `json:"void_reason,omitempty"`
 	VoidByName        string    `json:"void_by_name,omitempty"`
+	VoidRequesterName string    `json:"void_requester_name,omitempty"`
+	VoidRequesterID   string    `json:"void_requester_id,omitempty"`
 	CreatedAt         time.Time `json:"created_at"`
 }
 
@@ -100,8 +102,12 @@ func InitFinanceDB(pool *pgxpool.Pool) {
 		verified_at VARCHAR(100) DEFAULT '',
 		void_reason TEXT DEFAULT '',
 		void_by_name VARCHAR(150) DEFAULT '',
+		void_requester_name VARCHAR(150) DEFAULT '',
+		void_requester_id VARCHAR(100) DEFAULT '',
 		created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 	);
+	ALTER TABLE portal_finance_transactions ADD COLUMN IF NOT EXISTS void_requester_name VARCHAR(150) DEFAULT '';
+	ALTER TABLE portal_finance_transactions ADD COLUMN IF NOT EXISTS void_requester_id VARCHAR(100) DEFAULT '';
 	CREATE INDEX IF NOT EXISTS idx_portal_finance_status_date ON portal_finance_transactions(status, transaction_date DESC);
 	`
 	if _, err := pool.Exec(ctx, createTableQuery); err != nil {
@@ -136,7 +142,7 @@ func SyncFinanceFromDB(ctx context.Context, pool *pgxpool.Pool) {
 	}
 
 	rows, err := pool.Query(ctx, `
-		SELECT id, transaction_number, type, category_name, amount, description, person_in_charge, receipt_url, status, transaction_date, maker_name, maker_id, verifier_name, verifier_id, verified_at, void_reason, void_by_name, created_at
+		SELECT id, transaction_number, type, category_name, amount, description, person_in_charge, receipt_url, status, transaction_date, maker_name, maker_id, verifier_name, verifier_id, verified_at, void_reason, void_by_name, void_requester_name, void_requester_id, created_at
 		FROM portal_finance_transactions
 		ORDER BY transaction_date DESC, created_at DESC
 	`)
@@ -166,6 +172,8 @@ func SyncFinanceFromDB(ctx context.Context, pool *pgxpool.Pool) {
 			&t.VerifiedAt,
 			&t.VoidReason,
 			&t.VoidByName,
+			&t.VoidRequesterName,
+			&t.VoidRequesterID,
 			&t.CreatedAt,
 		); err == nil {
 			loaded = append(loaded, t)
@@ -251,13 +259,14 @@ func GetCashSummary(w http.ResponseWriter, r *http.Request) {
 	var pendingCount int
 
 	for _, tx := range transactions {
-		if tx.Status == "VERIFIED" {
+		if tx.Status == "VERIFIED" || tx.Status == "PENDING_VOID" {
 			if tx.Type == "INCOME" {
 				totalIncome += tx.Amount
 			} else if tx.Type == "EXPENSE" {
 				totalExpense += tx.Amount
 			}
-		} else if tx.Status == "DRAFT_PENDING" {
+		}
+		if tx.Status == "DRAFT_PENDING" || tx.Status == "PENDING_VOID" {
 			pendingCount++
 		}
 	}
@@ -594,6 +603,173 @@ func VoidTransaction(w http.ResponseWriter, r *http.Request) {
 					SET status = 'VOID', void_reason = $1, void_by_name = $2
 					WHERE id = $3
 				`, transactions[i].VoidReason, transactions[i].VoidByName, id)
+			}
+
+			saveTransactionsToDiskLocked()
+
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(transactions[i])
+			return
+		}
+	}
+
+	http.Error(w, "Transaksi tidak ditemukan", http.StatusNotFound)
+}
+
+// RequestVoidTransaction mengajukan pembatalan (soft delete) untuk transaksi yang berstatus "Sah" (VERIFIED)
+func RequestVoidTransaction(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	claims, _ := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
+
+	if claims == nil || (claims.Role != "BENDAHARA_I" && claims.Role != "BENDAHARA_II") {
+		http.Error(w, "Akses ditolak: Hanya Bendahara I atau Bendahara II yang dapat mengajukan pembatalan transaksi", http.StatusForbidden)
+		return
+	}
+
+	var req VoidRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Reason == "" {
+		http.Error(w, "Alasan pengajuan pembatalan wajib disertakan", http.StatusBadRequest)
+		return
+	}
+
+	txLock.Lock()
+	defer txLock.Unlock()
+
+	for i, tx := range transactions {
+		if tx.ID == id {
+			if tx.Status != "VERIFIED" {
+				http.Error(w, "Hanya transaksi berstatus 'Sah' (VERIFIED) yang dapat diajukan untuk dibatalkan", http.StatusBadRequest)
+				return
+			}
+
+			transactions[i].Status = "PENDING_VOID"
+			transactions[i].VoidReason = req.Reason
+			transactions[i].VoidRequesterID = claims.UserID
+			transactions[i].VoidRequesterName = fmt.Sprintf("%s (%s)", claims.FullName, claims.Role)
+
+			pool := getFinancePool()
+			if pool != nil {
+				ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+				defer cancel()
+				_, _ = pool.Exec(ctx, `
+					UPDATE portal_finance_transactions
+					SET status = 'PENDING_VOID', void_reason = $1, void_requester_name = $2, void_requester_id = $3
+					WHERE id = $4
+				`, transactions[i].VoidReason, transactions[i].VoidRequesterName, transactions[i].VoidRequesterID, id)
+			}
+
+			saveTransactionsToDiskLocked()
+
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(transactions[i])
+			return
+		}
+	}
+
+	http.Error(w, "Transaksi tidak ditemukan", http.StatusNotFound)
+}
+
+// ApproveVoidTransaction menyetujui permohonan pembatalan oleh Bendahara pasangannya (bendahara lain)
+func ApproveVoidTransaction(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	claims, _ := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
+
+	if claims == nil || (claims.Role != "BENDAHARA_I" && claims.Role != "BENDAHARA_II") {
+		http.Error(w, "Akses ditolak: Hanya Bendahara yang dapat memproses pengesahan pembatalan transaksi", http.StatusForbidden)
+		return
+	}
+
+	txLock.Lock()
+	defer txLock.Unlock()
+
+	for i, tx := range transactions {
+		if tx.ID == id {
+			if tx.Status != "PENDING_VOID" {
+				http.Error(w, "Transaksi tidak dalam status pengajuan pembatalan (PENDING_VOID)", http.StatusBadRequest)
+				return
+			}
+
+			// Dual Control: Pengaju pembatalan TIDAK BOLEH mengesahkan pembatalannya sendiri
+			if claims.UserID == tx.VoidRequesterID {
+				http.Error(w, "Prinsip Maker-Checker: Anda tidak dapat mengesahkan pengajuan pembatalan yang Anda buat sendiri. Pembatalan wajib diverifikasi oleh bendahara lain.", http.StatusForbidden)
+				return
+			}
+
+			transactions[i].Status = "VOID"
+			transactions[i].VoidByName = fmt.Sprintf("%s (%s)", claims.FullName, claims.Role)
+
+			pool := getFinancePool()
+			if pool != nil {
+				ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+				defer cancel()
+				_, _ = pool.Exec(ctx, `
+					UPDATE portal_finance_transactions
+					SET status = 'VOID', void_by_name = $1
+					WHERE id = $2
+				`, transactions[i].VoidByName, id)
+			}
+
+			saveTransactionsToDiskLocked()
+
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(transactions[i])
+			return
+		}
+	}
+
+	http.Error(w, "Transaksi tidak ditemukan", http.StatusNotFound)
+}
+
+// RejectVoidTransaction menolak permohonan pembatalan oleh Bendahara pasangannya dan mengembalikan status ke "Sah" (VERIFIED)
+func RejectVoidTransaction(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	claims, _ := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
+
+	if claims == nil || (claims.Role != "BENDAHARA_I" && claims.Role != "BENDAHARA_II") {
+		http.Error(w, "Akses ditolak: Hanya Bendahara yang dapat memproses permohonan pembatalan transaksi", http.StatusForbidden)
+		return
+	}
+
+	var req struct {
+		Reason string `json:"reason"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&req)
+
+	txLock.Lock()
+	defer txLock.Unlock()
+
+	for i, tx := range transactions {
+		if tx.ID == id {
+			if tx.Status != "PENDING_VOID" {
+				http.Error(w, "Transaksi tidak dalam status pengajuan pembatalan (PENDING_VOID)", http.StatusBadRequest)
+				return
+			}
+
+			// Dual Control: Pengaju pembatalan tidak boleh menolak review sendiri
+			if claims.UserID == tx.VoidRequesterID {
+				http.Error(w, "Prinsip Maker-Checker: Penolakan permohonan pembatalan harus diputuskan oleh bendahara lain.", http.StatusForbidden)
+				return
+			}
+
+			note := fmt.Sprintf("Permohonan pembatalan ditolak oleh %s (%s)", claims.FullName, claims.Role)
+			if req.Reason != "" {
+				note += fmt.Sprintf(": %s", req.Reason)
+			}
+
+			transactions[i].Status = "VERIFIED"
+			transactions[i].VoidReason = note
+			transactions[i].VoidRequesterID = ""
+			transactions[i].VoidRequesterName = ""
+
+			pool := getFinancePool()
+			if pool != nil {
+				ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+				defer cancel()
+				_, _ = pool.Exec(ctx, `
+					UPDATE portal_finance_transactions
+					SET status = 'VERIFIED', void_reason = $1, void_requester_name = '', void_requester_id = ''
+					WHERE id = $2
+				`, note, id)
 			}
 
 			saveTransactionsToDiskLocked()
