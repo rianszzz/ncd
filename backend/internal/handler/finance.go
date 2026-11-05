@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -128,7 +129,7 @@ func InitFinanceDB(pool *pgxpool.Pool) {
 			INSERT INTO portal_finance_transactions (
 				id, transaction_number, type, category_name, amount, description, person_in_charge, receipt_url, status, transaction_date, maker_name, maker_id, verifier_name, verifier_id, verified_at, void_reason, void_by_name, created_at
 			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-			ON CONFLICT (id) DO NOTHING
+			ON CONFLICT DO NOTHING
 		`, t.ID, t.TransactionNumber, t.Type, t.CategoryName, t.Amount, t.Description, t.PersonInCharge, t.ReceiptURL, t.Status, t.TransactionDate, t.MakerName, t.MakerID, t.VerifierName, t.VerifierID, t.VerifiedAt, t.VoidReason, t.VoidByName, t.CreatedAt)
 	}
 
@@ -334,6 +335,62 @@ func paginateTransactions(w http.ResponseWriter, r *http.Request, all []Transact
 	_ = json.NewEncoder(w).Encode(all)
 }
 
+// generateNextTransactionNumberLocked calculates the next sequential transaction number for the given month prefix.
+// It scans both in-memory transactions and the PostgreSQL database to determine the highest existing suffix,
+// guaranteeing collision-free monotonic numbering regardless of transaction deletions.
+// Must be called with txLock held.
+func generateNextTransactionNumberLocked(ctx context.Context, pool *pgxpool.Pool, txDateStr string, skipNumbers map[string]bool) string {
+	parsedDate, err := time.Parse("2006-01-02", txDateStr)
+	prefixMonth := time.Now().Format("200601")
+	if err == nil {
+		prefixMonth = parsedDate.Format("200601")
+	}
+	prefix := fmt.Sprintf("NCD-TRX-%s-", prefixMonth)
+
+	maxSeq := 0
+	// 1. Scan in-memory transactions
+	for _, tx := range transactions {
+		if strings.HasPrefix(tx.TransactionNumber, prefix) {
+			suffix := strings.TrimPrefix(tx.TransactionNumber, prefix)
+			if seq, convErr := strconv.Atoi(suffix); convErr == nil && seq > maxSeq {
+				maxSeq = seq
+			}
+		}
+	}
+
+	// 2. Scan database transactions if pool is active
+	if pool != nil {
+		dbCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+		defer cancel()
+		rows, qErr := pool.Query(dbCtx, `
+			SELECT transaction_number 
+			FROM portal_finance_transactions 
+			WHERE transaction_number LIKE $1
+		`, prefix+"%")
+		if qErr == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var txNum string
+				if sErr := rows.Scan(&txNum); sErr == nil {
+					suffix := strings.TrimPrefix(txNum, prefix)
+					if seq, convErr := strconv.Atoi(suffix); convErr == nil && seq > maxSeq {
+						maxSeq = seq
+					}
+				}
+			}
+		}
+	}
+
+	candidateSeq := maxSeq + 1
+	for {
+		candidate := fmt.Sprintf("%s%04d", prefix, candidateSeq)
+		if skipNumbers == nil || !skipNumbers[candidate] {
+			return candidate
+		}
+		candidateSeq++
+	}
+}
+
 func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	claims, _ := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
 
@@ -360,37 +417,70 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		txDate = time.Now().Format("2006-01-02")
 	}
 
-	newTx := TransactionDTO{
-		ID:                uuid.New().String(),
-		TransactionNumber: fmt.Sprintf("NCD-TRX-%s-%04d", time.Now().Format("200601"), len(transactions)+1),
-		Type:              req.Type,
-		CategoryName:      req.CategoryName,
-		Amount:            req.Amount,
-		Description:       req.Description,
-		PersonInCharge:    req.PersonInCharge,
-		ReceiptURL:        req.ReceiptURL,
-		Status:            "DRAFT_PENDING",
-		TransactionDate:   txDate,
-		MakerName:         makerName,
-		MakerID:           makerID,
-		CreatedAt:         time.Now(),
-	}
+	txLock.Lock()
+	defer txLock.Unlock()
 
 	pool := getFinancePool()
-	if pool != nil {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
-		_, _ = pool.Exec(ctx, `
-			INSERT INTO portal_finance_transactions (
-				id, transaction_number, type, category_name, amount, description, person_in_charge, receipt_url, status, transaction_date, maker_name, maker_id, created_at
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-		`, newTx.ID, newTx.TransactionNumber, newTx.Type, newTx.CategoryName, newTx.Amount, newTx.Description, newTx.PersonInCharge, newTx.ReceiptURL, newTx.Status, newTx.TransactionDate, newTx.MakerName, newTx.MakerID, newTx.CreatedAt)
+	var newTx TransactionDTO
+	inserted := false
+	skipMap := make(map[string]bool)
+
+	// Attempt inserting with monotonic generation and collision retry loop (up to 5 attempts)
+	for attempt := 0; attempt < 5; attempt++ {
+		txNum := generateNextTransactionNumberLocked(r.Context(), pool, txDate, skipMap)
+
+		newTx = TransactionDTO{
+			ID:                uuid.New().String(),
+			TransactionNumber: txNum,
+			Type:              req.Type,
+			CategoryName:      req.CategoryName,
+			Amount:            req.Amount,
+			Description:       req.Description,
+			PersonInCharge:    req.PersonInCharge,
+			ReceiptURL:        req.ReceiptURL,
+			Status:            "DRAFT_PENDING",
+			TransactionDate:   txDate,
+			MakerName:         makerName,
+			MakerID:           makerID,
+			CreatedAt:         time.Now(),
+		}
+
+		if pool != nil {
+			ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+			_, dbErr := pool.Exec(ctx, `
+				INSERT INTO portal_finance_transactions (
+					id, transaction_number, type, category_name, amount, description, person_in_charge, receipt_url, status, transaction_date, maker_name, maker_id, created_at
+				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+			`, newTx.ID, newTx.TransactionNumber, newTx.Type, newTx.CategoryName, newTx.Amount, newTx.Description, newTx.PersonInCharge, newTx.ReceiptURL, newTx.Status, newTx.TransactionDate, newTx.MakerName, newTx.MakerID, newTx.CreatedAt)
+			cancel()
+
+			if dbErr != nil {
+				errStr := dbErr.Error()
+				// If unique constraint violation on transaction_number, blacklist candidate and retry
+				if strings.Contains(errStr, "23505") || strings.Contains(errStr, "duplicate key") || strings.Contains(errStr, "unique constraint") {
+					log.Printf("[Finance Create] Duplicate transaction number detected: %s. Retrying next sequence...\n", txNum)
+					skipMap[txNum] = true
+					continue
+				}
+
+				log.Printf("[Finance Create] Database INSERT error: %v\n", dbErr)
+				http.Error(w, fmt.Sprintf("Gagal menyimpan transaksi ke database: %v", dbErr), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		inserted = true
+		break
 	}
 
-	txLock.Lock()
+	if !inserted {
+		http.Error(w, "Gagal mengalokasikan nomor transaksi unik setelah beberapa percobaan", http.StatusInternalServerError)
+		return
+	}
+
+	// Update memory slice & disk cache atomically
 	transactions = append([]TransactionDTO{newTx}, transactions...)
 	saveTransactionsToDiskLocked()
-	txLock.Unlock()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

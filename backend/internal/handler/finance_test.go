@@ -218,3 +218,35 @@ func TestDualControlRejectVoidTransactionFlow(t *testing.T) {
 		t.Fatalf("expected status to revert to VERIFIED, got %s", revertedTx.Status)
 	}
 }
+
+func TestMonotonicTransactionNumberGeneration(t *testing.T) {
+	txLock.Lock()
+	defer txLock.Unlock()
+
+	// Backup existing transactions
+	backup := make([]TransactionDTO, len(transactions))
+	copy(backup, transactions)
+	defer func() {
+		transactions = backup
+	}()
+
+	// Simulate existing transactions with gaps (e.g. 0002, 0005)
+	transactions = []TransactionDTO{
+		{TransactionNumber: "NCD-TRX-202611-0005"},
+		{TransactionNumber: "NCD-TRX-202611-0002"},
+	}
+
+	next := generateNextTransactionNumberLocked(context.Background(), nil, "2026-11-05", nil)
+	if next != "NCD-TRX-202611-0006" {
+		t.Fatalf("expected next transaction number to be NCD-TRX-202611-0006, got %s", next)
+	}
+
+	// Test skip map / collision retry
+	skip := map[string]bool{
+		"NCD-TRX-202611-0006": true,
+	}
+	nextSkipped := generateNextTransactionNumberLocked(context.Background(), nil, "2026-11-05", skip)
+	if nextSkipped != "NCD-TRX-202611-0007" {
+		t.Fatalf("expected next transaction number to be NCD-TRX-202611-0007 when 0006 is skipped, got %s", nextSkipped)
+	}
+}
