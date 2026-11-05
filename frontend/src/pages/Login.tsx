@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../services/api'
-import { KeyRound, ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowRight, Loader2 } from 'lucide-react'
+import { NcdPortalAvatar } from '../components/portal/NcdPortalAvatar'
 
 export function Login() {
   const navigate = useNavigate()
@@ -9,6 +10,22 @@ export function Login() {
   const [accessKey, setAccessKey] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAccessKey(e.target.value)
+    if (error) setError('')
+    setIsTyping(true)
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false)
+    }, 1100)
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,14 +46,18 @@ export function Login() {
         localStorage.setItem('ncd_user', JSON.stringify(res.data.user))
       }
 
+      setIsSuccess(true)
+
       const redirectPath = searchParams.get('redirect')
       const targetClass = searchParams.get('class')
-      if (redirectPath) {
-        const dest = targetClass ? `${redirectPath}?class=${encodeURIComponent(targetClass)}` : redirectPath
-        navigate(dest)
-      } else {
-        navigate('/app')
-      }
+      setTimeout(() => {
+        if (redirectPath) {
+          const dest = targetClass ? `${redirectPath}?class=${encodeURIComponent(targetClass)}` : redirectPath
+          navigate(dest)
+        } else {
+          navigate('/app')
+        }
+      }, 500)
     } catch {
       setError('Kunci akses tidak valid atau telah dicabut oleh God Admin.')
     } finally {
@@ -45,11 +66,20 @@ export function Login() {
   }
 
   return (
-    <div className="max-w-md mx-auto px-6 py-12 md:py-20 text-left">
+    <div className="max-w-md mx-auto px-6 py-12 md:py-16 text-left">
       <div className="text-center mb-8">
-        <div className="w-12 h-12 bg-[#111215] border border-black/20 flex items-center justify-center text-white mx-auto mb-4 shadow-2xs">
-          <KeyRound className="w-5 h-5 text-white" />
+        {/* Interactive Avatar replacing former key box */}
+        <div className="flex justify-center mb-3">
+          <NcdPortalAvatar
+            isTyping={isTyping}
+            isFocused={isFocused}
+            hasError={Boolean(error)}
+            isLoading={loading}
+            isSuccess={isSuccess}
+            size={116}
+          />
         </div>
+
         <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#111215]">
           Portal Member NCD
         </h1>
@@ -76,7 +106,12 @@ export function Login() {
                 type="text"
                 required
                 value={accessKey}
-                onChange={(e) => setAccessKey(e.target.value)}
+                onChange={handleInputChange}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => {
+                  setIsFocused(false)
+                  setIsTyping(false)
+                }}
                 autoComplete="off"
                 spellCheck="false"
                 className="w-full px-3.5 py-2.5 min-h-[44px] bg-[#F4F1EB] outline-none focus:bg-white focus:border-[#111215] focus-visible:ring-2 focus-visible:ring-[#111215] focus-visible:ring-offset-2 border border-[#111215]/20 transition-all font-mono text-xs uppercase"
