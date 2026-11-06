@@ -7,6 +7,7 @@ import (
 	"html"
 	"log"
 	"net/http"
+	"net/mail"
 	"net/url"
 	"os"
 	"strconv"
@@ -182,6 +183,24 @@ func SubmitApplication(w http.ResponseWriter, r *http.Request) {
 
 	if input.FullName == "" || input.Email == "" || input.PhoneWA == "" || input.Generation == "" || input.CampusDomicile == "" {
 		http.Error(w, "Nama lengkap, email, WhatsApp, angkatan, dan domisili kampus wajib diisi", http.StatusBadRequest)
+		return
+	}
+
+	// Server-side validation: Email syntax
+	parsedEmail, err := mail.ParseAddress(input.Email)
+	if err != nil || !strings.Contains(input.Email, ".") {
+		http.Error(w, "Format alamat email tidak valid", http.StatusBadRequest)
+		return
+	}
+	input.Email = parsedEmail.Address
+
+	// Server-side validation: Field length bounds to prevent resource abuse
+	if len(input.FullName) > 200 || len(input.Email) > 254 || len(input.PhoneWA) > 32 || len(input.Generation) > 30 || len(input.CampusDomicile) > 100 {
+		http.Error(w, "Panjang isian data formulir melebihi batas yang diizinkan", http.StatusBadRequest)
+		return
+	}
+	if len(input.Motivation) > 5000 || len(input.PortfolioLinks) > 2000 || len(input.SkillsInterest) > 1000 {
+		http.Error(w, "Panjang motivasi, portofolio, atau minat keahlian melebihi batas wajar", http.StatusBadRequest)
 		return
 	}
 

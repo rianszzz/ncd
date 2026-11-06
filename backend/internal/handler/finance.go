@@ -405,6 +405,18 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cleanType := strings.ToUpper(strings.TrimSpace(req.Type))
+	if cleanType != "INCOME" && cleanType != "EXPENSE" {
+		http.Error(w, "Jenis mutasi wajib berupa 'INCOME' (Pemasukan) atau 'EXPENSE' (Pengeluaran)", http.StatusBadRequest)
+		return
+	}
+	req.Type = cleanType
+
+	if len(req.Description) > 1000 || len(req.ReceiptURL) > 2000 || len(req.PersonInCharge) > 200 || len(req.CategoryName) > 100 {
+		http.Error(w, "Panjang isian data transaksi melebihi batas yang diizinkan", http.StatusBadRequest)
+		return
+	}
+
 	makerName := "Bendahara"
 	makerID := "u-bendahara"
 	if claims != nil {
@@ -464,7 +476,11 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 				}
 
 				log.Printf("[Finance Create] Database INSERT error: %v\n", dbErr)
-				http.Error(w, fmt.Sprintf("Gagal menyimpan transaksi ke database: %v", dbErr), http.StatusInternalServerError)
+				if os.Getenv("APP_ENV") == "production" {
+					http.Error(w, `{"error":"Gagal memproses transaksi kas di basis data. Silakan coba kembali."}`, http.StatusInternalServerError)
+				} else {
+					http.Error(w, fmt.Sprintf(`{"error":"Gagal menyimpan transaksi ke database: %v"}`, dbErr), http.StatusInternalServerError)
+				}
 				return
 			}
 		}
@@ -500,6 +516,18 @@ func UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 
 	if req.Amount <= 0 || req.Description == "" || req.ReceiptURL == "" {
 		http.Error(w, "Nominal > 0, deskripsi, dan link foto nota wajib diisi", http.StatusBadRequest)
+		return
+	}
+
+	cleanType := strings.ToUpper(strings.TrimSpace(req.Type))
+	if cleanType != "INCOME" && cleanType != "EXPENSE" {
+		http.Error(w, "Jenis mutasi wajib berupa 'INCOME' (Pemasukan) atau 'EXPENSE' (Pengeluaran)", http.StatusBadRequest)
+		return
+	}
+	req.Type = cleanType
+
+	if len(req.Description) > 1000 || len(req.ReceiptURL) > 2000 || len(req.PersonInCharge) > 200 || len(req.CategoryName) > 100 {
+		http.Error(w, "Panjang isian data transaksi melebihi batas yang diizinkan", http.StatusBadRequest)
 		return
 	}
 

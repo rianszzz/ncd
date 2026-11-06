@@ -46,6 +46,15 @@ func Login(jwtSecret string) http.HandlerFunc {
 			return
 		}
 
+		if len(cleanKey) > 128 {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{
+				"error": "Panjang format kunci akses tidak valid",
+			})
+			return
+		}
+
 		// Direct Access Key / Token Flow (Only authenticated via Token)
 		accessKey, ok := AuthenticateByKey(cleanKey)
 		if !ok {
@@ -63,7 +72,7 @@ func Login(jwtSecret string) http.HandlerFunc {
 			Role:     accessKey.Role,
 			FullName: accessKey.Assignee,
 			Position: accessKey.Position,
-			Key:      accessKey.Key,
+			Key:      MaskTokenKey(accessKey.Key), // Masked! Sensitive raw secret token never leaves server
 		}
 
 		// Create JWT token

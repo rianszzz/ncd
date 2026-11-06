@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -186,3 +187,130 @@ func getClientIP(r *http.Request) string {
 	// Direct client connection fallback
 	return remoteHost
 }
+
+// SecurityHeaders injects defense-in-depth security headers into all HTTP responses
+func SecurityHeaders(env string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			h := w.Header()
+
+			// 1. MIME Sniffing protection
+			h.Set("X-Content-Type-Options", "nosniff")
+
+			// 2. Clickjacking protection
+			h.Set("X-Frame-Options", "DENY")
+
+			// 3. Legacy XSS filter
+			h.Set("X-XSS-Protection", "1; mode=block")
+
+			// 4. Referrer Policy
+			h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+
+			// 5. Restrict dangerous browser features
+			h.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()")
+
+			// 6. Content Security Policy (CSP)
+			csp := "default-src 'self'; " +
+				"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com; " +
+				"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+				"font-src 'self' https://fonts.gstatic.com data:; " +
+				"img-src 'self' data: https: blob:; " +
+				"connect-src 'self' https: ws: wss:; " +
+				"frame-ancestors 'none'; " +
+				"base-uri 'self'; " +
+				"form-action 'self';"
+			h.Set("Content-Security-Policy", csp)
+
+			// 7. Strict-Transport-Security (HSTS): Enforce HTTPS in production or secure connections
+			if env == "production" || r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+				h.Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// HTTPSRedirect enforces HTTPS in production environments behind a reverse proxy
+func HTTPSRedirect(env string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if env == "production" && r.Header.Get("X-Forwarded-Proto") == "http" {
+				target := "https://" + r.Host + r.URL.RequestURI()
+				http.Redirect(w, r, target, http.StatusMovedPermanently)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// CSRFProtection validates Origin and Referer for state-mutating requests when authenticating via session cookie
+func CSRFProtection(allowedOrigin string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Skip safe / read-only methods
+			if r.Method == http.MethodGet || r.Method == http.MethodHead || r.Method == http.MethodOptions {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// If the request uses Authorization: Bearer, it is an explicit API client and not susceptible to ambient cookie CSRF
+			authHeader := r.Header.Get("Authorization")
+			if strings.HasPrefix(authHeader, "Bearer ") {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// If session cookie "ncd_token" is present, enforce strict Origin/Referer verification
+			if _, err := r.Cookie("ncd_token"); err == nil {
+				origin := r.Header.Get("Origin")
+				referer := r.Header.Get("Referer")
+
+				// If both are missing, reject state-mutating cookie request
+				if origin == "" && referer == "" {
+					http.Error(w, `{"error":"CSRF validation failed: Missing Origin and Referer headers"}`, http.StatusForbidden)
+					return
+				}
+
+				allowed := false
+				if origin != "" {
+					allowed = isAllowedOrigin(origin, allowedOrigin, r.Host)
+				} else if referer != "" {
+					allowed = isAllowedReferer(referer, allowedOrigin, r.Host)
+				}
+
+				if !allowed {
+					http.Error(w, `{"error":"CSRF validation failed: Request origin not authorized"}`, http.StatusForbidden)
+					return
+				}
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func isAllowedOrigin(origin string, allowedOrigin string, host string) bool {
+	cleanOrigin := strings.TrimRight(origin, "/")
+	cleanAllowed := strings.TrimRight(allowedOrigin, "/")
+	if strings.EqualFold(cleanOrigin, cleanAllowed) {
+		return true
+	}
+	// Check against request Host
+	u, err := url.Parse(origin)
+	if err == nil && (strings.EqualFold(u.Host, host) || strings.EqualFold(u.Hostname(), "localhost") || strings.EqualFold(u.Hostname(), "127.0.0.1")) {
+		return true
+	}
+	return false
+}
+
+func isAllowedReferer(referer string, allowedOrigin string, host string) bool {
+	u, err := url.Parse(referer)
+	if err != nil {
+		return false
+	}
+	refOrigin := fmt.Sprintf("%s://%s", u.Scheme, u.Host)
+	return isAllowedOrigin(refOrigin, allowedOrigin, host)
+}
+

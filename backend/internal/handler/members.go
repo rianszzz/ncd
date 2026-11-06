@@ -231,7 +231,7 @@ func GetMemberOnboardingTracker(w http.ResponseWriter, r *http.Request) {
 				Email:    k.Email,
 				Role:     k.Role,
 				Position: k.Position,
-				TokenKey: k.Key,
+				TokenKey: "", // Masked/Omitted: Access keys must never be exposed across member tracker
 			}
 
 			// Cocokkan profil jika sudah ada

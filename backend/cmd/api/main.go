@@ -80,6 +80,9 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(15 * time.Second))
 	r.Use(middleware.Compress(5))
+	r.Use(ncdMiddleware.HTTPSRedirect(cfg.Environment))
+	r.Use(ncdMiddleware.SecurityHeaders(cfg.Environment))
+	r.Use(ncdMiddleware.CSRFProtection(cfg.CORSOrigin))
 	r.Use(ncdMiddleware.BodyLimit(10 << 20)) // Spending Cap / Protection: 10MB body limit
 	r.Use(apiLimiter.Middleware())
 
@@ -136,7 +139,8 @@ func main() {
 			protected.Post("/member/onboarding", handler.SubmitMemberOnboarding)
 			protected.Get("/portal/member-onboarding", handler.GetMemberOnboardingTracker)
 
-			// Token Self-Service (Setiap role dapat mengubah kode tokennya dengan awalan NCD-)
+			// Token Self-Service (Setiap role dapat mengubah atau melihat kode token pribadinya secara aman)
+			protected.Get("/portal/tokens/my-token", handler.GetMyToken)
 			protected.Put("/portal/tokens/my-token", handler.UpdateToken)
 			protected.Put("/portal/tokens/{id}", handler.UpdateToken)
 

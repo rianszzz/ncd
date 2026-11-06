@@ -102,13 +102,23 @@ export function Dashboard() {
     }
   }, [localUser, navigate])
 
+  // Query: My Token (Masked personal key fetched securely from server)
+  const { data: myTokenData } = useQuery<{ id: string; key: string; masked_key: string }>({
+    queryKey: ['myToken'],
+    queryFn: async () => {
+      const res = await api.get('/portal/tokens/my-token')
+      return res.data
+    },
+    staleTime: 60000,
+  })
+
   const currentUser = {
     id: localUser?.id || '',
     name: localUser?.full_name || localUser?.name || 'Member NCD',
     email: localUser?.email || '',
     role: localUser?.role || 'MEMBER',
     position: localUser?.position || 'Anggota',
-    key: localUser?.key || '',
+    key: myTokenData?.masked_key || myTokenData?.key || localUser?.key || 'NCD-••••••••',
   }
 
   const isGodAdmin = currentUser.role === 'GOD_ADMIN'
@@ -1311,25 +1321,21 @@ export function Dashboard() {
   const updateTokenMutation = useMutation({
     mutationFn: async ({ id, newKey }: { id: string; newKey: string }) => {
       const res = await api.put(`/portal/tokens/${id}`, { new_key: newKey })
-      return res.data as { message: string; token: AccessKey }
+      return res.data as { message: string; masked_key?: string; key?: string; token?: AccessKey }
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['accessTokens'] })
-      const updatedToken = data.token
-      if (updatedToken) {
-        if (
-          localUser &&
-          (localUser.id === updatedToken.id ||
-            localUser.key === currentUser.key ||
-            editingMyToken)
-        ) {
-          const updated = { ...localUser, key: updatedToken.key }
+      queryClient.invalidateQueries({ queryKey: ['myToken'] })
+      const newMasked = data.masked_key || data.key || data.token?.key
+      if (newMasked) {
+        if (localUser) {
+          const updated = { ...localUser, key: newMasked }
           localStorage.setItem('ncd_user', JSON.stringify(updated))
           setLocalUser(updated)
         }
         setTokenUpdateMsg({
           type: 'success',
-          text: `Token berhasil diperbarui: ${updatedToken.key}`,
+          text: `Token berhasil diperbarui: ${newMasked}`,
         })
       } else {
         setTokenUpdateMsg({
@@ -5733,7 +5739,7 @@ export function Dashboard() {
                         type="button"
                         onClick={() => {
                           setEditingMyToken(true)
-                          setNewMyTokenKey(currentUser.key)
+                          setNewMyTokenKey('')
                           setTokenUpdateMsg(null)
                         }}
                         className="inline-flex items-center space-x-1 text-[11px] text-[#111215] font-medium hover:underline cursor-pointer"

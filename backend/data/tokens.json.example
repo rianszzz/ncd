@@ -1,0 +1,22 @@
+[
+  {
+    "id": "tok-god-demo",
+    "key": "NCD-GOD-MASTER-DEMO",
+    "role": "GOD_ADMIN",
+    "assignee": "Lead Administrator",
+    "position": "System Architect",
+    "email": "godadmin@example.dev",
+    "is_active": true,
+    "created_at": "2026-01-01T00:00:00Z"
+  },
+  {
+    "id": "tok-super-demo",
+    "key": "NCD-SUPERADMIN-DEMO",
+    "role": "SUPER_ADMIN",
+    "assignee": "Chairman",
+    "position": "Chairman",
+    "email": "chairman@example.dev",
+    "is_active": true,
+    "created_at": "2026-01-10T00:00:00Z"
+  }
+]

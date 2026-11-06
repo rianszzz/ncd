@@ -296,6 +296,12 @@ func IsTokenActive(keyOrID string) bool {
 }
 
 func ListTokens(w http.ResponseWriter, r *http.Request) {
+	claims, ok := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
+	if !ok || claims == nil || claims.Role != "GOD_ADMIN" {
+		http.Error(w, `{"error": "Forbidden: Hanya GOD_ADMIN yang berwenang mengakses daftar token portal"}`, http.StatusForbidden)
+		return
+	}
+
 	if DBPool != nil {
 		SyncTokensFromDB(r.Context(), DBPool)
 	}
@@ -568,12 +574,67 @@ func UpdateToken(w http.ResponseWriter, r *http.Request) {
 			saveTokensToDiskLocked()
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
-				"message": "Kode token berhasil diperbarui",
-				"token":   accessKeys[i],
+				"message":    "Kode token berhasil diperbarui",
+				"id":         accessKeys[i].ID,
+				"masked_key": MaskTokenKey(cleanKey),
+				"key":        MaskTokenKey(cleanKey),
 			})
 			return
 		}
 	}
 
 	http.Error(w, `{"error": "Akun token tidak ditemukan"}`, http.StatusNotFound)
+}
+
+// MaskTokenKey masks sensitive portal keys so raw tokens are never exposed in browser
+func MaskTokenKey(key string) string {
+	if len(key) <= 6 {
+		return "NCD-••••"
+	}
+	prefix := "NCD-"
+	if !strings.HasPrefix(key, prefix) {
+		return "••••••••"
+	}
+	clean := strings.TrimPrefix(key, prefix)
+	if len(clean) <= 3 {
+		return prefix + "••••"
+	}
+	visibleLen := 2
+	if len(clean) > 5 {
+		visibleLen = 3
+	}
+	maskedPart := "••••"
+	lastChars := clean[len(clean)-visibleLen:]
+	return prefix + maskedPart + lastChars
+}
+
+// GetMyToken returns the authenticated user's token information with masking
+func GetMyToken(w http.ResponseWriter, r *http.Request) {
+	claims, ok := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
+	if !ok || claims == nil {
+		http.Error(w, `{"error": "Unauthorized: Sesi login diperlukan"}`, http.StatusUnauthorized)
+		return
+	}
+
+	tokenLock.RLock()
+	defer tokenLock.RUnlock()
+
+	for _, k := range accessKeys {
+		if k.ID == claims.UserID || strings.EqualFold(k.Email, claims.Email) {
+			masked := MaskTokenKey(k.Key)
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"id":         k.ID,
+				"role":       k.Role,
+				"assignee":   k.Assignee,
+				"email":      k.Email,
+				"position":   k.Position,
+				"key":        masked,
+				"masked_key": masked,
+			})
+			return
+		}
+	}
+
+	http.Error(w, `{"error": "Token akun tidak ditemukan"}`, http.StatusNotFound)
 }
