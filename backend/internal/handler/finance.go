@@ -393,6 +393,14 @@ func generateNextTransactionNumberLocked(ctx context.Context, pool *pgxpool.Pool
 
 func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	claims, _ := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
+	if claims == nil || (claims.Role != "BENDAHARA_I" && claims.Role != "BENDAHARA_II") {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"error": "Akses ditolak: Pemisahan wewenang (Segregation of Duties). Hanya Bendahara I dan Bendahara II yang berwenang mencatat transaksi kas.",
+		})
+		return
+	}
 
 	var req CreateTransactionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -507,6 +515,14 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 func UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	claims, _ := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
+	if claims == nil || (claims.Role != "BENDAHARA_I" && claims.Role != "BENDAHARA_II") {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"error": "Akses ditolak: Pemisahan wewenang. Hanya Bendahara yang berwenang mengubah transaksi kas.",
+		})
+		return
+	}
 
 	var req CreateTransactionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -541,10 +557,10 @@ func UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			// Validasi kepemilikan draft: Hanya pembuat draft atau SUPER_ADMIN / GOD_ADMIN yang boleh mengubah
+			// Validasi kepemilikan draft: Hanya pembuat draft atau sesama Bendahara berwenang yang boleh mengubah
 			isOwner := claims != nil && tx.MakerID != "" && tx.MakerID == claims.UserID
-			isAdmin := claims != nil && (claims.Role == "SUPER_ADMIN" || claims.Role == "GOD_ADMIN")
-			if !isOwner && !isAdmin {
+			isChecker := claims != nil && claims.Role == "BENDAHARA_II"
+			if !isOwner && !isChecker {
 				http.Error(w, "Forbidden: Anda tidak berhak mengubah draft transaksi milik pembuat lain", http.StatusForbidden)
 				return
 			}
@@ -595,6 +611,14 @@ func UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 func DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	claims, _ := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
+	if claims == nil || (claims.Role != "BENDAHARA_I" && claims.Role != "BENDAHARA_II") {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"error": "Akses ditolak: Pemisahan wewenang. Hanya Bendahara yang berwenang menghapus transaksi kas.",
+		})
+		return
+	}
 
 	txLock.Lock()
 	defer txLock.Unlock()
@@ -606,10 +630,10 @@ func DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			// Validasi kepemilikan draft: Hanya pembuat draft atau SUPER_ADMIN / GOD_ADMIN yang boleh menghapus
+			// Validasi kepemilikan draft: Hanya pembuat draft atau sesama Bendahara berwenang yang boleh menghapus
 			isOwner := claims != nil && tx.MakerID != "" && tx.MakerID == claims.UserID
-			isAdmin := claims != nil && (claims.Role == "SUPER_ADMIN" || claims.Role == "GOD_ADMIN")
-			if !isOwner && !isAdmin {
+			isChecker := claims != nil && claims.Role == "BENDAHARA_II"
+			if !isOwner && !isChecker {
 				http.Error(w, "Forbidden: Anda tidak berhak menghapus draft transaksi milik pembuat lain", http.StatusForbidden)
 				return
 			}

@@ -37,11 +37,13 @@ import {
   ChevronLeft,
   Search,
   Download,
+  FileSpreadsheet,
   CheckSquare,
   Loader2,
   RefreshCw,
   Ban,
 } from 'lucide-react'
+import writeExcelFile from 'write-excel-file/browser'
 import {
   api,
   AccessKey,
@@ -131,7 +133,8 @@ export function Dashboard() {
   const isBendahara1 = currentUser.role === 'BENDAHARA_I'
   const isBendahara2 = currentUser.role === 'BENDAHARA_II'
   const isBendahara = isBendahara1 || isBendahara2
-  const canManageCash = isBendahara || isGodAdmin || isSuperAdmin
+  // Segregation of Duties: Hak kelola transaksi kas mutlak hanya untuk Bendahara (GOD_ADMIN & SUPER_ADMIN dilarang mencatat mutasi)
+  const canManageCash = isBendahara
   const canManageNews = isGodAdmin || isSuperAdmin || isSekretaris
   const canManageDocs = isGodAdmin || isSuperAdmin || isSekretaris
   const canVerifyApplications = isGodAdmin || isSuperAdmin || isSekretaris
@@ -324,12 +327,14 @@ export function Dashboard() {
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     refetchOnWindowFocus: true,
+    refetchInterval: 12000,
   })
 
   // Query: Transactions (Pemasukan & Pengeluaran)
   const {
     data: transactions = [],
     isLoading: loadingTx,
+    isFetching: isFetchingTx,
     isError: isTxError,
     refetch: refetchTx,
   } = useQuery<Transaction[]>({
@@ -341,6 +346,7 @@ export function Dashboard() {
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     refetchOnWindowFocus: true,
+    refetchInterval: 12000,
   })
 
   // Mutation: Approve (Verify) Transaction
@@ -675,6 +681,10 @@ export function Dashboard() {
   }
 
   const openCreateTransaction = () => {
+    if (!canManageCash) {
+      alert('Akses ditolak: Pemisahan wewenang keuangan (Segregation of Duties). Hanya Bendahara yang berwenang mencatat transaksi kas.')
+      return
+    }
     setEditingTransaction(null)
     resetTxForm()
     setTxDate(new Date().toISOString().split('T')[0])
@@ -712,6 +722,10 @@ export function Dashboard() {
 
   const handleSubmitTransaction = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!canManageCash) {
+      setTxFormError('Akses ditolak: Pemisahan wewenang keuangan (Segregation of Duties). Hanya Bendahara yang berwenang mencatat transaksi kas.')
+      return
+    }
     const amt = parseFloat(txAmount)
     if (!amt || amt <= 0) {
       setTxFormError('Nominal transaksi harus lebih besar dari 0')
@@ -1454,6 +1468,195 @@ export function Dashboard() {
 
   const currentBalance =
     cashSummary?.current_balance ?? totalIncome - totalExpense
+
+  const [isExporting, setIsExporting] = useState(false)
+
+  const handleExportXlsx = async () => {
+    if (!isBendahara) {
+      alert('Akses ditolak: Pemisahan wewenang. Fitur ekspor .xlsx laporan arus kas dikhususkan hanya untuk Bendahara.')
+      return
+    }
+
+    try {
+      setIsExporting(true)
+
+      // 1. Ambil data mutasi terkini secara real-time dari database
+      const { data: latestData } = await refetchTx()
+      const txData = latestData || transactions
+
+      // 2. Terapkan filter aktif di antarmuka (Tipe Aliran & Status Mutasi)
+      const exportList = txData.filter((tx) => {
+        if (txFilter === 'INCOME' && tx.type !== 'INCOME') return false
+        if (txFilter === 'EXPENSE' && tx.type !== 'EXPENSE') return false
+        if (txStatusFilter === 'DRAFT_PENDING') {
+          if (tx.status !== 'DRAFT_PENDING' && tx.status !== 'PENDING_VOID') return false
+        } else if (txStatusFilter !== 'ALL' && tx.status !== txStatusFilter) {
+          return false
+        }
+        return true
+      })
+
+      if (exportList.length === 0) {
+        alert('Tidak ada transaksi yang sesuai dengan filter yang aktif untuk diekspor.')
+        setIsExporting(false)
+        return
+      }
+
+      // Hitung ringkasan akumulasi data yang diekspor
+      let sumIncome = 0
+      let sumExpense = 0
+      exportList.forEach((tx) => {
+        if (tx.status === 'VERIFIED' || tx.status === 'PENDING_VOID') {
+          if (tx.type === 'INCOME') sumIncome += tx.amount
+          if (tx.type === 'EXPENSE') sumExpense += tx.amount
+        }
+      })
+      const netBalance = sumIncome - sumExpense
+
+      const dateStr = new Date().toISOString().split('T')[0]
+      const timestampStr = new Date().toLocaleString('id-ID', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      })
+
+      const columns = [
+        { width: 6 },   // No
+        { width: 24 },  // No. Transaksi
+        { width: 14 },  // Tanggal
+        { width: 15 },  // Tipe Mutasi
+        { width: 22 },  // Kategori
+        { width: 18 },  // Nominal
+        { width: 36 },  // Deskripsi
+        { width: 20 },  // PIC
+        { width: 22 },  // Maker
+        { width: 22 },  // Status
+        { width: 22 },  // Verifikator
+        { width: 20 },  // Tanggal Pengesahan
+        { width: 32 },  // Alasan Void / Catatan
+        { width: 38 },  // Bukti Nota
+      ]
+
+      const headerBg = '#111215'
+      const headerTextColor = '#FFFFFF'
+
+      const sheetData: any[] = [
+        // Title Banner
+        [
+          {
+            value: 'LAPORAN ARUS KAS & MUTASI KEUANGAN - NCD COMMUNITY',
+            fontWeight: 'bold',
+            fontSize: 13,
+          },
+        ],
+        [
+          {
+            value: `Diekspor pada: ${timestampStr} WIB | Oleh: ${currentUser.name} (${currentUser.role})`,
+            fontSize: 10,
+            fontStyle: 'italic',
+          },
+        ],
+        [
+          {
+            value: `Filter Tipe: ${txFilter === 'ALL' ? 'Semua Tipe' : txFilter === 'INCOME' ? 'Pemasukan' : 'Pengeluaran'} | Filter Status: ${txStatusFilter === 'ALL' ? 'Semua Status' : txStatusFilter} | Jumlah Data: ${exportList.length} transaksi`,
+            fontSize: 10,
+          },
+        ],
+        [], // Pemisah baris
+        // Baris Header Kolom
+        [
+          { value: 'No', fontWeight: 'bold', backgroundColor: headerBg, textColor: headerTextColor, align: 'center' },
+          { value: 'No. Transaksi', fontWeight: 'bold', backgroundColor: headerBg, textColor: headerTextColor },
+          { value: 'Tanggal', fontWeight: 'bold', backgroundColor: headerBg, textColor: headerTextColor, align: 'center' },
+          { value: 'Tipe Mutasi', fontWeight: 'bold', backgroundColor: headerBg, textColor: headerTextColor, align: 'center' },
+          { value: 'Kategori', fontWeight: 'bold', backgroundColor: headerBg, textColor: headerTextColor },
+          { value: 'Nominal (IDR)', fontWeight: 'bold', backgroundColor: headerBg, textColor: headerTextColor, align: 'right' },
+          { value: 'Deskripsi Transaksi', fontWeight: 'bold', backgroundColor: headerBg, textColor: headerTextColor },
+          { value: 'Penanggung Jawab (PIC)', fontWeight: 'bold', backgroundColor: headerBg, textColor: headerTextColor },
+          { value: 'Pencatat (Maker)', fontWeight: 'bold', backgroundColor: headerBg, textColor: headerTextColor },
+          { value: 'Status Transaksi', fontWeight: 'bold', backgroundColor: headerBg, textColor: headerTextColor, align: 'center' },
+          { value: 'Pemeriksa (Verifier)', fontWeight: 'bold', backgroundColor: headerBg, textColor: headerTextColor },
+          { value: 'Tanggal Pengesahan', fontWeight: 'bold', backgroundColor: headerBg, textColor: headerTextColor, align: 'center' },
+          { value: 'Catatan / Alasan Void', fontWeight: 'bold', backgroundColor: headerBg, textColor: headerTextColor },
+          { value: 'Bukti Nota (Link)', fontWeight: 'bold', backgroundColor: headerBg, textColor: headerTextColor },
+        ],
+      ]
+
+      // Baris Data Transaksi
+      exportList.forEach((tx, idx) => {
+        const statusLabel =
+          tx.status === 'VERIFIED'
+            ? 'Sah'
+            : tx.status === 'DRAFT_PENDING'
+            ? 'Menunggu Verifikasi'
+            : tx.status === 'PENDING_VOID'
+            ? 'Pengajuan Batal'
+            : 'Void / Ditolak'
+
+        sheetData.push([
+          { value: idx + 1, align: 'center' },
+          { value: tx.transaction_number, fontWeight: 'bold' },
+          { value: tx.transaction_date, align: 'center' },
+          {
+            value: tx.type === 'INCOME' ? 'Pemasukan' : 'Pengeluaran',
+            align: 'center',
+            fontWeight: 'bold',
+            textColor: tx.type === 'INCOME' ? '#047857' : '#B91C1C',
+          },
+          { value: tx.category_name },
+          {
+            value: tx.amount,
+            type: Number,
+            format: '#,##0',
+            align: 'right',
+            fontWeight: 'bold',
+          },
+          { value: tx.description },
+          { value: tx.person_in_charge },
+          { value: tx.maker_name },
+          { value: statusLabel, align: 'center' },
+          { value: tx.verifier_name || '-' },
+          { value: tx.verified_at || '-' },
+          { value: tx.void_reason || '-' },
+          { value: tx.receipt_url || '-' },
+        ])
+      })
+
+      // Baris Ringkasan Akumulasi
+      sheetData.push([])
+      sheetData.push([
+        { value: 'TOTAL PEMASUKAN SAH', fontWeight: 'bold', align: 'right', columnSpan: 5 },
+        null,
+        null,
+        null,
+        null,
+        { value: sumIncome, type: Number, format: '#,##0', fontWeight: 'bold', align: 'right', textColor: '#047857' },
+      ])
+      sheetData.push([
+        { value: 'TOTAL PENGELUARAN SAH', fontWeight: 'bold', align: 'right', columnSpan: 5 },
+        null,
+        null,
+        null,
+        null,
+        { value: sumExpense, type: Number, format: '#,##0', fontWeight: 'bold', align: 'right', textColor: '#B91C1C' },
+      ])
+      sheetData.push([
+        { value: 'SALDO BERSIH (NET BALANCE)', fontWeight: 'bold', align: 'right', columnSpan: 5 },
+        null,
+        null,
+        null,
+        null,
+        { value: netBalance, type: Number, format: '#,##0', fontWeight: 'bold', align: 'right' },
+      ])
+
+      const fileName = `Laporan_Kas_NCD_${dateStr}.xlsx`
+      await writeExcelFile(sheetData, { columns }).toFile(fileName)
+    } catch (err) {
+      console.error('Gagal mengekspor berkas Excel:', err)
+      alert('Terjadi kesalahan saat membuat berkas Excel. Silakan coba kembali.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   // Competition Transactions Identification (per organizational minutes)
   const isCompetitionTx = (t: Transaction) => {
@@ -5108,6 +5311,38 @@ export function Dashboard() {
                   </button>
                 )}
 
+                {/* Fitur Ekspor Excel .xlsx: Eksklusif Hanya Role Bendahara */}
+                {isBendahara && (
+                  <button
+                    type="button"
+                    onClick={handleExportXlsx}
+                    disabled={isExporting}
+                    title="Ekspor mutasi kas ke berkas Microsoft Excel (.xlsx) sesuai filter aktif"
+                    className="px-3 py-1.5 text-xs font-bold bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50 transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    {isExporting ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-200" />
+                    ) : (
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-200" />
+                    )}
+                    <span>{isExporting ? 'Mengekspor...' : 'Ekspor .xlsx'}</span>
+                  </button>
+                )}
+
+                {/* Tombol Sinkronisasi Data Kas Real-Time */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await Promise.all([refetchTx(), refetchSummary()])
+                  }}
+                  disabled={isFetchingTx}
+                  title="Sinkronisasi data kas terkini secara manual dari database"
+                  className="px-2.5 py-1.5 text-xs text-[#525660] hover:text-[#111215] bg-[#F4F1EB] hover:bg-[#EAE5DC] border border-[#111215]/20 transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isFetchingTx ? 'animate-spin text-emerald-600' : ''}`} />
+                  <span className="hidden sm:inline text-[11px] font-medium">Sinkron</span>
+                </button>
+
                 {/* Filter: Brutalist Spring Segmented (Tipe Aliran) */}
                 <div
                   role="group"
@@ -5221,9 +5456,17 @@ export function Dashboard() {
 
             {/* Status Filter Toolbar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#111215]">
-                Daftar Mutasi Kas ({filteredTransactions.length})
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#111215]">
+                  Daftar Mutasi Kas ({filteredTransactions.length})
+                </span>
+                {isFetchingTx && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Live Sync
+                  </span>
+                )}
+              </div>
 
               <div className="flex items-center gap-1.5 flex-wrap">
                 {[
@@ -6849,7 +7092,7 @@ export function Dashboard() {
       )}
 
       {/* MODAL: PENCATATAN & EDIT MUTASI KAS (BENDAHARA) */}
-      {isTxModalOpen && (
+      {isTxModalOpen && canManageCash && (
         <div
           role="dialog"
           aria-modal="true"

@@ -1,1 +1,23 @@
-[]
+[
+  {
+    "id": "ach-fbca1c07",
+    "title": "Juara Harapan 1",
+    "event_name": "ICBC 2026 UDINUS",
+    "competition": "ICBC 2026 UDINUS",
+    "organizer": "",
+    "tier": "Internasional",
+    "rank": "Juara Harapan 1",
+    "category": "",
+    "year": 2026,
+    "date": "2026",
+    "award_date": "2026",
+    "team_name": "Fauzan, Mirza, Syawal, Yusuf, Iqbal",
+    "members": [
+      "Fauzan, Mirza, Syawal, Yusuf, Iqbal"
+    ],
+    "team_members": [
+      "Fauzan, Mirza, Syawal, Yusuf, Iqbal"
+    ],
+    "description": ""
+  }
+]

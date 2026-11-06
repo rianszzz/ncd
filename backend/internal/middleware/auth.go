@@ -109,3 +109,31 @@ func RequireRole(allowedRoles ...string) func(http.Handler) http.Handler {
 		})
 	}
 }
+
+// RequireStrictRole membatasi hak akses secara ketat TANPA bypass GOD_ADMIN (misal: pemisahan wewenang keuangan / Segregation of Duties)
+func RequireStrictRole(allowedRoles ...string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			claims, ok := r.Context().Value(UserContextKey).(*UserClaims)
+			if !ok || claims == nil {
+				http.Error(w, `{"error": "Unauthorized: Data pengguna tidak ditemukan"}`, http.StatusUnauthorized)
+				return
+			}
+
+			hasRole := false
+			for _, role := range allowedRoles {
+				if claims.Role == role {
+					hasRole = true
+					break
+				}
+			}
+
+			if !hasRole {
+				http.Error(w, fmt.Sprintf(`{"error": "Forbidden: Hak akses role %s tidak diizinkan untuk tindakan ini (Pemisahan Wewenang Keuangan)"}`, claims.Role), http.StatusForbidden)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
