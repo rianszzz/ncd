@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, lazy, Suspense } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../services/api'
 import { ArrowRight, Loader2 } from 'lucide-react'
-import { NcdPortalAvatar } from '../components/portal/NcdPortalAvatar'
+
+const NcdPortalAvatar = lazy(() => import('../components/portal/NcdPortalAvatar'))
 
 export function Login() {
   const navigate = useNavigate()
@@ -70,14 +71,16 @@ export function Login() {
       <div className="text-center mb-8">
         {/* Interactive Avatar replacing former key box */}
         <div className="flex justify-center mb-3">
-          <NcdPortalAvatar
-            isTyping={isTyping}
-            isFocused={isFocused}
-            hasError={Boolean(error)}
-            isLoading={loading}
-            isSuccess={isSuccess}
-            size={116}
-          />
+          <Suspense fallback={<div className="w-[116px] h-[116px]" />}>
+            <NcdPortalAvatar
+              isTyping={isTyping}
+              isFocused={isFocused}
+              hasError={Boolean(error)}
+              isLoading={loading}
+              isSuccess={isSuccess}
+              size={116}
+            />
+          </Suspense>
         </div>
 
         <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#111215]">

@@ -151,6 +151,7 @@ func main() {
 			protected.With(ncdMiddleware.RequireRole("GOD_ADMIN", "SUPER_ADMIN")).Group(func(admin chi.Router) {
 				admin.Get("/portal/learning-sessions/admin/registrations", handler.ListLearningSessionRegistrations)
 				admin.Post("/portal/learning-sessions/classes", handler.CreateLearningSessionClass)
+				admin.Post("/portal/learning-sessions/classes/{id}/toggle-status", handler.ToggleLearningSessionClassStatus)
 				admin.Delete("/portal/learning-sessions/classes/{id}", handler.DeleteLearningSessionClass)
 			})
 

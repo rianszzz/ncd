@@ -1,11 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
 import {
-  motion,
-  useScroll,
-  useTransform,
-  useReducedMotion,
-} from 'motion/react'
-import {
   ShieldCheck,
   Users,
   FolderGit2,
@@ -110,14 +104,19 @@ const PILLARS: PillarItem[] = [
 ]
 
 export function GovernanceHorizontalScroll() {
-  const shouldReduceMotion = useReducedMotion()
+  const [shouldReduceMotion, setShouldReduceMotion] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
+  const progressRef = useRef<HTMLDivElement>(null)
   const [scrollRange, setScrollRange] = useState(0)
 
-  // Measure dynamic horizontal scroll range across mobile, tablet, and desktop:
-  // Stops precisely when Card 04 (Dukungan Kompetisi) aligns with center of viewport,
-  // then unpins immediately so vertical page scroll continues cleanly.
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setShouldReduceMotion(true)
+    }
+  }, [])
+
+  // Measure dynamic horizontal scroll range across mobile, tablet, and desktop
   useEffect(() => {
     const calculateRange = () => {
       if (trackRef.current) {
@@ -142,15 +141,33 @@ export function GovernanceHorizontalScroll() {
     }
   }, [])
 
-  // Dynamic scroll height: tailored per viewport height
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start start', 'end end'],
-  })
+  // Native lightweight rAF scroll binding - zero library overhead, GPU-accelerated
+  useEffect(() => {
+    if (shouldReduceMotion) return
 
-  // Direct transform (zero spring lag / zero physics calculation overhead on scroll ticks)
-  const x = useTransform(scrollYProgress, [0, 1], [0, -scrollRange])
-  const progressWidth = useTransform(scrollYProgress, [0, 1], ['0%', '100%'])
+    let ticking = false
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          if (containerRef.current && trackRef.current) {
+            const rect = containerRef.current.getBoundingClientRect()
+            const total = rect.height - window.innerHeight
+            const progress = total > 0 ? Math.min(Math.max(-rect.top / total, 0), 1) : 0
+            trackRef.current.style.transform = `translate3d(${-progress * scrollRange}px, 0, 0)`
+            if (progressRef.current) {
+              progressRef.current.style.width = `${progress * 100}%`
+            }
+          }
+          ticking = false
+        })
+        ticking = true
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [scrollRange, shouldReduceMotion])
 
   if (shouldReduceMotion) {
     return (
@@ -205,9 +222,9 @@ export function GovernanceHorizontalScroll() {
       <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col justify-center">
         {/* Horizontal Moving Track */}
         <div className="w-full overflow-visible">
-          <motion.div
+          <div
             ref={trackRef}
-            style={{ x, willChange: 'transform' }}
+            style={{ willChange: 'transform' }}
             className="flex items-center gap-5 sm:gap-12 lg:gap-20 pl-4 sm:pl-10 lg:pl-20 pr-4 sm:pr-10 lg:pr-20 w-max py-4 sm:py-8"
           >
             {/* Lead Block: PRINSIP ORGANISASI (Black Theme) */}
@@ -304,15 +321,16 @@ export function GovernanceHorizontalScroll() {
                 </div>
               )
             })}
-          </motion.div>
+          </div>
         </div>
 
         {/* Minimal Scroll Progress Bar Indicator at Bottom */}
         <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-10 lg:left-20 right-4 sm:right-10 lg:right-20 flex items-center justify-start">
           <div className="h-0.5 w-full max-w-xs bg-[#111215]/10 rounded-none overflow-hidden">
-            <motion.div
-              style={{ width: progressWidth }}
-              className="h-full bg-[#111215] rounded-none"
+            <div
+              ref={progressRef}
+              style={{ width: '0%' }}
+              className="h-full bg-[#111215] rounded-none transition-[width] duration-75"
             />
           </div>
         </div>

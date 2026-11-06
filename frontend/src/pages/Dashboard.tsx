@@ -43,7 +43,6 @@ import {
   RefreshCw,
   Ban,
 } from 'lucide-react'
-import writeExcelFile from 'write-excel-file/browser'
 import {
   api,
   AccessKey,
@@ -1649,6 +1648,7 @@ export function Dashboard() {
       ])
 
       const fileName = `Laporan_Kas_NCD_${dateStr}.xlsx`
+      const writeExcelFile = (await import('write-excel-file/browser')).default
       await writeExcelFile(sheetData, { columns }).toFile(fileName)
     } catch (err) {
       console.error('Gagal mengekspor berkas Excel:', err)

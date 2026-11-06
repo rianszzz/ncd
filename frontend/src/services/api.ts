@@ -342,6 +342,7 @@ export interface LearningSessionClass {
   poster_url: string
   accent_color: string
   discord_url: string
+  is_closed?: boolean
   created_at: string
 }
 
@@ -364,6 +365,13 @@ export const createLearningSessionClass = async (data: {
   discord_url: string
 }): Promise<{ message: string; class: LearningSessionClass }> => {
   const res = await api.post('/portal/learning-sessions/classes', data)
+  return res.data
+}
+
+export const toggleLearningSessionClassStatus = async (
+  id: string
+): Promise<{ message: string; class: LearningSessionClass }> => {
+  const res = await api.post(`/portal/learning-sessions/classes/${id}/toggle-status`)
   return res.data
 }
 

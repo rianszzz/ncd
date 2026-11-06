@@ -24,6 +24,7 @@ import {
   getMyLearningSessionRegistrations,
   getLearningSessionClasses,
   createLearningSessionClass,
+  toggleLearningSessionClassStatus,
   deleteLearningSessionClass,
 } from '../services/api'
 import fawwazPoster from '../assets/learning-session/fawwaz-poster.webp'
@@ -44,6 +45,7 @@ export interface ClassSession {
   accentColor: string
   discordUrl: string
   isCustom?: boolean
+  isClosed?: boolean
 }
 
 export const LEARNING_CLASSES: ClassSession[] = [
@@ -63,6 +65,7 @@ export const LEARNING_CLASSES: ClassSession[] = [
     accentColor: '#3B82F6',
     discordUrl: 'https://discord.com/events/1566134369398034514/1566142733561634877',
     isCustom: false,
+    isClosed: false,
   },
   {
     id: 'class-fauzan-02',
@@ -80,6 +83,7 @@ export const LEARNING_CLASSES: ClassSession[] = [
     accentColor: '#6366F1',
     discordUrl: 'https://discord.com/events/1566134369398034514/1566143302619767078',
     isCustom: false,
+    isClosed: false,
   },
 ]
 
@@ -134,6 +138,7 @@ export function LearningSessionSection({
         accentColor: rc.accent_color || '#3B82F6',
         discordUrl: rc.discord_url,
         isCustom: rc.id !== 'class-fawwaz-01' && rc.id !== 'class-fauzan-02',
+        isClosed: rc.is_closed ?? false,
       }))
     }
     return LEARNING_CLASSES
@@ -259,11 +264,29 @@ export function LearningSessionSection({
     },
   })
 
+  // Toggle Class Status (Open / Close Registration) Mutation
+  const toggleStatusMutation = useMutation({
+    mutationFn: toggleLearningSessionClassStatus,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['learningSessionClasses'] })
+      queryClient.invalidateQueries({ queryKey: ['adminLearningSessionRegistrations'] })
+    },
+    onError: (err: any) => {
+      const msg =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        'Gagal mengubah status pendaftaran kelas.'
+      alert(msg)
+    },
+  })
+
   // Delete Class Mutation
   const deleteClassMutation = useMutation({
     mutationFn: deleteLearningSessionClass,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['learningSessionClasses'] })
+      queryClient.invalidateQueries({ queryKey: ['adminLearningSessionRegistrations'] })
+      queryClient.invalidateQueries({ queryKey: ['myLearningSessions'] })
     },
     onError: (err: any) => {
       const msg =
@@ -277,7 +300,7 @@ export function LearningSessionSection({
   const handleDeleteClass = (id?: string, title?: string) => {
     if (!id) return
     const confirmed = window.confirm(
-      `Apakah Anda yakin ingin menghapus kelas "${title}"? Data pendaftaran terkait pada kelas ini akan ikut terhapus.`
+      `PERINGATAN PENGHAPUSAN KELAS!\n\nApakah Anda yakin ingin menghapus kelas "${title}"?\nSemua data pendaftaran peserta pada kelas ini akan ikut terhapus secara permanen dari sistem basis data.`
     )
     if (confirmed) {
       deleteClassMutation.mutate(id)
@@ -468,7 +491,12 @@ export function LearningSessionSection({
                   <span className="px-3 py-1 rounded-none text-[11px] font-mono font-bold uppercase tracking-wider bg-[#111215]/80 text-[#F4F1EB] backdrop-blur-md border border-white/20 shadow-xs">
                     {session.classNumber}
                   </span>
-                  {isRegistered ? (
+                  {session.isClosed ? (
+                    <span className="px-3 py-1 rounded-none text-[11px] font-semibold bg-rose-600/95 text-white backdrop-blur-md flex items-center gap-1.5 shadow-sm">
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Registrasi Ditutup</span>
+                    </span>
+                  ) : isRegistered ? (
                     <span className="px-3 py-1 rounded-none text-[11px] font-semibold bg-emerald-500/90 text-white backdrop-blur-md flex items-center gap-1.5 shadow-sm">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>Terdaftar</span>
@@ -490,18 +518,6 @@ export function LearningSessionSection({
                       <GraduationCap className="w-3.5 h-3.5" />
                       <span>Speaker: {session.speakerName}</span>
                     </div>
-
-                    {canManageClasses && session.isCustom && (
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteClass(session.id, session.title)}
-                        disabled={deleteClassMutation.isPending}
-                        title="Hapus Kelas Ini"
-                        className="p-1.5 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-none transition-colors cursor-pointer select-none"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
                   </div>
 
                   <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-[#111215] leading-snug group-hover:text-[#6456EB] transition-colors">
@@ -539,6 +555,11 @@ export function LearningSessionSection({
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         Terdaftar • Akses Discord Siap
                       </span>
+                    ) : session.isClosed ? (
+                      <span className="text-rose-700 font-semibold flex items-center gap-1">
+                        <Lock className="w-3.5 h-3.5" />
+                        Pendaftaran Ditutup oleh Penyelenggara
+                      </span>
                     ) : isLoggedIn ? (
                       <span className="text-slate-600">Akses khusus Member NCD</span>
                     ) : (
@@ -562,6 +583,16 @@ export function LearningSessionSection({
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                     </div>
+                  ) : session.isClosed ? (
+                    <button
+                      type="button"
+                      disabled
+                      className="px-5 py-3 rounded-none bg-[#EAE5DC] text-[#7E8492] border border-[#111215]/20 font-semibold text-xs flex items-center space-x-2 cursor-not-allowed select-none"
+                      title="Pendaftaran untuk kelas ini telah ditutup oleh pengurus"
+                    >
+                      <Lock className="w-3.5 h-3.5 text-rose-600" />
+                      <span>Registrasi Ditutup</span>
+                    </button>
                   ) : (
                     <button
                       type="button"
@@ -574,6 +605,68 @@ export function LearningSessionSection({
                   )}
                 </div>
               </div>
+
+              {/* Bilah Kontrol Admin: Khusus GOD_ADMIN & SUPER_ADMIN */}
+              {canManageClasses && (
+                <div className="bg-[#111215] text-[#F4F1EB] p-3 px-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-[#111215]">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono uppercase tracking-wider font-bold px-2 py-0.5 bg-white/15 text-white/95 border border-white/20">
+                      KONTROL ADMIN
+                    </span>
+                    <span className="text-xs font-semibold text-white/85">
+                      Status:{' '}
+                      {session.isClosed ? (
+                        <span className="text-rose-400 font-bold uppercase tracking-wider">Ditutup</span>
+                      ) : (
+                        <span className="text-emerald-400 font-bold uppercase tracking-wider">Dibuka</span>
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Toggle Buka/Tutup Pendaftaran */}
+                    <button
+                      type="button"
+                      onClick={() => toggleStatusMutation.mutate(session.id || '')}
+                      disabled={toggleStatusMutation.isPending}
+                      className={`px-3 py-1.5 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                        session.isClosed
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                          : 'bg-amber-600 hover:bg-amber-700 text-white'
+                      }`}
+                      title={
+                        session.isClosed
+                          ? 'Buka kembali pendaftaran untuk kelas ini'
+                          : 'Tutup pendaftaran untuk kelas ini'
+                      }
+                    >
+                      {session.isClosed ? (
+                        <>
+                          <Radio className="w-3.5 h-3.5" />
+                          <span>Buka Pendaftaran</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-3.5 h-3.5" />
+                          <span>Tutup Pendaftaran</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Hapus Kelas */}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteClass(session.id, session.title)}
+                      disabled={deleteClassMutation.isPending}
+                      className="px-3 py-1.5 text-xs font-bold bg-rose-700 hover:bg-rose-800 text-white transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      title="Hapus kelas ini beserta data pendaftaran terkait"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Hapus Kelas</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </motion.div>
           )
         })}

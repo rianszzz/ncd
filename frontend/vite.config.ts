@@ -31,16 +31,23 @@ export default defineConfig({
       },
     },
   },
+  esbuild: {
+    legalComments: 'none',
+    drop: ['console', 'debugger'],
+  },
   build: {
     target: 'es2022',
     cssMinify: true,
     cssCodeSplit: true,
-    modulePreload: { polyfill: false },
+    modulePreload: false,
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            if (id.includes('@bible-strong')) {
+              return 'vendor-avatar'
+            }
             if (id.includes('lucide-react')) {
               return 'vendor-icons'
             }

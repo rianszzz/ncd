@@ -32,6 +32,7 @@ type LearningSessionClass struct {
 	PosterURL   string    `json:"poster_url"`
 	AccentColor string    `json:"accent_color"`
 	DiscordURL  string    `json:"discord_url"`
+	IsClosed    bool      `json:"is_closed"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 
@@ -209,8 +210,10 @@ func InitLearningSessionsDB(pool *pgxpool.Pool) {
 		poster_url TEXT NOT NULL,
 		accent_color VARCHAR(32) NOT NULL DEFAULT '#6456EB',
 		discord_url TEXT NOT NULL,
+		is_closed BOOLEAN NOT NULL DEFAULT FALSE,
 		created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 	);
+	ALTER TABLE learning_session_classes ADD COLUMN IF NOT EXISTS is_closed BOOLEAN NOT NULL DEFAULT FALSE;
 	CREATE INDEX IF NOT EXISTS idx_ls_classes_slug ON learning_session_classes(slug);
 
 	CREATE TABLE IF NOT EXISTS learning_session_registrations (
@@ -232,9 +235,29 @@ func InitLearningSessionsDB(pool *pgxpool.Pool) {
 	`
 	_, _ = pool.Exec(ctx, query)
 
+	// Dual-Sync Seed: Amankan semua kelas dari disk / default ke database PostgreSQL
+	lsClassLock.RLock()
+	classesToSeed := make([]LearningSessionClass, len(lsClasses))
+	copy(classesToSeed, lsClasses)
+	lsClassLock.RUnlock()
+
+	if len(classesToSeed) == 0 {
+		classesToSeed = defaultLearningClasses
+	}
+
+	for _, c := range classesToSeed {
+		_, _ = pool.Exec(ctx, `
+			INSERT INTO learning_session_classes (
+				id, slug, class_number, speaker_name, title, description, date_label, time_label, platform, mode, poster_url, accent_color, discord_url, is_closed, created_at
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+			ON CONFLICT (slug) DO NOTHING;
+		`, c.ID, c.Slug, c.ClassNumber, c.SpeakerName, c.Title, c.Description,
+			c.DateLabel, c.TimeLabel, c.Platform, c.Mode, c.PosterURL, c.AccentColor, c.DiscordURL, c.IsClosed, c.CreatedAt)
+	}
+
 	// Sync Classes from DB
 	rowsClasses, errClasses := pool.Query(ctx, `
-		SELECT id, slug, class_number, speaker_name, title, description, date_label, time_label, platform, mode, poster_url, accent_color, discord_url, created_at
+		SELECT id, slug, class_number, speaker_name, title, description, date_label, time_label, platform, mode, poster_url, accent_color, discord_url, is_closed, created_at
 		FROM learning_session_classes
 		ORDER BY created_at ASC;
 	`)
@@ -246,7 +269,7 @@ func InitLearningSessionsDB(pool *pgxpool.Pool) {
 			var c LearningSessionClass
 			if err := rowsClasses.Scan(
 				&c.ID, &c.Slug, &c.ClassNumber, &c.SpeakerName, &c.Title, &c.Description,
-				&c.DateLabel, &c.TimeLabel, &c.Platform, &c.Mode, &c.PosterURL, &c.AccentColor, &c.DiscordURL, &c.CreatedAt,
+				&c.DateLabel, &c.TimeLabel, &c.Platform, &c.Mode, &c.PosterURL, &c.AccentColor, &c.DiscordURL, &c.IsClosed, &c.CreatedAt,
 			); err == nil {
 				dbClasses = append(dbClasses, c)
 			}
@@ -259,11 +282,11 @@ func InitLearningSessionsDB(pool *pgxpool.Pool) {
 			for _, defC := range defaultLearningClasses {
 				_, _ = pool.Exec(ctx, `
 					INSERT INTO learning_session_classes (
-						id, slug, class_number, speaker_name, title, description, date_label, time_label, platform, mode, poster_url, accent_color, discord_url, created_at
-					) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+						id, slug, class_number, speaker_name, title, description, date_label, time_label, platform, mode, poster_url, accent_color, discord_url, is_closed, created_at
+					) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 					ON CONFLICT (slug) DO NOTHING;
 				`, defC.ID, defC.Slug, defC.ClassNumber, defC.SpeakerName, defC.Title, defC.Description,
-					defC.DateLabel, defC.TimeLabel, defC.Platform, defC.Mode, defC.PosterURL, defC.AccentColor, defC.DiscordURL, defC.CreatedAt)
+					defC.DateLabel, defC.TimeLabel, defC.Platform, defC.Mode, defC.PosterURL, defC.AccentColor, defC.DiscordURL, defC.IsClosed, defC.CreatedAt)
 			}
 			lsClasses = append([]LearningSessionClass{}, defaultLearningClasses...)
 			saveLearningSessionClassesLocked()
@@ -437,8 +460,8 @@ func CreateLearningSessionClass(w http.ResponseWriter, r *http.Request) {
 			defer cancel()
 			_, _ = lsDBPool.Exec(ctx, `
 				INSERT INTO learning_session_classes (
-					id, slug, class_number, speaker_name, title, description, date_label, time_label, platform, mode, poster_url, accent_color, discord_url, created_at
-				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+					id, slug, class_number, speaker_name, title, description, date_label, time_label, platform, mode, poster_url, accent_color, discord_url, is_closed, created_at
+				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 				ON CONFLICT (slug) DO UPDATE SET
 					class_number = EXCLUDED.class_number,
 					speaker_name = EXCLUDED.speaker_name,
@@ -450,9 +473,10 @@ func CreateLearningSessionClass(w http.ResponseWriter, r *http.Request) {
 					mode = EXCLUDED.mode,
 					poster_url = EXCLUDED.poster_url,
 					accent_color = EXCLUDED.accent_color,
-					discord_url = EXCLUDED.discord_url;
+					discord_url = EXCLUDED.discord_url,
+					is_closed = EXCLUDED.is_closed;
 			`, item.ID, item.Slug, item.ClassNumber, item.SpeakerName, item.Title, item.Description,
-				item.DateLabel, item.TimeLabel, item.Platform, item.Mode, item.PosterURL, item.AccentColor, item.DiscordURL, item.CreatedAt)
+				item.DateLabel, item.TimeLabel, item.Platform, item.Mode, item.PosterURL, item.AccentColor, item.DiscordURL, item.IsClosed, item.CreatedAt)
 		}(newClass)
 	}
 
@@ -464,7 +488,66 @@ func CreateLearningSessionClass(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// DeleteLearningSessionClass allows GOD_ADMIN and SUPER_ADMIN to remove a class
+// ToggleLearningSessionClassStatus allows GOD_ADMIN and SUPER_ADMIN to close or re-open class registrations
+func ToggleLearningSessionClassStatus(w http.ResponseWriter, r *http.Request) {
+	claims, ok := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
+	if !ok || claims == nil {
+		http.Error(w, `{"error":"Akses ditolak: Autentikasi diperlukan"}`, http.StatusUnauthorized)
+		return
+	}
+
+	if claims.Role != "GOD_ADMIN" && claims.Role != "SUPER_ADMIN" {
+		http.Error(w, `{"error":"Akses ditolak: Hanya God Admin dan Super Admin yang berwenang mengubah status kelas"}`, http.StatusForbidden)
+		return
+	}
+
+	classID := chi.URLParam(r, "id")
+	if classID == "" {
+		http.Error(w, `{"error":"ID kelas wajib diisi"}`, http.StatusBadRequest)
+		return
+	}
+
+	lsClassLock.Lock()
+	found := false
+	var updatedClass LearningSessionClass
+	for i, c := range lsClasses {
+		if c.ID == classID {
+			found = true
+			lsClasses[i].IsClosed = !lsClasses[i].IsClosed
+			updatedClass = lsClasses[i]
+			break
+		}
+	}
+	if !found {
+		lsClassLock.Unlock()
+		http.Error(w, `{"error":"Kelas tidak ditemukan"}`, http.StatusNotFound)
+		return
+	}
+	saveLearningSessionClassesLocked()
+	lsClassLock.Unlock()
+
+	// Update status in PostgreSQL
+	if lsDBPool != nil {
+		go func(id string, isClosed bool) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_, _ = lsDBPool.Exec(ctx, `UPDATE learning_session_classes SET is_closed = $1 WHERE id = $2;`, isClosed, id)
+		}(classID, updatedClass.IsClosed)
+	}
+
+	statusMsg := "Pendaftaran kelas berhasil ditutup"
+	if !updatedClass.IsClosed {
+		statusMsg = "Pendaftaran kelas berhasil dibuka kembali"
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": statusMsg,
+		"class":   updatedClass,
+	})
+}
+
+// DeleteLearningSessionClass allows GOD_ADMIN and SUPER_ADMIN to remove any class and its registrations
 func DeleteLearningSessionClass(w http.ResponseWriter, r *http.Request) {
 	claims, ok := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
 	if !ok || claims == nil {
@@ -485,10 +568,12 @@ func DeleteLearningSessionClass(w http.ResponseWriter, r *http.Request) {
 
 	lsClassLock.Lock()
 	found := false
+	var targetSlug string
 	var updatedClasses []LearningSessionClass
 	for _, c := range lsClasses {
 		if c.ID == classID {
 			found = true
+			targetSlug = c.Slug
 			continue
 		}
 		updatedClasses = append(updatedClasses, c)
@@ -502,18 +587,35 @@ func DeleteLearningSessionClass(w http.ResponseWriter, r *http.Request) {
 	saveLearningSessionClassesLocked()
 	lsClassLock.Unlock()
 
-	// Async delete from PostgreSQL
+	// Cascade delete registrations in memory & disk
+	if targetSlug != "" {
+		lsLock.Lock()
+		var keptRegs []LearningSessionRegistration
+		for _, reg := range lsRegistrations {
+			if reg.ClassSlug != targetSlug {
+				keptRegs = append(keptRegs, reg)
+			}
+		}
+		lsRegistrations = keptRegs
+		saveLearningSessionRegistrationsLocked()
+		lsLock.Unlock()
+	}
+
+	// Delete from PostgreSQL
 	if lsDBPool != nil {
-		go func(id string) {
+		go func(id string, slug string) {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
+			if slug != "" {
+				_, _ = lsDBPool.Exec(ctx, `DELETE FROM learning_session_registrations WHERE class_slug = $1;`, slug)
+			}
 			_, _ = lsDBPool.Exec(ctx, `DELETE FROM learning_session_classes WHERE id = $1;`, id)
-		}(classID)
+		}(classID, targetSlug)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]string{
-		"message": "Kelas berhasil dihapus",
+		"message": "Kelas beserta data pendaftaran terkait berhasil dihapus",
 	})
 }
 
@@ -542,6 +644,7 @@ func RegisterLearningSession(w http.ResponseWriter, r *http.Request) {
 
 	req.ClassSlug = strings.TrimSpace(req.ClassSlug)
 	var className, speakerName string
+	var isClosed bool
 
 	// 1. Check in dynamic classes
 	lsClassLock.RLock()
@@ -549,6 +652,7 @@ func RegisterLearningSession(w http.ResponseWriter, r *http.Request) {
 		if c.Slug == req.ClassSlug {
 			className = c.Title
 			speakerName = c.SpeakerName
+			isClosed = c.IsClosed
 			break
 		}
 	}
@@ -560,6 +664,7 @@ func RegisterLearningSession(w http.ResponseWriter, r *http.Request) {
 			if defC.Slug == req.ClassSlug {
 				className = defC.Title
 				speakerName = defC.SpeakerName
+				isClosed = defC.IsClosed
 				break
 			}
 		}
@@ -567,6 +672,11 @@ func RegisterLearningSession(w http.ResponseWriter, r *http.Request) {
 
 	if className == "" {
 		http.Error(w, `{"error":"Kelas tidak valid. Pilih kelas yang tersedia."}`, http.StatusBadRequest)
+		return
+	}
+
+	if isClosed {
+		http.Error(w, `{"error":"Pendaftaran untuk kelas ini telah ditutup oleh penyelenggara."}`, http.StatusBadRequest)
 		return
 	}
 

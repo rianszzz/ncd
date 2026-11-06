@@ -1,16 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { motion, useReducedMotion } from 'motion/react'
-import {
-  ArrowRight,
-} from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { api, Project } from '../services/api'
 import { ProjectSkeleton } from '../components/Skeletons'
 import { GovernanceHorizontalScroll } from '../components/ui/GovernanceHorizontalScroll'
 import FadeContent from '../components/ui/FadeContent'
 
 export function Home() {
-  const shouldReduceMotion = useReducedMotion()
   const { data: projects, isLoading } = useQuery<Project[]>({
     queryKey: ['publicProjects'],
     queryFn: async () => {
@@ -18,8 +14,6 @@ export function Home() {
       return res.data
     },
   })
-
-  const ease = [0.22, 1, 0.36, 1] as const
 
   return (
     <div className="flex flex-col items-center">
@@ -59,13 +53,7 @@ export function Home() {
       <GovernanceHorizontalScroll />
 
       {/* Featured Projects Highlight */}
-      <motion.section
-        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-60px' }}
-        transition={{ duration: shouldReduceMotion ? 0 : 0.5, ease }}
-        className="max-w-6xl mx-auto px-6 py-14 md:py-20 w-full"
-      >
+      <section className="max-w-6xl mx-auto px-6 py-14 md:py-20 w-full">
         <FadeContent
           effect="mist"
           duration={1.8}
@@ -100,16 +88,8 @@ export function Home() {
                   : '/projects/cover-cphub.webp')
 
               return (
-                <motion.div
+                <div
                   key={p.id}
-                  initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-40px' }}
-                  transition={{
-                    duration: shouldReduceMotion ? 0 : 0.45,
-                    delay: shouldReduceMotion ? 0 : idx * 0.08,
-                    ease,
-                  }}
                   className="group relative min-h-[360px] sm:min-h-[390px] w-full overflow-hidden rounded-none border border-[#111215]/20 bg-[#111215] shadow-xs hover:border-[#111215] transition-all flex flex-col justify-between"
                 >
                   {/* Full Card Image Background with FadeContent Transition */}
@@ -178,7 +158,7 @@ export function Home() {
                       </Link>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               )
             })
           )}
@@ -193,16 +173,10 @@ export function Home() {
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
-      </motion.section>
+      </section>
 
       {/* Call to Action Section */}
-      <motion.section
-        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-60px' }}
-        transition={{ duration: shouldReduceMotion ? 0 : 0.5, ease }}
-        className="max-w-4xl mx-auto px-5 sm:px-6 py-12 sm:py-16 md:py-20 text-center w-full border-t border-[#111215]/6"
-      >
+      <section className="max-w-4xl mx-auto px-5 sm:px-6 py-12 sm:py-16 md:py-20 text-center w-full border-t border-[#111215]/6">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-[-0.025em] text-[#111215]">
           Tertarik Berkolaborasi di NCD?
         </h2>
@@ -224,7 +198,7 @@ export function Home() {
             <span>Tentang Kami</span>
           </Link>
         </div>
-      </motion.section>
+      </section>
     </div>
   )
 }
