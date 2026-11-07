@@ -713,8 +713,38 @@ export function Dashboard() {
       return
     }
     const reader = new FileReader()
-    reader.onloadend = () => {
-      setTxReceiptUrl(reader.result as string)
+    reader.onload = (event) => {
+      const rawData = event.target?.result as string
+      // Otomatis kompresi gambar nota agar ringan & cepat disimpan
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let width = img.width
+        let height = img.height
+        const maxDim = 1280
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width)
+            width = maxDim
+          } else {
+            width = Math.round((width * maxDim) / height)
+            height = maxDim
+          }
+        }
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height)
+          setTxReceiptUrl(canvas.toDataURL('image/jpeg', 0.82))
+        } else {
+          setTxReceiptUrl(rawData)
+        }
+      }
+      img.onerror = () => {
+        setTxReceiptUrl(rawData)
+      }
+      img.src = rawData
     }
     reader.readAsDataURL(file)
   }

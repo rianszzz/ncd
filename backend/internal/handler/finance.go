@@ -420,7 +420,16 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 	req.Type = cleanType
 
-	if len(req.Description) > 1000 || len(req.ReceiptURL) > 2000 || len(req.PersonInCharge) > 200 || len(req.CategoryName) > 100 {
+	isDataURI := strings.HasPrefix(req.ReceiptURL, "data:image/")
+	isHTTPURL := strings.HasPrefix(req.ReceiptURL, "http://") || strings.HasPrefix(req.ReceiptURL, "https://")
+
+	if !isDataURI && !isHTTPURL {
+		http.Error(w, "Format bukti nota tidak valid (harus berupa tautan http/https atau file gambar)", http.StatusBadRequest)
+		return
+	}
+
+	if (isHTTPURL && len(req.ReceiptURL) > 2048) || (isDataURI && len(req.ReceiptURL) > 8*1024*1024) ||
+		len(req.Description) > 1000 || len(req.PersonInCharge) > 200 || len(req.CategoryName) > 100 {
 		http.Error(w, "Panjang isian data transaksi melebihi batas yang diizinkan", http.StatusBadRequest)
 		return
 	}
@@ -542,7 +551,16 @@ func UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 	req.Type = cleanType
 
-	if len(req.Description) > 1000 || len(req.ReceiptURL) > 2000 || len(req.PersonInCharge) > 200 || len(req.CategoryName) > 100 {
+	isDataURI := strings.HasPrefix(req.ReceiptURL, "data:image/")
+	isHTTPURL := strings.HasPrefix(req.ReceiptURL, "http://") || strings.HasPrefix(req.ReceiptURL, "https://")
+
+	if !isDataURI && !isHTTPURL {
+		http.Error(w, "Format bukti nota tidak valid (harus berupa tautan http/https atau file gambar)", http.StatusBadRequest)
+		return
+	}
+
+	if (isHTTPURL && len(req.ReceiptURL) > 2048) || (isDataURI && len(req.ReceiptURL) > 8*1024*1024) ||
+		len(req.Description) > 1000 || len(req.PersonInCharge) > 200 || len(req.CategoryName) > 100 {
 		http.Error(w, "Panjang isian data transaksi melebihi batas yang diizinkan", http.StatusBadRequest)
 		return
 	}
