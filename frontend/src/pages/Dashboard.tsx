@@ -42,6 +42,7 @@ import {
   Loader2,
   RefreshCw,
   Ban,
+  HelpCircle,
 } from 'lucide-react'
 import {
   api,
@@ -62,6 +63,7 @@ import {
 } from '../services/api'
 import { DashboardRowSkeleton, TokenRowSkeleton } from '../components/Skeletons'
 import { LearningSessionSection } from '../components/LearningSessionSection'
+import { DashboardTour } from '../components/dashboard/DashboardTour'
 import { AnimatePresence, motion } from 'motion/react'
 
 const AVAILABLE_ROLES = [
@@ -164,6 +166,30 @@ export function Dashboard() {
       setActiveTab('learning-session')
     }
   }, [searchParams])
+
+  // Interactive Dashboard Product Tour (Excluding GOD_ADMIN)
+  const [isTourOpen, setIsTourOpen] = useState(false)
+  const tourStorageKey = `ncd_tour_seen_${currentUser.id || currentUser.email || 'user'}_v1`
+
+  useEffect(() => {
+    if (isGodAdmin) return
+    const hasSeenTour = localStorage.getItem(tourStorageKey)
+    if (!hasSeenTour) {
+      const timer = setTimeout(() => {
+        setIsTourOpen(true)
+      }, 600)
+      return () => clearTimeout(timer)
+    }
+  }, [isGodAdmin, tourStorageKey])
+
+  const handleOpenTour = () => {
+    setIsTourOpen(true)
+  }
+
+  const handleCloseTour = () => {
+    localStorage.setItem(tourStorageKey, 'true')
+    setIsTourOpen(false)
+  }
 
   // Member Onboarding State (Role: MEMBER)
   const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4>(1)
@@ -1958,34 +1984,49 @@ export function Dashboard() {
     <div className="max-w-6xl mx-auto px-3.5 sm:px-6 pt-5 pb-28 sm:py-8 md:py-12 text-left">
       {/* Top Header Card */}
       <div className="bg-white border border-[#111215]/15 p-4 sm:p-6 md:p-7 shadow-2xs mb-5 sm:mb-6">
-        <div className="flex items-start space-x-2.5 sm:space-x-3.5 min-w-0">
-          <span className="w-9 h-9 sm:w-10 sm:h-10 bg-[#111215] text-[#F4F1EB] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 border border-black/20">
-            {userInitials}
-          </span>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <h1 className="text-base sm:text-xl md:text-2xl font-bold tracking-tight text-[#111215]">
-                {isPengurus ? `Dasbor Otoritas ${currentUser.name}` : `Dasbor Member ${currentUser.name}`}
-              </h1>
-              <span className="px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold tracking-wider uppercase bg-[#111215] text-[#F4F1EB] border border-[#111215] shrink-0">
-                {currentUser.role === 'MEMBER' ? 'KOMUNITAS MEMBER' : currentUser.role}
-              </span>
-              {!isPengurus && (
-                <span
-                  className={`px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold tracking-wider uppercase border shrink-0 ${
-                    memberProfile?.is_onboarded
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                      : 'bg-amber-50 text-amber-800 border-amber-300'
-                  }`}
-                >
-                  {memberProfile?.is_onboarded ? 'Onboarding Selesai' : 'Onboarding Menunggu'}
+        <div className="flex items-start justify-between gap-3 min-w-0">
+          <div className="flex items-start space-x-2.5 sm:space-x-3.5 min-w-0" data-tour="member-identity">
+            <span className="w-9 h-9 sm:w-10 sm:h-10 bg-[#111215] text-[#F4F1EB] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 border border-black/20">
+              {userInitials}
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h1 className="text-base sm:text-xl md:text-2xl font-bold tracking-tight text-[#111215]">
+                  {isPengurus ? `Dasbor Otoritas ${currentUser.name}` : `Dasbor Member ${currentUser.name}`}
+                </h1>
+                <span className="px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold tracking-wider uppercase bg-[#111215] text-[#F4F1EB] border border-[#111215] shrink-0">
+                  {currentUser.role === 'MEMBER' ? 'KOMUNITAS MEMBER' : currentUser.role}
                 </span>
-              )}
+                {!isPengurus && (
+                  <span
+                    className={`px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold tracking-wider uppercase border shrink-0 ${
+                      memberProfile?.is_onboarded
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                        : 'bg-amber-50 text-amber-800 border-amber-300'
+                    }`}
+                  >
+                    {memberProfile?.is_onboarded ? 'Onboarding Selesai' : 'Onboarding Menunggu'}
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] sm:text-xs text-[#525660] mt-0.5">
+                {currentUser.position}
+              </p>
             </div>
-            <p className="text-[11px] sm:text-xs text-[#525660] mt-0.5">
-              {currentUser.position}
-            </p>
           </div>
+
+          {!isGodAdmin && (
+            <button
+              type="button"
+              data-tour="tutorial-btn"
+              onClick={handleOpenTour}
+              aria-label="Buka Panduan Tutorial Dasbor"
+              className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 text-[11px] sm:text-xs font-semibold text-[#111215] bg-[#F4F1EB] hover:bg-[#111215] hover:text-[#F4F1EB] border border-[#111215]/20 hover:border-[#111215] transition-all duration-150 select-none active:scale-95 min-h-[34px] sm:min-h-[36px] shadow-2xs group"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-[#6456EB] group-hover:text-white transition-colors" />
+              <span>Tutorial</span>
+            </button>
+          )}
         </div>
 
         {/* Master / Executive Key Metadata Row */}
@@ -2004,7 +2045,7 @@ export function Dashboard() {
         </div>
 
         {/* Desktop Tab Navigation (Header Card - Visible only on Desktop) */}
-        <div className="hidden sm:block mt-4 pt-3.5 border-t border-[#111215]/8 w-full">
+        <div className="hidden sm:block mt-4 pt-3.5 border-t border-[#111215]/8 w-full" data-tour="nav-tabs">
           <nav
             role="tablist"
             aria-label="Navigasi Menu Dasbor"
@@ -2013,10 +2054,17 @@ export function Dashboard() {
             {navTabs.map((tab, idx) => {
               const Icon = tab.icon
               const isActive = activeTab === tab.id
+              const tourAttr =
+                tab.id === 'onboarding' || tab.id === 'member-onboarding'
+                  ? 'tab-onboarding'
+                  : tab.id === 'learning-session'
+                  ? 'tab-learning-session'
+                  : undefined
               return (
                 <button
                   key={tab.id}
                   type="button"
+                  data-tour={tourAttr}
                   role="tab"
                   id={`dashboard-desktop-tab-${tab.id}`}
                   aria-selected={isActive}
@@ -7439,16 +7487,24 @@ export function Dashboard() {
       >
         <nav
           role="tablist"
+          data-tour="nav-tabs-mobile"
           aria-label="Tab Menu Dasbor"
           className="relative flex items-center w-full bg-white border border-[#111215]/20 p-1 shadow-lg select-none overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden rounded-none"
         >
           {navTabs.map((tab, idx) => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
+            const tourAttr =
+              tab.id === 'onboarding' || tab.id === 'member-onboarding'
+                ? 'tab-onboarding-mobile'
+                : tab.id === 'learning-session'
+                ? 'tab-learning-session-mobile'
+                : undefined
             return (
               <button
                 key={tab.id}
                 type="button"
+                data-tour={tourAttr}
                 role="tab"
                 id={`dashboard-mobile-tab-${tab.id}`}
                 aria-selected={isActive}
@@ -7478,6 +7534,13 @@ export function Dashboard() {
           })}
         </nav>
       </aside>
+
+      {/* Interactive Dashboard Product Tour (Excluding GOD_ADMIN) */}
+      <DashboardTour
+        isOpen={isTourOpen}
+        onClose={handleCloseTour}
+        currentUserRole={currentUser.role}
+      />
     </div>
   )
 }

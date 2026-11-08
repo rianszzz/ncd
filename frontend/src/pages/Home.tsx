@@ -5,6 +5,7 @@ import { api, Project } from '../services/api'
 import { ProjectSkeleton } from '../components/Skeletons'
 import { GovernanceHorizontalScroll } from '../components/ui/GovernanceHorizontalScroll'
 import FadeContent from '../components/ui/FadeContent'
+import Snowfall from 'react-snowfall'
 
 export function Home() {
   const { data: projects, isLoading } = useQuery<Project[]>({
@@ -17,12 +18,23 @@ export function Home() {
 
   return (
     <div className="flex flex-col items-center">
+      <Snowfall
+        color="rgb(0, 0, 0)"
+        snowflakeCount={50}
+        style={{
+          position: 'fixed',
+          width: '100vw',
+          height: '100vh',
+          zIndex: 0,
+          pointerEvents: 'none',
+        }}
+      />
       {/* Hero Section */}
       <section
         className="animate-fade-in min-h-[calc(100dvh-3.5rem)] w-full max-w-4xl mx-auto px-5 sm:px-6 py-8 md:py-16 text-center flex flex-col items-center justify-center"
       >
-        <h1 className="text-3xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-[-0.035em] text-[#111215] leading-[1.18] sm:leading-[1.12] max-w-2xl mx-auto">
-          Komunitas Mahasiswa<br />
+        <h1 className="text-3xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-[-0.035em] text-[#111215] leading-[1.18] sm:leading-[1.12] max-w-2xl mx-auto font-inter">
+          <span className="inline-block whitespace-nowrap"><span className="font-script font-normal inline-block text-[1.38em] mr-[5px] sm:mr-[6px] leading-none align-baseline select-none">K</span>omunitas</span> Mahasiswa<br />
           Teknologi dan Riset<br />
           Terbuka
         </h1>

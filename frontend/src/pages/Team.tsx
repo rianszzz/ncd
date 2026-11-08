@@ -122,8 +122,20 @@ export function Team() {
         transition={{ duration: shouldReduceMotion ? 0 : 0.5, ease }}
         className="mb-8 md:mb-10"
       >
-        <h1 className="text-3xl md:text-5xl font-semibold tracking-[-0.03em] text-[#111215]">
-          Pengurus dan Kontributor
+        <h1 className="text-3xl md:text-5xl font-semibold tracking-[-0.03em] text-[#111215] font-inter">
+          <span className="inline-block whitespace-nowrap">
+            <span className="font-script font-normal inline-block text-[1.38em] mr-[3.5px] sm:mr-[4px] leading-none align-baseline select-none">
+              P
+            </span>
+            engurus
+          </span>{' '}
+          dan{' '}
+          <span className="inline-block whitespace-nowrap">
+            <span className="font-script font-normal inline-block text-[1.38em] mr-[5px] sm:mr-[6px] leading-none align-baseline select-none">
+              K
+            </span>
+            ontributor
+          </span>
         </h1>
         <p className="text-xs md:text-sm text-[#525660] mt-2 leading-relaxed max-w-2xl">
           Struktur organisasi Nusantara Cyber Developer beranggotakan mahasiswa yang aktif mengembangkan sistem dan menjalankan tata kelola komunitas.

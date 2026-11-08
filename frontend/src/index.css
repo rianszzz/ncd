@@ -1,4 +1,55 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource/instrument-serif/400-italic.css";
+
+@font-face {
+  font-family: 'Snell Roundhand';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/snell-roundhand.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Snell Roundhand';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/snell-roundhand-bold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Symphony';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/Symphony-Regular.woff2') format('woff2'),
+       url('/fonts/Symphony-Regular.ttf') format('truetype');
+}
+
+@theme {
+  --font-inter: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-script: 'Snell Roundhand', 'Pinyon Script', cursive;
+  --font-instrument: 'Instrument Serif', Georgia, serif;
+  --font-symphony: 'Symphony', serif;
+}
+
+.font-script {
+  font-family: 'Snell Roundhand', 'Pinyon Script', cursive;
+}
+
+.font-instrument {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+}
+
+.font-symphony {
+  font-family: 'Symphony', Georgia, serif;
+}
+
+.font-inter {
+  font-family: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
 
 @layer base {
   :root {
@@ -66,7 +117,7 @@
   }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "SF Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "SF Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

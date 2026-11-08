@@ -2,6 +2,7 @@ import React, { useState, useRef, lazy, Suspense } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../services/api'
 import { ArrowRight, Loader2 } from 'lucide-react'
+import Snowfall from 'react-snowfall'
 
 const NcdPortalAvatar = lazy(() => import('../components/portal/NcdPortalAvatar'))
 
@@ -68,6 +69,17 @@ export function Login() {
 
   return (
     <div className="max-w-md mx-auto px-6 py-12 md:py-16 text-left">
+      <Snowfall
+        color="rgb(0, 0, 0)"
+        snowflakeCount={50}
+        style={{
+          position: 'fixed',
+          width: '100vw',
+          height: '100vh',
+          zIndex: 0,
+          pointerEvents: 'none',
+        }}
+      />
       <div className="text-center mb-8">
         {/* Interactive Avatar replacing former key box */}
         <div className="flex justify-center mb-3">
