@@ -26,6 +26,8 @@ import {
   createLearningSessionClass,
   toggleLearningSessionClassStatus,
   deleteLearningSessionClass,
+  getAuthUser,
+  isAuthenticated,
 } from '../services/api'
 import fawwazPoster from '../assets/learning-session/fawwaz-poster.webp'
 import fauzanPoster from '../assets/learning-session/fauzan-poster.webp'
@@ -103,10 +105,8 @@ export function LearningSessionSection({
   const shouldReduceMotion = useReducedMotion()
   const ease = [0.22, 1, 0.36, 1] as const
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('ncd_jwt') : null
-  const localUserRaw = typeof window !== 'undefined' ? localStorage.getItem('ncd_user') : null
-  const localUser = localUserRaw ? JSON.parse(localUserRaw) : null
-  const isLoggedIn = Boolean(token && localUser)
+  const localUser = getAuthUser<Record<string, string>>()
+  const isLoggedIn = isAuthenticated()
 
   // Remote classes query
   const { data: remoteClasses } = useQuery({

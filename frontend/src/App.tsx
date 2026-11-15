@@ -5,6 +5,7 @@ import { Navbar } from './components/Navbar'
 import { Footer } from './components/Footer'
 import { RouteMeta } from './components/RouteMeta'
 import { ScrollToTop } from './components/ui/ScrollToTop'
+import { isAuthenticated } from './services/api'
 import { Home } from './pages/Home'
 
 // Route-level dynamic code-splitting: loads non-home modules on-demand
@@ -30,9 +31,7 @@ function PageFallback() {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const token = localStorage.getItem('ncd_jwt')
-  const user = localStorage.getItem('ncd_user')
-  if (!token || !user) {
+  if (!isAuthenticated()) {
     return <Navigate to="/login" replace />
   }
   return <>{children}</>

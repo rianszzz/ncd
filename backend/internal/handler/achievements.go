@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/ncd/backend/internal/storage"
 )
 
 // AchievementDTO represents an achievement / trophy earned by NCD teams.
@@ -58,60 +58,27 @@ var (
 	competitionsList = []CompetitionDTO{}
 )
 
-func getAchievementsFilePath() string {
-	if _, err := os.Stat("backend/data"); err == nil {
-		return "backend/data/achievements.json"
-	}
-	if _, err := os.Stat("data"); err == nil {
-		return "data/achievements.json"
-	}
-	if _, err := os.Stat("../../data"); err == nil {
-		return "../../data/achievements.json"
-	}
-	return "data/achievements.json"
-}
-
-func getCompetitionsFilePath() string {
-	if _, err := os.Stat("backend/data"); err == nil {
-		return "backend/data/competitions.json"
-	}
-	if _, err := os.Stat("data"); err == nil {
-		return "data/competitions.json"
-	}
-	if _, err := os.Stat("../../data"); err == nil {
-		return "../../data/competitions.json"
-	}
-	return "data/competitions.json"
-}
+const (
+	achievementsFileName = "achievements.json"
+	competitionsFileName = "competitions.json"
+)
 
 func saveAchievementsToDiskLocked() {
-	filePath := getAchievementsFilePath()
-	bytes, err := json.MarshalIndent(achievementsList, "", "  ")
-	if err == nil {
-		_ = os.WriteFile(filePath, bytes, 0644)
-	}
+	_ = storage.SaveJSON(achievementsFileName, achievementsList)
 }
 
 func saveCompetitionsToDiskLocked() {
-	filePath := getCompetitionsFilePath()
-	bytes, err := json.MarshalIndent(competitionsList, "", "  ")
-	if err == nil {
-		_ = os.WriteFile(filePath, bytes, 0644)
-	}
+	_ = storage.SaveJSON(competitionsFileName, competitionsList)
 }
 
 func loadAchievementsFromDisk() {
 	achLock.Lock()
 	defer achLock.Unlock()
 
-	filePath := getAchievementsFilePath()
-	bytes, err := os.ReadFile(filePath)
-	if err == nil && len(bytes) > 0 {
-		var loaded []AchievementDTO
-		if err := json.Unmarshal(bytes, &loaded); err == nil {
-			achievementsList = loaded
-			return
-		}
+	var loaded []AchievementDTO
+	if err := storage.LoadJSON(achievementsFileName, &loaded); err == nil {
+		achievementsList = loaded
+		return
 	}
 	achievementsList = []AchievementDTO{}
 	saveAchievementsToDiskLocked()
@@ -121,14 +88,10 @@ func loadCompetitionsFromDisk() {
 	compLock.Lock()
 	defer compLock.Unlock()
 
-	filePath := getCompetitionsFilePath()
-	bytes, err := os.ReadFile(filePath)
-	if err == nil && len(bytes) > 0 {
-		var loaded []CompetitionDTO
-		if err := json.Unmarshal(bytes, &loaded); err == nil {
-			competitionsList = loaded
-			return
-		}
+	var loaded []CompetitionDTO
+	if err := storage.LoadJSON(competitionsFileName, &loaded); err == nil {
+		competitionsList = loaded
+		return
 	}
 	competitionsList = []CompetitionDTO{}
 	saveCompetitionsToDiskLocked()

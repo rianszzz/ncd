@@ -16,6 +16,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ncd/backend/internal/middleware"
+	"github.com/ncd/backend/internal/pagination"
+	"github.com/ncd/backend/internal/storage"
 )
 
 type TransactionDTO struct {
@@ -190,55 +192,24 @@ func SyncFinanceFromDB(ctx context.Context, pool *pgxpool.Pool) {
 	txLock.Unlock()
 }
 
+const transactionsDataFile = "transactions.json"
+
 func getTransactionsFilePath() string {
-	paths := []string{
-		"backend/data/transactions.json",
-		"data/transactions.json",
-		"../../data/transactions.json",
-		"../data/transactions.json",
-		"/tmp/transactions.json",
-	}
-	for _, p := range paths {
-		if _, err := os.Stat(p); err == nil {
-			return p
-		}
-	}
-	if _, err := os.Stat("backend/data"); err == nil {
-		return "backend/data/transactions.json"
-	}
-	if _, err := os.Stat("data"); err == nil {
-		return "data/transactions.json"
-	}
-	return "backend/data/transactions.json"
+	return storage.ResolveDataPath(transactionsDataFile)
 }
 
 func saveTransactionsToDiskLocked() {
-	filePath := getTransactionsFilePath()
-	bytes, err := json.MarshalIndent(transactions, "", "  ")
-	if err == nil {
-		_ = os.WriteFile(filePath, bytes, 0644)
-		// Simpan salinan cadangan di /tmp untuk lingkungan serverless
-		_ = os.WriteFile("/tmp/ncd_transactions_backup.json", bytes, 0644)
-	}
+	_ = storage.SaveJSON(transactionsDataFile, transactions)
 }
 
 func loadTransactionsFromDisk() {
 	txLock.Lock()
 	defer txLock.Unlock()
 
-	filePath := getTransactionsFilePath()
-	bytes, err := os.ReadFile(filePath)
-	if err != nil || len(bytes) == 0 {
-		// Coba baca dari salinan /tmp jika path utama tidak tersedia
-		bytes, err = os.ReadFile("/tmp/ncd_transactions_backup.json")
-	}
-
-	if err == nil && len(bytes) > 0 {
-		loaded := []TransactionDTO{}
-		if err := json.Unmarshal(bytes, &loaded); err == nil {
-			transactions = loaded
-			return
-		}
+	var loaded []TransactionDTO
+	if err := storage.LoadJSON(transactionsDataFile, &loaded); err == nil {
+		transactions = loaded
+		return
 	}
 	saveTransactionsToDiskLocked()
 }
@@ -299,40 +270,12 @@ func ListTransactions(w http.ResponseWriter, r *http.Request) {
 }
 
 func paginateTransactions(w http.ResponseWriter, r *http.Request, all []TransactionDTO) {
-	total := len(all)
-	pageStr := r.URL.Query().Get("page")
-	limitStr := r.URL.Query().Get("limit")
-
-	w.Header().Set("X-Total-Count", strconv.Itoa(total))
-
-	if pageStr != "" || limitStr != "" {
-		page, _ := strconv.Atoi(pageStr)
-		if page < 1 {
-			page = 1
-		}
-		limit, _ := strconv.Atoi(limitStr)
-		if limit < 1 || limit > 100 {
-			limit = 20
-		}
-
-		start := (page - 1) * limit
-		if start > total {
-			start = total
-		}
-		end := start + limit
-		if end > total {
-			end = total
-		}
-
-		w.Header().Set("X-Page", strconv.Itoa(page))
-		w.Header().Set("X-Per-Page", strconv.Itoa(limit))
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(all[start:end])
-		return
-	}
+	page, limit := pagination.Parse(r, 20, 100)
+	paged, total := pagination.Slice(all, page, limit)
+	pagination.SetHeaders(w, total, page, limit)
 
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(all)
+	_ = json.NewEncoder(w).Encode(paged)
 }
 
 // generateNextTransactionNumberLocked calculates the next sequential transaction number for the given month prefix.

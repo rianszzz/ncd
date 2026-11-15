@@ -13,6 +13,18 @@ import (
 )
 
 func TestDualControlVoidVerifiedTransactionFlow(t *testing.T) {
+	txLock.Lock()
+	initialTxs := make([]TransactionDTO, len(transactions))
+	copy(initialTxs, transactions)
+	txLock.Unlock()
+
+	t.Cleanup(func() {
+		txLock.Lock()
+		transactions = initialTxs
+		saveTransactionsToDiskLocked()
+		txLock.Unlock()
+	})
+
 	// 1. Setup Context Users
 	bendahara1Claims := &middleware.UserClaims{
 		UserID:   "user-ben1",
@@ -150,6 +162,18 @@ func TestDualControlVoidVerifiedTransactionFlow(t *testing.T) {
 }
 
 func TestDualControlRejectVoidTransactionFlow(t *testing.T) {
+	txLock.Lock()
+	initialTxs := make([]TransactionDTO, len(transactions))
+	copy(initialTxs, transactions)
+	txLock.Unlock()
+
+	t.Cleanup(func() {
+		txLock.Lock()
+		transactions = initialTxs
+		saveTransactionsToDiskLocked()
+		txLock.Unlock()
+	})
+
 	bendahara1Claims := &middleware.UserClaims{
 		UserID:   "user-ben1",
 		FullName: "Bendahara Satu",

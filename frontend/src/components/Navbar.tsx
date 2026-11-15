@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Lock, Menu, X, ShieldCheck, LogOut } from 'lucide-react'
-import { api } from '../services/api'
+import { api, clearAuthSession, isAuthenticated } from '../services/api'
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
@@ -17,8 +17,7 @@ export function Navbar() {
     } catch {
       // ignore
     } finally {
-      localStorage.removeItem('ncd_jwt')
-      localStorage.removeItem('ncd_user')
+      clearAuthSession()
       setIsLoggedIn(false)
       setIsOpen(false)
       navigate('/login')
@@ -28,7 +27,7 @@ export function Navbar() {
   // Close mobile menu & update auth state on route change
   useEffect(() => {
     setIsOpen(false)
-    setIsLoggedIn(Boolean(localStorage.getItem('ncd_jwt') && localStorage.getItem('ncd_user')))
+    setIsLoggedIn(isAuthenticated())
   }, [location.pathname])
 
   // Close mobile menu on Escape key press

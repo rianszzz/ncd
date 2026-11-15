@@ -10,7 +10,6 @@ import (
 	"net/mail"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -19,6 +18,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ncd/backend/internal/middleware"
+	"github.com/ncd/backend/internal/pagination"
+	"github.com/ncd/backend/internal/storage"
 )
 
 type ApplicationVote struct {
@@ -89,36 +90,24 @@ func SendTelegramAlert(text string) {
 	}()
 }
 
+const applicationsDataFile = "applications.json"
+
 func getApplicationsFilePath() string {
-	if _, err := os.Stat("backend/data"); err == nil {
-		return "backend/data/applications.json"
-	}
-	if _, err := os.Stat("data"); err == nil {
-		return "data/applications.json"
-	}
-	return "data/applications.json"
+	return storage.ResolveDataPath(applicationsDataFile)
 }
 
 func saveApplicationsToDiskLocked() {
-	filePath := getApplicationsFilePath()
-	bytes, err := json.MarshalIndent(applicationsList, "", "  ")
-	if err == nil {
-		_ = os.WriteFile(filePath, bytes, 0644)
-	}
+	_ = storage.SaveJSON(applicationsDataFile, applicationsList)
 }
 
 func loadApplicationsFromDisk() {
 	appLock.Lock()
 	defer appLock.Unlock()
 
-	filePath := getApplicationsFilePath()
-	bytes, err := os.ReadFile(filePath)
-	if err == nil && len(bytes) > 0 {
-		var loaded []ApplicationDTO
-		if err := json.Unmarshal(bytes, &loaded); err == nil {
-			applicationsList = loaded
-			return
-		}
+	var loaded []ApplicationDTO
+	if err := storage.LoadJSON(applicationsDataFile, &loaded); err == nil {
+		applicationsList = loaded
+		return
 	}
 
 	applicationsList = []ApplicationDTO{}
@@ -330,40 +319,12 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 }
 
 func paginateApplications(w http.ResponseWriter, r *http.Request, all []ApplicationDTO) {
-	total := len(all)
-	pageStr := r.URL.Query().Get("page")
-	limitStr := r.URL.Query().Get("limit")
-
-	w.Header().Set("X-Total-Count", strconv.Itoa(total))
-
-	if pageStr != "" || limitStr != "" {
-		page, _ := strconv.Atoi(pageStr)
-		if page < 1 {
-			page = 1
-		}
-		limit, _ := strconv.Atoi(limitStr)
-		if limit < 1 || limit > 100 {
-			limit = 20
-		}
-
-		start := (page - 1) * limit
-		if start > total {
-			start = total
-		}
-		end := start + limit
-		if end > total {
-			end = total
-		}
-
-		w.Header().Set("X-Page", strconv.Itoa(page))
-		w.Header().Set("X-Per-Page", strconv.Itoa(limit))
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(all[start:end])
-		return
-	}
+	page, limit := pagination.Parse(r, 20, 100)
+	paged, total := pagination.Slice(all, page, limit)
+	pagination.SetHeaders(w, total, page, limit)
 
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(all)
+	_ = json.NewEncoder(w).Encode(paged)
 }
 
 // VoteApplication mencatat voting ACC / TIDAK_ACC beserta diskusi opsional dari pengurus

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -15,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/ncd/backend/internal/storage"
 )
 
 // PostDTO represents a public news or announcement entry for NCD.
@@ -36,39 +36,24 @@ var (
 	postsList = []PostDTO{}
 )
 
+const newsDataFile = "posts.json"
+
 func getPostsFilePath() string {
-	if _, err := os.Stat("backend/data"); err == nil {
-		return "backend/data/posts.json"
-	}
-	if _, err := os.Stat("data"); err == nil {
-		return "data/posts.json"
-	}
-	if _, err := os.Stat("../../data"); err == nil {
-		return "../../data/posts.json"
-	}
-	return "data/posts.json"
+	return storage.ResolveDataPath(newsDataFile)
 }
 
 func savePostsToDiskLocked() {
-	filePath := getPostsFilePath()
-	bytes, err := json.MarshalIndent(postsList, "", "  ")
-	if err == nil {
-		_ = os.WriteFile(filePath, bytes, 0644)
-	}
+	_ = storage.SaveJSON(newsDataFile, postsList)
 }
 
 func loadPostsFromDisk() {
 	postLock.Lock()
 	defer postLock.Unlock()
 
-	filePath := getPostsFilePath()
-	bytes, err := os.ReadFile(filePath)
-	if err == nil && len(bytes) > 0 {
-		loaded := []PostDTO{}
-		if err := json.Unmarshal(bytes, &loaded); err == nil {
-			postsList = loaded
-			return
-		}
+	var loaded []PostDTO
+	if err := storage.LoadJSON(newsDataFile, &loaded); err == nil {
+		postsList = loaded
+		return
 	}
 	postsList = []PostDTO{}
 	savePostsToDiskLocked()

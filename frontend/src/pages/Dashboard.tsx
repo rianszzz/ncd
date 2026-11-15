@@ -60,6 +60,8 @@ import {
   submitMemberOnboarding,
   getMemberOnboardingTracker,
   getAdminLearningSessionRegistrations,
+  getAuthUser,
+  isAuthenticated,
 } from '../services/api'
 import { DashboardRowSkeleton, TokenRowSkeleton } from '../components/Skeletons'
 import { LearningSessionSection } from '../components/LearningSessionSection'
@@ -88,19 +90,11 @@ export function Dashboard() {
     role?: string
     position?: string
     key?: string
-  } | null>(() => {
-    try {
-      const raw = localStorage.getItem('ncd_user')
-      return raw ? JSON.parse(raw) : null
-    } catch {
-      return null
-    }
-  })
+  } | null>(() => getAuthUser())
 
   // Fail-closed security redirect: must possess both JWT token and stored user object
   useEffect(() => {
-    const token = localStorage.getItem('ncd_jwt')
-    if (!token || !localUser) {
+    if (!isAuthenticated()) {
       navigate('/login', { replace: true })
     }
   }, [localUser, navigate])

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html"
 	"net/http"
-	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -16,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ncd/backend/internal/middleware"
+	"github.com/ncd/backend/internal/storage"
 )
 
 type LearningSessionClass struct {
@@ -102,47 +102,29 @@ var (
 )
 
 func init() {
-	go func() {
-		time.Sleep(100 * time.Millisecond)
-		loadLearningSessionClassesFromDisk()
-		loadLearningSessionRegistrationsFromDisk()
-	}()
+	loadLearningSessionClassesFromDisk()
+	loadLearningSessionRegistrationsFromDisk()
 }
 
+const (
+	learningClassesFile       = "learning_session_classes.json"
+	learningRegistrationsFile = "learning_session_registrations.json"
+)
+
 func getLearningSessionsFilePath() string {
-	if _, err := os.Stat("backend/data"); err == nil {
-		return "backend/data/learning_session_registrations.json"
-	}
-	if _, err := os.Stat("data"); err == nil {
-		return "data/learning_session_registrations.json"
-	}
-	return "data/learning_session_registrations.json"
+	return storage.ResolveDataPath(learningRegistrationsFile)
 }
 
 func getLearningClassesFilePath() string {
-	if _, err := os.Stat("backend/data"); err == nil {
-		return "backend/data/learning_session_classes.json"
-	}
-	if _, err := os.Stat("data"); err == nil {
-		return "data/learning_session_classes.json"
-	}
-	return "data/learning_session_classes.json"
+	return storage.ResolveDataPath(learningClassesFile)
 }
 
 func loadLearningSessionClassesFromDisk() {
 	lsClassLock.Lock()
 	defer lsClassLock.Unlock()
 
-	filePath := getLearningClassesFilePath()
-	data, err := os.ReadFile(filePath)
-	if err != nil || len(data) == 0 {
-		lsClasses = append([]LearningSessionClass{}, defaultLearningClasses...)
-		saveLearningSessionClassesLocked()
-		return
-	}
-
 	var list []LearningSessionClass
-	if err := json.Unmarshal(data, &list); err != nil || len(list) == 0 {
+	if err := storage.LoadJSON(learningClassesFile, &list); err != nil || len(list) == 0 {
 		lsClasses = append([]LearningSessionClass{}, defaultLearningClasses...)
 		saveLearningSessionClassesLocked()
 		return
@@ -151,26 +133,15 @@ func loadLearningSessionClassesFromDisk() {
 }
 
 func saveLearningSessionClassesLocked() {
-	filePath := getLearningClassesFilePath()
-	bytes, err := json.MarshalIndent(lsClasses, "", "  ")
-	if err == nil {
-		_ = os.WriteFile(filePath, bytes, 0644)
-	}
+	_ = storage.SaveJSON(learningClassesFile, lsClasses)
 }
 
 func loadLearningSessionRegistrationsFromDisk() {
 	lsLock.Lock()
 	defer lsLock.Unlock()
 
-	filePath := getLearningSessionsFilePath()
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		lsRegistrations = []LearningSessionRegistration{}
-		return
-	}
-
 	var list []LearningSessionRegistration
-	if err := json.Unmarshal(data, &list); err != nil {
+	if err := storage.LoadJSON(learningRegistrationsFile, &list); err != nil {
 		lsRegistrations = []LearningSessionRegistration{}
 		return
 	}
@@ -178,11 +149,7 @@ func loadLearningSessionRegistrationsFromDisk() {
 }
 
 func saveLearningSessionRegistrationsLocked() {
-	filePath := getLearningSessionsFilePath()
-	bytes, err := json.MarshalIndent(lsRegistrations, "", "  ")
-	if err == nil {
-		_ = os.WriteFile(filePath, bytes, 0644)
-	}
+	_ = storage.SaveJSON(learningRegistrationsFile, lsRegistrations)
 }
 
 // InitLearningSessionsDB initializes DB tables and syncs existing registrations & classes

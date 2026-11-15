@@ -28,7 +28,7 @@ func HealthCheck(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
 		defer cancel()
 		if err := DBPool.Ping(ctx); err != nil {
-			dbStatus = "error: " + err.Error()
+			dbStatus = "unreachable"
 		}
 	} else {
 		dbStatus = "fallback_local_disk"

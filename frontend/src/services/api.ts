@@ -380,8 +380,46 @@ export const deleteLearningSessionClass = async (id: string): Promise<{ message:
   return res.data
 }
 
+export const AUTH_TOKEN_KEY = 'ncd_jwt'
+export const AUTH_USER_KEY = 'ncd_user'
+
+export const getAuthToken = (): string | null => {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem(AUTH_TOKEN_KEY)
+}
+
+export const getAuthUser = <T = Record<string, unknown>>(): T | null => {
+  if (typeof window === 'undefined') return null
+  const raw = localStorage.getItem(AUTH_USER_KEY)
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as T
+  } catch {
+    return null
+  }
+}
+
+export const setAuthSession = (token: string, user?: unknown): void => {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(AUTH_TOKEN_KEY, token)
+  if (user) {
+    localStorage.setItem(AUTH_USER_KEY, typeof user === 'string' ? user : JSON.stringify(user))
+  }
+}
+
+export const clearAuthSession = (): void => {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(AUTH_TOKEN_KEY)
+  localStorage.removeItem(AUTH_USER_KEY)
+}
+
+export const isAuthenticated = (): boolean => {
+  if (typeof window === 'undefined') return false
+  return Boolean(localStorage.getItem(AUTH_TOKEN_KEY) && localStorage.getItem(AUTH_USER_KEY))
+}
+
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('ncd_jwt')
+  const token = getAuthToken()
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -393,8 +431,7 @@ api.interceptors.response.use(
   (error) => {
     // 1. Sesi Login Habis / Token Tidak Sah / Akses Terlarang (401/403)
     if (error.response?.status === 401 || error.response?.status === 403) {
-      localStorage.removeItem('ncd_jwt')
-      localStorage.removeItem('ncd_user')
+      clearAuthSession()
       if (
         typeof window !== 'undefined' &&
         (window.location.pathname.startsWith('/app') ||

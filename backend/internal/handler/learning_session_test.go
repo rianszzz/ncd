@@ -12,6 +12,29 @@ import (
 )
 
 func TestLearningSessionFlow(t *testing.T) {
+	// Snapshot initial state to ensure clean isolation and idempotent test runs
+	lsLock.Lock()
+	initialRegs := make([]LearningSessionRegistration, len(lsRegistrations))
+	copy(initialRegs, lsRegistrations)
+	lsLock.Unlock()
+
+	lsClassLock.Lock()
+	initialClasses := make([]LearningSessionClass, len(lsClasses))
+	copy(initialClasses, lsClasses)
+	lsClassLock.Unlock()
+
+	t.Cleanup(func() {
+		lsLock.Lock()
+		lsRegistrations = initialRegs
+		saveLearningSessionRegistrationsLocked()
+		lsLock.Unlock()
+
+		lsClassLock.Lock()
+		lsClasses = initialClasses
+		saveLearningSessionClassesLocked()
+		lsClassLock.Unlock()
+	})
+
 	// 1. Unauthenticated request should fail (401)
 	body, _ := json.Marshal(map[string]string{
 		"class_slug": "fawwaz-webdev",

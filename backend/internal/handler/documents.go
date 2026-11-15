@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/ncd/backend/internal/middleware"
+	"github.com/ncd/backend/internal/storage"
 )
 
 type OrganizationDocument struct {
@@ -27,27 +27,18 @@ type OrganizationDocument struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+const documentsFileName = "documents.json"
+
 var (
-	docLock   sync.RWMutex
-	docsList  = []OrganizationDocument{}
-	docsInit  sync.Once
+	docLock  sync.RWMutex
+	docsList = []OrganizationDocument{}
+	docsInit sync.Once
 )
 
-func getDocumentsFilePath() string {
-	if _, err := os.Stat("backend/data"); err == nil {
-		return "backend/data/documents.json"
-	}
-	if _, err := os.Stat("data"); err == nil {
-		return "data/documents.json"
-	}
-	return "data/documents.json"
-}
-
 func initDocs() {
-	filePath := getDocumentsFilePath()
-	bytes, err := os.ReadFile(filePath)
-	if err == nil {
-		_ = json.Unmarshal(bytes, &docsList)
+	var loaded []OrganizationDocument
+	if err := storage.LoadJSON(documentsFileName, &loaded); err == nil {
+		docsList = loaded
 		return
 	}
 	docsList = []OrganizationDocument{}
@@ -55,11 +46,7 @@ func initDocs() {
 }
 
 func saveDocsToDiskLocked() {
-	filePath := getDocumentsFilePath()
-	bytes, err := json.MarshalIndent(docsList, "", "  ")
-	if err == nil {
-		_ = os.WriteFile(filePath, bytes, 0644)
-	}
+	_ = storage.SaveJSON(documentsFileName, docsList)
 }
 
 // ListDocuments mengembalikan daftar dokumen & notulensi organisasi

@@ -86,20 +86,29 @@ func main() {
 	r.Use(ncdMiddleware.BodyLimit(10 << 20)) // Spending Cap / Protection: 10MB body limit
 	r.Use(apiLimiter.Middleware())
 
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins: []string{
-			cfg.CORSOrigin,
+	allowedOrigins := []string{cfg.CORSOrigin}
+	if cfg.Environment != "production" {
+		allowedOrigins = append(allowedOrigins,
 			"http://localhost:5173",
 			"http://127.0.0.1:5173",
 			"http://localhost:4173",
 			"http://127.0.0.1:4173",
-		},
+		)
+	}
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: allowedOrigins,
 		AllowOriginFunc: func(r *http.Request, origin string) bool {
-			return origin == "http://localhost:5173" ||
-				origin == "http://127.0.0.1:5173" ||
-				origin == "http://localhost:4173" ||
-				origin == "http://127.0.0.1:4173" ||
-				origin == cfg.CORSOrigin
+			if strings.EqualFold(strings.TrimRight(origin, "/"), strings.TrimRight(cfg.CORSOrigin, "/")) {
+				return true
+			}
+			if cfg.Environment != "production" {
+				return origin == "http://localhost:5173" ||
+					origin == "http://127.0.0.1:5173" ||
+					origin == "http://localhost:4173" ||
+					origin == "http://127.0.0.1:4173"
+			}
+			return false
 		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},

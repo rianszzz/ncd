@@ -1,6 +1,6 @@
 import React, { useState, useRef, lazy, Suspense } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { api } from '../services/api'
+import { api, setAuthSession } from '../services/api'
 import { ArrowRight, Loader2 } from 'lucide-react'
 import Snowfall from 'react-snowfall'
 
@@ -42,23 +42,20 @@ export function Login() {
     try {
       const res = await api.post('/auth/login', { key: cleanKey })
       if (res.data?.token) {
-        localStorage.setItem('ncd_jwt', res.data.token)
-      }
-      if (res.data?.user) {
-        localStorage.setItem('ncd_user', JSON.stringify(res.data.user))
+        setAuthSession(res.data.token, res.data.user)
       }
 
       setIsSuccess(true)
 
-      const redirectPath = searchParams.get('redirect')
+      const rawRedirect = searchParams.get('redirect')
       const targetClass = searchParams.get('class')
+      // Validate redirect destination to prevent open redirect vulnerabilities
+      const isSafeRedirect = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')
+      const redirectPath = isSafeRedirect ? rawRedirect : '/app'
+
       setTimeout(() => {
-        if (redirectPath) {
-          const dest = targetClass ? `${redirectPath}?class=${encodeURIComponent(targetClass)}` : redirectPath
-          navigate(dest)
-        } else {
-          navigate('/app')
-        }
+        const dest = (targetClass && redirectPath !== '/app') ? `${redirectPath}?class=${encodeURIComponent(targetClass)}` : redirectPath
+        navigate(dest)
       }, 500)
     } catch {
       setError('Kunci akses tidak valid atau telah dicabut oleh God Admin.')

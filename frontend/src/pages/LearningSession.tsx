@@ -1,13 +1,10 @@
 import { Navigate, useSearchParams } from 'react-router-dom'
+import { isAuthenticated } from '../services/api'
 
 export function LearningSession() {
   const [searchParams] = useSearchParams()
   const targetClass = searchParams.get('class')
-
-  const token = typeof window !== 'undefined' ? localStorage.getItem('ncd_jwt') : null
-  const localUserRaw = typeof window !== 'undefined' ? localStorage.getItem('ncd_user') : null
-  const localUser = localUserRaw ? JSON.parse(localUserRaw) : null
-  const isLoggedIn = Boolean(token && localUser)
+  const isLoggedIn = isAuthenticated()
 
   const destUrl = targetClass
     ? `/app?tab=learning-session&class=${encodeURIComponent(targetClass)}`

@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -16,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ncd/backend/internal/middleware"
+	"github.com/ncd/backend/internal/storage"
 )
 
 type AccessKey struct {
@@ -104,39 +104,24 @@ var (
 	}
 )
 
+const tokensDataFile = "tokens.json"
+
 func getTokensFilePath() string {
-	if _, err := os.Stat("backend/data"); err == nil {
-		return "backend/data/tokens.json"
-	}
-	if _, err := os.Stat("data"); err == nil {
-		return "data/tokens.json"
-	}
-	if _, err := os.Stat("../../data"); err == nil {
-		return "../../data/tokens.json"
-	}
-	return "data/tokens.json"
+	return storage.ResolveDataPath(tokensDataFile)
 }
 
 func saveTokensToDiskLocked() {
-	filePath := getTokensFilePath()
-	bytes, err := json.MarshalIndent(accessKeys, "", "  ")
-	if err == nil {
-		_ = os.WriteFile(filePath, bytes, 0644)
-	}
+	_ = storage.SaveJSON(tokensDataFile, accessKeys)
 }
 
 func loadTokensFromDisk() {
 	tokenLock.Lock()
 	defer tokenLock.Unlock()
 
-	filePath := getTokensFilePath()
-	bytes, err := os.ReadFile(filePath)
-	if err == nil && len(bytes) > 0 {
-		var loaded []AccessKey
-		if err := json.Unmarshal(bytes, &loaded); err == nil && len(loaded) > 0 {
-			accessKeys = loaded
-			return
-		}
+	var loaded []AccessKey
+	if err := storage.LoadJSON(tokensDataFile, &loaded); err == nil && len(loaded) > 0 {
+		accessKeys = loaded
+		return
 	}
 	saveTokensToDiskLocked()
 }

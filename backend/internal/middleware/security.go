@@ -299,8 +299,10 @@ func isAllowedOrigin(origin string, allowedOrigin string, host string) bool {
 	}
 	// Check against request Host
 	u, err := url.Parse(origin)
-	if err == nil && (strings.EqualFold(u.Host, host) || strings.EqualFold(u.Hostname(), "localhost") || strings.EqualFold(u.Hostname(), "127.0.0.1")) {
-		return true
+	if err == nil {
+		if strings.EqualFold(u.Host, host) || strings.EqualFold(u.Hostname(), host) {
+			return true
+		}
 	}
 	return false
 }

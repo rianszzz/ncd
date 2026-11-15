@@ -3,12 +3,12 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/ncd/backend/internal/middleware"
+	"github.com/ncd/backend/internal/storage"
 )
 
 type MemberProfile struct {
@@ -58,43 +58,23 @@ var (
 )
 
 func init() {
-	go func() {
-		time.Sleep(150 * time.Millisecond)
-		loadMemberProfilesFromDisk()
-	}()
+	loadMemberProfilesFromDisk()
 }
 
-func getMemberProfilesFilePath() string {
-	if _, err := os.Stat("backend/data"); err == nil {
-		return "backend/data/member_onboarding.json"
-	}
-	if _, err := os.Stat("data"); err == nil {
-		return "data/member_onboarding.json"
-	}
-	return "data/member_onboarding.json"
-}
+const memberProfilesFileName = "member_onboarding.json"
 
 func loadMemberProfilesFromDisk() {
 	memberProfilesLock.Lock()
 	defer memberProfilesLock.Unlock()
 
-	filePath := getMemberProfilesFilePath()
-	bytes, err := os.ReadFile(filePath)
-	if err == nil && len(bytes) > 0 {
-		var loaded []MemberProfile
-		if err := json.Unmarshal(bytes, &loaded); err == nil {
-			memberProfilesList = loaded
-			return
-		}
+	var loaded []MemberProfile
+	if err := storage.LoadJSON(memberProfilesFileName, &loaded); err == nil {
+		memberProfilesList = loaded
 	}
 }
 
 func saveMemberProfilesToDiskLocked() {
-	filePath := getMemberProfilesFilePath()
-	bytes, err := json.MarshalIndent(memberProfilesList, "", "  ")
-	if err == nil {
-		_ = os.WriteFile(filePath, bytes, 0644)
-	}
+	_ = storage.SaveJSON(memberProfilesFileName, memberProfilesList)
 }
 
 // GetMemberProfile mengembalikan data profil onboarding milik user yang sedang login
