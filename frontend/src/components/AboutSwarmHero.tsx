@@ -6,7 +6,7 @@ import { X } from 'lucide-react'
 const ARROW_PATH =
   'M4.6 3.9 C4.2 3.1 4.9 2.4 5.7 2.8 L20.6 9.4 C21.5 9.8 21.4 11.1 20.4 11.3 L13.9 12.9 C13.4 13 13 13.4 12.9 13.9 L11.3 20.4 C11.1 21.4 9.8 21.5 9.4 20.6 Z'
 
-export type CursorShape = 'arrow' | 'cross' | 'ibeam' | 'dup'
+type CursorShape = 'arrow' | 'cross' | 'ibeam' | 'dup'
 
 // Easing functions
 function easeInOutCubic(t: number): number {

@@ -194,10 +194,6 @@ func SyncFinanceFromDB(ctx context.Context, pool *pgxpool.Pool) {
 
 const transactionsDataFile = "transactions.json"
 
-func getTransactionsFilePath() string {
-	return storage.ResolveDataPath(transactionsDataFile)
-}
-
 func saveTransactionsToDiskLocked() {
 	_ = storage.SaveJSON(transactionsDataFile, transactions)
 }

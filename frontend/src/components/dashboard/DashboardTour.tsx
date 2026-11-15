@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { X, ArrowRight, ArrowLeft, Check, Sparkles } from 'lucide-react'
 
-export interface TourStep {
+interface TourStep {
   id: string
   targetSelector: string
   mobileTargetSelector?: string
@@ -17,7 +17,7 @@ interface DashboardTourProps {
   currentUserRole: string
 }
 
-export const TOUR_STEPS: TourStep[] = [
+const TOUR_STEPS: TourStep[] = [
   {
     id: 'identity',
     targetSelector: '[data-tour="member-identity"]',

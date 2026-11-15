@@ -31,34 +31,6 @@ export function MemberSkeleton() {
   )
 }
 
-export function SummarySkeleton() {
-  return (
-    <div className="p-6 rounded-2xl bg-white border border-[#111215]/8 shadow-2xs animate-pulse">
-      <div className="flex items-center justify-between mb-2">
-        <div className="w-24 h-3 rounded bg-[#111215]/8" />
-        <div className="w-3 h-3 rounded-full bg-[#111215]/10" />
-      </div>
-      <div className="w-36 h-8 rounded-md bg-[#111215]/10 my-2" />
-      <div className="w-28 h-3 rounded bg-[#111215]/6" />
-    </div>
-  )
-}
-
-export function TableRowSkeleton() {
-  return (
-    <tr className="animate-pulse">
-      <td className="py-4 px-4"><div className="w-20 h-4 rounded bg-[#111215]/10" /></td>
-      <td className="py-4 px-4"><div className="w-16 h-3 rounded bg-[#111215]/8" /></td>
-      <td className="py-4 px-4"><div className="w-24 h-4 rounded bg-[#111215]/8" /></td>
-      <td className="py-4 px-4"><div className="w-36 h-3 rounded bg-[#111215]/8" /></td>
-      <td className="py-4 px-4"><div className="w-20 h-4 rounded bg-[#111215]/10" /></td>
-      <td className="py-4 px-4"><div className="w-16 h-3 rounded bg-[#111215]/8" /></td>
-      <td className="py-4 px-4"><div className="w-20 h-4 rounded bg-[#111215]/8" /></td>
-      <td className="py-4 px-4 text-center"><div className="w-8 h-4 rounded bg-[#111215]/8 mx-auto" /></td>
-    </tr>
-  )
-}
-
 export function NewsCardSkeleton() {
   return (
     <div className="bg-white rounded-2xl border border-[#111215]/8 overflow-hidden shadow-2xs flex flex-col p-6 animate-pulse">

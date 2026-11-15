@@ -32,7 +32,7 @@ import {
 import fawwazPoster from '../assets/learning-session/fawwaz-poster.webp'
 import fauzanPoster from '../assets/learning-session/fauzan-poster.webp'
 
-export interface ClassSession {
+interface ClassSession {
   id?: string
   slug: string
   classNumber: string
@@ -50,7 +50,7 @@ export interface ClassSession {
   isClosed?: boolean
 }
 
-export const LEARNING_CLASSES: ClassSession[] = [
+const LEARNING_CLASSES: ClassSession[] = [
   {
     id: 'class-fawwaz-01',
     slug: 'fawwaz-webdev',

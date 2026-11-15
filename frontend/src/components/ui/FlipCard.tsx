@@ -27,7 +27,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 const snap = (deg: number) => Math.round(deg / 180) * 180
 const isBack = (deg: number) => Math.abs(Math.round(deg / 180)) % 2 === 1
 
-export interface FlipCardProps {
+interface FlipCardProps {
   front?: ReactNode
   back?: ReactNode
   flipped?: boolean

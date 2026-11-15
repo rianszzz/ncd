@@ -3,7 +3,7 @@ import { validateAvatarDefinition, type AvatarDefinition } from '@bible-strong/a
 import { Avatar } from '@bible-strong/avatar-react'
 import '@bible-strong/avatar-react/styles.css'
 
-export interface NcdPortalAvatarProps {
+interface NcdPortalAvatarProps {
   isTyping?: boolean
   isFocused?: boolean
   hasError?: boolean

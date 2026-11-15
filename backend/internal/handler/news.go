@@ -38,10 +38,6 @@ var (
 
 const newsDataFile = "posts.json"
 
-func getPostsFilePath() string {
-	return storage.ResolveDataPath(newsDataFile)
-}
-
 func savePostsToDiskLocked() {
 	_ = storage.SaveJSON(newsDataFile, postsList)
 }

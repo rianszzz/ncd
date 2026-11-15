@@ -125,15 +125,6 @@ export interface Competition {
   url?: string
 }
 
-export interface DashboardUser {
-  id: string
-  name: string
-  full_name?: string
-  email: string
-  role: string
-  position: string
-}
-
 export interface ApplicationVote {
   id: string
   user_id: string
@@ -180,32 +171,6 @@ export interface OrganizationDocument {
   author: string
   created_at: string
   updated_at: string
-}
-
-export interface ActivityItem {
-  id: string
-  title: string
-  timestamp: string
-  type: 'TRANSACTION' | 'PROJECT' | 'MEMBER' | 'ANNOUNCEMENT' | string
-  actor?: string
-  badge?: string
-}
-
-export interface DashboardSummary {
-  user: DashboardUser
-  pending_verification_count?: number
-  total_transactions_count?: number
-  active_projects_count?: number
-  total_members_count?: number
-  cash_balance?: number
-  stats?: {
-    cash_balance: number
-    pending_verification_count: number
-    total_transactions_count?: number
-    active_projects_count: number
-    total_members_count: number
-  }
-  recent_activity: ActivityItem[]
 }
 
 export interface AccessKey {
@@ -380,10 +345,10 @@ export const deleteLearningSessionClass = async (id: string): Promise<{ message:
   return res.data
 }
 
-export const AUTH_TOKEN_KEY = 'ncd_jwt'
-export const AUTH_USER_KEY = 'ncd_user'
+const AUTH_TOKEN_KEY = 'ncd_jwt'
+const AUTH_USER_KEY = 'ncd_user'
 
-export const getAuthToken = (): string | null => {
+const getAuthToken = (): string | null => {
   if (typeof window === 'undefined') return null
   return localStorage.getItem(AUTH_TOKEN_KEY)
 }

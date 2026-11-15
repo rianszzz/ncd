@@ -106,10 +106,6 @@ var (
 
 const tokensDataFile = "tokens.json"
 
-func getTokensFilePath() string {
-	return storage.ResolveDataPath(tokensDataFile)
-}
-
 func saveTokensToDiskLocked() {
 	_ = storage.SaveJSON(tokensDataFile, accessKeys)
 }

@@ -19,10 +19,6 @@ var (
 	dbPoolMutex  sync.Mutex
 )
 
-func SetRepository(r *repository.Queries) {
-	Repo = r
-}
-
 func SetDB(pool *pgxpool.Pool, r *repository.Queries) {
 	DBPool = pool
 	Repo = r

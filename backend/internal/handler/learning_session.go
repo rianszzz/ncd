@@ -111,14 +111,6 @@ const (
 	learningRegistrationsFile = "learning_session_registrations.json"
 )
 
-func getLearningSessionsFilePath() string {
-	return storage.ResolveDataPath(learningRegistrationsFile)
-}
-
-func getLearningClassesFilePath() string {
-	return storage.ResolveDataPath(learningClassesFile)
-}
-
 func loadLearningSessionClassesFromDisk() {
 	lsClassLock.Lock()
 	defer lsClassLock.Unlock()

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, CSSProperties, ReactNode } from 'react'
 
-export interface FadeContentProps extends React.HTMLAttributes<HTMLDivElement> {
+interface FadeContentProps extends React.HTMLAttributes<HTMLDivElement> {
   children?: ReactNode
   blur?: boolean | number
   duration?: number

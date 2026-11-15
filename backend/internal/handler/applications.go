@@ -92,10 +92,6 @@ func SendTelegramAlert(text string) {
 
 const applicationsDataFile = "applications.json"
 
-func getApplicationsFilePath() string {
-	return storage.ResolveDataPath(applicationsDataFile)
-}
-
 func saveApplicationsToDiskLocked() {
 	_ = storage.SaveJSON(applicationsDataFile, applicationsList)
 }
