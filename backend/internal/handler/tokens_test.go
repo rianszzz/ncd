@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/ncd/backend/internal/middleware"
 )
 
@@ -189,4 +190,18 @@ func TestUpdateTokenPrefixRequirement(t *testing.T) {
 	req3.Header.Set("Content-Type", "application/json")
 	w3 := httptest.NewRecorder()
 	UpdateToken(w3, req3)
+}
+
+func TestDeleteTokenGodAdminForbidden(t *testing.T) {
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", "tok-god-1")
+
+	req := httptest.NewRequest("DELETE", "/api/v1/portal/tokens/tok-god-1", nil)
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	w := httptest.NewRecorder()
+
+	DeleteToken(w, req)
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 Forbidden when deleting GOD_ADMIN token, got %d: %s", w.Code, w.Body.String())
+	}
 }

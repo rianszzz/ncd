@@ -460,8 +460,8 @@ func DeleteToken(w http.ResponseWriter, r *http.Request) {
 
 	for i := range accessKeys {
 		if accessKeys[i].ID == id {
-			if accessKeys[i].Role == "GOD_ADMIN" && len(accessKeys) <= 1 {
-				http.Error(w, `{"error": "Master God Admin key tidak dapat dihapus"}`, http.StatusBadRequest)
+			if accessKeys[i].Role == "GOD_ADMIN" {
+				http.Error(w, `{"error": "Forbidden: Token peran GOD_ADMIN tidak dapat dihapus"}`, http.StatusForbidden)
 				return
 			}
 

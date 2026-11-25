@@ -43,6 +43,8 @@ import {
   RefreshCw,
   Ban,
   HelpCircle,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 import {
   api,
@@ -278,8 +280,23 @@ export function Dashboard() {
   const [rejectReason, setRejectReason] = useState('')
   const [rejectError, setRejectError] = useState('')
 
-  // Copy status feedback
+  // Copy status feedback & Token key masking
   const [copiedKey, setCopiedKey] = useState('')
+  const [revealedTokenIds, setRevealedTokenIds] = useState<Record<string, boolean>>({})
+
+  const toggleTokenVisibility = (id: string) => {
+    setRevealedTokenIds((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  const maskTokenKey = (key: string) => {
+    if (!key) return '••••••••'
+    if (key.startsWith('NCD-')) {
+      const clean = key.slice(4)
+      if (clean.length <= 4) return 'NCD-••••'
+      return `NCD-••••••••-${clean.slice(-3)}`
+    }
+    return '••••••••'
+  }
 
   // New Token Form State (God Admin only)
   const [newRole, setNewRole] = useState('SUPER_ADMIN')
@@ -4456,19 +4473,34 @@ export function Dashboard() {
                         {/* Token Key Box */}
                         <div className="flex items-center justify-between bg-[#F4F1EB]/80 px-2.5 py-1.5 rounded-lg border border-[#111215]/6">
                           <code className="font-mono text-xs font-semibold text-[#111215] truncate">
-                            {tok.key}
+                            {revealedTokenIds[tok.id] ? tok.key : maskTokenKey(tok.key)}
                           </code>
-                          <button
-                            onClick={() => handleCopy(tok.key)}
-                            className="p-1 rounded text-[#7E8492] hover:text-[#111215] transition-colors shrink-0"
-                            title="Salin token"
-                          >
-                            {copiedKey === tok.key ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5" />
-                            )}
-                          </button>
+                          <div className="flex items-center space-x-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => toggleTokenVisibility(tok.id)}
+                              className="p-1 rounded text-[#7E8492] hover:text-[#111215] transition-colors"
+                              title={revealedTokenIds[tok.id] ? 'Sembunyikan token' : 'Tampilkan token'}
+                            >
+                              {revealedTokenIds[tok.id] ? (
+                                <EyeOff className="w-3.5 h-3.5 text-[#525660]" />
+                              ) : (
+                                <Eye className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(tok.key)}
+                              className="p-1 rounded text-[#7E8492] hover:text-[#111215] transition-colors"
+                              title="Salin token"
+                            >
+                              {copiedKey === tok.key ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
                         </div>
 
                         {/* Action buttons (44px target) */}
@@ -4496,12 +4528,12 @@ export function Dashboard() {
                             {tok.is_active ? 'Cabut' : 'Aktifkan'}
                           </button>
 
-                          {tok.key !== 'NCD-GOD-MASTER-2026' && (
+                          {tok.role !== 'GOD_ADMIN' && (
                             <button
                               onClick={() => {
                                 if (
                                   window.confirm(
-                                    `Hapus token ${tok.key} permanen?`
+                                    `Hapus token ${tok.assignee} (${tok.role}) permanen?`
                                   )
                                 ) {
                                   deleteTokenMutation.mutate(tok.id)
@@ -4519,13 +4551,26 @@ export function Dashboard() {
                       {/* Desktop View (>= sm) */}
                       <div className="hidden sm:grid grid-cols-12 gap-0 items-center text-xs">
                         {/* Token Key + Copy */}
-                        <div className="col-span-4 flex items-center space-x-2 min-w-0 pr-2">
+                        <div className="col-span-4 flex items-center space-x-1.5 min-w-0 pr-2">
                           <code className="font-mono text-xs font-semibold text-[#111215] bg-[#F4F1EB] px-2 py-1 rounded truncate">
-                            {tok.key}
+                            {revealedTokenIds[tok.id] ? tok.key : maskTokenKey(tok.key)}
                           </code>
                           <button
+                            type="button"
+                            onClick={() => toggleTokenVisibility(tok.id)}
+                            className="p-1.5 rounded-lg hover:bg-[#111215]/8 text-[#7E8492] hover:text-[#111215] transition-colors shrink-0 cursor-pointer"
+                            title={revealedTokenIds[tok.id] ? 'Sembunyikan token' : 'Tampilkan token'}
+                          >
+                            {revealedTokenIds[tok.id] ? (
+                              <EyeOff className="w-3.5 h-3.5 text-[#525660]" />
+                            ) : (
+                              <Eye className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleCopy(tok.key)}
-                            className="p-1.5 rounded-lg hover:bg-[#111215]/8 text-[#7E8492] hover:text-[#111215] transition-colors shrink-0"
+                            className="p-1.5 rounded-lg hover:bg-[#111215]/8 text-[#7E8492] hover:text-[#111215] transition-colors shrink-0 cursor-pointer"
                             title="Salin token"
                           >
                             {copiedKey === tok.key ? (
@@ -4591,12 +4636,12 @@ export function Dashboard() {
                             {tok.is_active ? 'Cabut' : 'Aktifkan'}
                           </button>
 
-                          {tok.key !== 'NCD-GOD-MASTER-2026' && (
+                          {tok.role !== 'GOD_ADMIN' && (
                             <button
                               onClick={() => {
                                 if (
                                   window.confirm(
-                                    `Hapus token ${tok.key} permanen?`
+                                    `Hapus token ${tok.assignee} (${tok.role}) permanen?`
                                   )
                                 ) {
                                   deleteTokenMutation.mutate(tok.id)
